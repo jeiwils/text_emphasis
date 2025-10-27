@@ -2,6 +2,17 @@
 
 
 
+TF–IDF	
+- Identify unusual or infrequent words/phrases to detect distinctive vocabulary marking central topics.	
+- scikit-learn TfidfVectorizer or Gensim; tokenize with spaCy or NLTK; n-grams for multi-word phrases.
+Lexical 
+- Entropy / Diversity	Measure lexical variation; higher or lower diversity may indicate sections of emphasis.	
+- Compute type–token ratio or Shannon entropy via NLTK or plain Python; optional: TextStat for additional metrics.
+Vocabulary Length / Rhythm	
+- Variations in word length can create rhythmic emphasis and affect attention.	
+- Tokenize with spaCy; compute word lengths per sentence and calculate variance or z-scores across the corpus.
+
+
 
 
 
@@ -31,7 +42,7 @@ class LexicalAnalyzer:
     def compute_lexical_entropy(self, tokens: List[str]) -> float:
         """
         
-        word variation within certain window 
+        word variation within certain window (i.e to see how varied vocabulary is in areas where there's a concentration of ndoes of a certain community in the networkx graph)
 
         Compute Shannon entropy of token distribution.
         
