@@ -18,38 +18,33 @@ class VerbalMorphosyntaxAnalyzer:
     # -------------------------------
     # Tense / Aspect
     # -------------------------------
-    def extract_tense_aspect(self, sent) -> List[str]:
+    def extract_tense_aspect(self, sent) -> List[Dict[str, List[str]]]:
         """
-        Extract tense/aspect info based on auxiliaries and verb forms.
-        Returns list of descriptors like 'past', 'present', 'progressive', 'perfect'
+        Returns a list of dicts, one per verb/auxiliary:
+        [{'verb': 'saw', 'tense_aspect': ['past']}, ...]
         """
-        descriptors = []
+        results = []
         for token in sent:
             if token.pos_ in ("AUX", "VERB"):
-                # Check auxiliary for tense/aspect
-                if token.tag_ in ("VBD", "VBN"):
-                    descriptors.append("past")
-                elif token.tag_ in ("VBZ", "VBP"):
-                    descriptors.append("present")
-                # progressive aspect: 'ing'
-                if token.tag_ == "VBG":
-                    descriptors.append("progressive")
-                # perfect aspect: 'have' + past participle
+                descriptors = []
+                if token.tag_ in ("VBD", "VBN"): descriptors.append("past")
+                elif token.tag_ in ("VBZ", "VBP"): descriptors.append("present")
+                if token.tag_ == "VBG": descriptors.append("progressive")
                 if token.tag_ == "VBN" and any(child.lemma_ in ("have", "has", "had") for child in token.children):
                     descriptors.append("perfect")
-        return list(set(descriptors))
+                results.append({"verb": token.text, "tense_aspect": descriptors})
+        return results
 
-    # -------------------------------
-    # Voice
-    # -------------------------------
-    def extract_voice(self, sent) -> str:
+    def extract_voice(self, sent) -> List[Dict[str, str]]:
         """
-        Determine if the sentence uses active or passive voice.
+        Returns a list of dicts, one per verb, with 'active' or 'passive'.
         """
+        results = []
         for token in sent:
-            if token.dep_ == "auxpass":
-                return "passive"
-        return "active"
+            if token.pos_ in ("AUX","VERB"):
+                voice = "passive" if any(c.dep_ == "auxpass" for c in token.children) else "active"
+                results.append({"verb": token.text, "voice": voice})
+        return results
 
     # -------------------------------
     # Modality

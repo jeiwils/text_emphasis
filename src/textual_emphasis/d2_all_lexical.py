@@ -4,6 +4,15 @@ from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 import spacy
 
+
+"""
+
+TO DO:
+- n-grams???
+
+"""
+
+
 class EnhancedLexicalAnalyzer:
     """
     Enhanced lexical analysis:

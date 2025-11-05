@@ -16,29 +16,48 @@ class TextAnalyser:
         self.syntactic_analyzer = FullSyntacticAnalyzer(language=language)
         self.lexical_analyzer = EnhancedLexicalAnalyzer(language=language)
 
-    def analyze_corpus(self, texts: List[str], pos_filter=None) -> pd.DataFrame:
-        """
-        Returns a DataFrame with:
-        - syntactic features (from FullSyntacticAnalyzer)
-        - lexical features (from EnhancedLexicalAnalyzer)
-        """
-        # 1. Syntactic analysis
-        df_syntactic = self.syntactic_analyzer.analyze_corpus(texts)
+def analyze_corpus(self, texts: List[str], pos_filter=None):
+    """
+    Returns two DataFrames:
+    - sentence_df: one row per sentence
+    - text_df: aggregated features per text
+    """
+    sentence_rows = []
+    text_rows = []
 
-        # 2. Lexical analysis
-        lexical_results = []
-        for text in texts:
-            tokens = self.lexical_analyzer.tokenize(text, pos_filter=pos_filter)
-            lexical_results.append({
+    syntactic_results = self.syntactic_analyzer.analyze_corpus(texts)
+
+    for text, syn_res in zip(texts, syntactic_results):
+        # Lexical analysis at sentence level
+        doc = self.lexical_analyzer.nlp(text)
+        for i, sent in enumerate(doc.sents):
+            tokens = self.lexical_analyzer.tokenize(sent.text, pos_filter=pos_filter)
+            sent_lexical = {
                 "ttr": self.lexical_analyzer.type_token_ratio(tokens),
                 "entropy": self.lexical_analyzer.shannon_entropy(tokens),
                 "guiraud": self.lexical_analyzer.guiraud_index(tokens),
                 "herdan_c": self.lexical_analyzer.herdan_c(tokens),
                 **self.lexical_analyzer.word_length_stats(tokens),
                 "n_tokens": len(tokens)
-            })
-        df_lexical = pd.DataFrame(lexical_results)
+            }
+            # Combine with sentence-level syntactic features
+            sent_row = {**syn_res["sentences"][i], **sent_lexical, "sentence_index": i, "text": text}
+            sentence_rows.append(sent_row)
 
-        # 3. Merge syntactic + lexical features
-        df_final = pd.concat([df_syntactic.reset_index(drop=True), df_lexical.reset_index(drop=True)], axis=1)
-        return df_final
+        # Lexical analysis at text level
+        tokens = self.lexical_analyzer.tokenize(text, pos_filter=pos_filter)
+        text_lexical = {
+            "ttr": self.lexical_analyzer.type_token_ratio(tokens),
+            "entropy": self.lexical_analyzer.shannon_entropy(tokens),
+            "guiraud": self.lexical_analyzer.guiraud_index(tokens),
+            "herdan_c": self.lexical_analyzer.herdan_c(tokens),
+            **self.lexical_analyzer.word_length_stats(tokens),
+            "n_tokens": len(tokens)
+        }
+        # Combine with aggregated syntactic features
+        text_row = {**syn_res["aggregated"], **text_lexical, "text": text}
+        text_rows.append(text_row)
+
+    sentence_df = pd.DataFrame(sentence_rows)
+    text_df = pd.DataFrame(text_rows)
+    return sentence_df, text_df

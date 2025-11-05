@@ -14,8 +14,10 @@ class FullSyntacticAnalyzer:
     def __init__(self, language: str = "en_core_web_sm"):
         # Load spaCy and Benepar
         self.nlp = spacy.load(language)
-        if not benepar.is_loaded("benepar_en3"):
+        try:
             benepar.download("benepar_en3")
+        except Exception:
+            pass
         self.nlp.add_pipe("benepar", config={"model": "benepar_en3"})
 
     # -------------------------------
@@ -122,7 +124,31 @@ class FullSyntacticAnalyzer:
         return any(t.dep_=="appos" for t in sent)
 
     def detect_parenthetical(self, sent) -> bool:
-        return any(t.dep_=="parataxis" for t in sent) or "(PRN" in sent._.parse_string
+        tree_str = str(sent._.parse_tree)
+        return any(t.dep_=="parataxis" for t in sent) or "(PRN" in tree_str
+    
+
+
+    ###### ORDERING 
+
+
+    def extract_constituent_sequence(self, sent):
+        """Return a sequence of top-level phrase labels (NP, VP, PP...)"""
+        tree = sent._.parse_tree
+        return [child.label() for child in tree if isinstance(child, benepar.Tree)]
+
+
+    def dependency_direction_stats(self, sent):
+        """Count left- vs right-headed dependencies."""
+        left, right = 0, 0
+        for token in sent:
+            for child in token.children:
+                if child.i < token.i:
+                    left += 1
+                else:
+                    right += 1
+        return {"left_arcs": left, "right_arcs": right}
+
 
     # -------------------------------
     # Unified Sentence-Level Analysis
@@ -164,6 +190,56 @@ class FullSyntacticAnalyzer:
                 "fronting": self.detect_fronting(sent),
                 "ellipsis": self.detect_ellipsis(sent),
                 "apposition": self.detect_apposition(sent),
-                "parenthetical": self.detect_parenthetical(sent)
+                "parenthetical": self.detect_parenthetical(sent),
+                "constituent_sequence": self.extract_constituent_sequence(sent),
+                "dependency_direction": self.dependency_direction_stats(sent),
             })
         return analysis
+    
+
+    def analyze_corpus(self, texts: List[str]) -> List[Dict[str, object]]:
+        """
+        For each text, return:
+        {
+            'sentences': [sentence-level dicts],
+            'aggregated': aggregated counts/flags per text
+        }
+        Handles per-verb features (tense_aspect, voice) as lists of dicts.
+        """
+        corpus_results = []
+
+        for text in texts:
+            sent_results = self.analyze_text(text)  # sentence-level
+            aggregated = {}
+
+            for sent_res in sent_results:
+                for key, val in sent_res.items():
+                    if isinstance(val, list):
+                        if val and isinstance(val[0], dict):  # list of dicts (per-verb)
+                            for d in val:
+                                for subkey, subval in d.items():
+                                    if isinstance(subval, list):
+                                        aggregated[f"{key}_{subkey}"] = aggregated.get(f"{key}_{subkey}", 0) + len(subval)
+                                    else:
+                                        aggregated[f"{key}_{subkey}"] = aggregated.get(f"{key}_{subkey}", 0) + 1
+                        else:
+                            aggregated[key] = aggregated.get(key, 0) + len(val)
+                    elif isinstance(val, dict):
+                        for subkey, subval in val.items():
+                            aggregated[subkey] = aggregated.get(subkey, 0) + len(subval)
+                    elif isinstance(val, bool):
+                        aggregated[key] = aggregated.get(key, False) or val
+                    else:
+                        aggregated[key] = val
+
+            corpus_results.append({
+                "sentences": sent_results,
+                "aggregated": aggregated
+            })
+
+        return corpus_results
+    
+
+
+
+

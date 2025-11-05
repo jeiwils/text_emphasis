@@ -1,55 +1,70 @@
-"""Module for integrating metrics and analysis."""
+"""
 
-from typing import List, Dict
-import pandas as pd
+TO DO:
+- SORT ALL THIS OUT INTO ONE CLASS????
+
+"""
+
+
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+def flatten_syntax_features(sentence_dict):
+    """Turn one sentence analysis dict into a string of syntactic features."""
+    features = []
+
+    # Constituents
+    for label, spans in sentence_dict["constituency"].items():
+        features += [label] * len(spans)
+
+    # Dependencies
+    features += list(sentence_dict["dependencies"].keys())
+
+    # Modifiers / Coordination
+    for group in ["modifiers", "coordination"]:
+        for label, vals in sentence_dict[group].items():
+            features += [label] * len(vals)
+
+    # Verbal morphosyntax
+    features += sentence_dict["tense_aspect"]
+    features += [sentence_dict["voice"]]
+    features += sentence_dict["modality"]
+    features += sentence_dict["negation"]
+
+    # Agreement patterns
+    features += [a.split(":")[1] for a in sentence_dict["agreement"] if ":" in a]
+
+    # Stylistic flags
+    for flag in ["inversion","fronting","ellipsis","apposition","parenthetical"]:
+        if sentence_dict[flag]:
+            features.append(flag)
+
+    # Ordering features
+    features += sentence_dict["constituent_sequence"]
+    features += ["left_arc"] * sentence_dict["dependency_direction"]["left_arcs"]
+    features += ["right_arc"] * sentence_dict["dependency_direction"]["right_arcs"]
+
+    return " ".join(features)
+
+
+
+
+def compute_syntactic_tfidf(analyzer, text):
+    analysis = analyzer.analyze_text(text)
+    docs = [flatten_syntax_features(sent) for sent in analysis]
+
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform(docs)
+
+    feature_names = vectorizer.get_feature_names_out()
+    return tfidf_matrix, feature_names, docs
+
+
+
+
 import numpy as np
-from scipy import stats
 
-class IntegrationAnalyzer:
-    def merge_metrics(self,
-                     node_metrics: pd.DataFrame,
-                     network_metrics: pd.DataFrame) -> pd.DataFrame:
-        """Merge node-level linguistic and network metrics."""
-        return pd.merge(node_metrics, network_metrics, on='text', how='inner')
-    
-    def compute_composite_emphasis(self,
-                                 node_metrics: pd.DataFrame,
-                                 weights: Dict[str, float]) -> pd.Series:
-        """Compute weighted emphasis score."""
-        # Normalize each metric column
-        normalized = node_metrics.copy()
-        for col in weights.keys():
-            if col in normalized.columns:
-                normalized[col] = stats.zscore(normalized[col])
-        
-        # Compute weighted sum
-        emphasis = pd.Series(0.0, index=normalized.index)
-        for col, weight in weights.items():
-            if col in normalized.columns:
-                emphasis += normalized[col] * weight
-        
-        return emphasis
-    
-    def community_level_analysis(self,
-                               node_metrics: pd.DataFrame,
-                               communities: Dict[int, List[str]]) -> pd.DataFrame:
-        """Aggregate metrics at community level."""
-        community_metrics = []
-        
-        for comm_id, nodes in communities.items():
-            # Get metrics for nodes in this community
-            comm_data = node_metrics[node_metrics['text'].isin(nodes)]
-            
-            # Compute summary statistics
-            summary = comm_data.describe()
-            metrics = {
-                'community_id': comm_id,
-                'size': len(nodes),
-                'mean_emphasis': comm_data['emphasis'].mean(),
-                'std_emphasis': comm_data['emphasis'].std(),
-                'max_emphasis': comm_data['emphasis'].max(),
-                'mean_centrality': comm_data['eigenvector'].mean()
-            }
-            community_metrics.append(metrics)
-            
-        return pd.DataFrame(community_metrics)
+def most_unusual_sentence(tfidf_matrix):
+    mean_scores = np.asarray(tfidf_matrix.mean(axis=1)).flatten()
+    idx = np.argmax(mean_scores)
+    return idx, mean_scores[idx]
