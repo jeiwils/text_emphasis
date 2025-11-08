@@ -9,6 +9,7 @@ import json
 """
 
 LOTS OF WORK NEEDS DOING ON THIS!!!
+I THINK I NEED TO TRAIN A LM FOR EACH TEXT???
 
 
 

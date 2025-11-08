@@ -1,20 +1,15 @@
-import spacy
 import statistics
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
+import spacy
 
 """
 
-TO DO:
-- corpus freqs???
-- x
+
 
 
 
 
     "lexico_semantics": {
-        "vocabulary": {
+        "vocabulary": { # I NEED TO PASS ANALYTICS ABOUT THE WHOLE CORPUS TO CALCULATE THESE
             "mattr_score": "<moving_average_type_token_ratio>", # proxy for lexical diversity 
             "avg_word_freq": "<mean_corpus_frequency>", # proxy for vocabulary rareness - in relation to whole corpus (i.e individual story)
             "content_function_ratio": "<content_words / total>" # proxy for density of informational content vs descriptive
@@ -38,26 +33,17 @@ TO DO:
 
 """
 
+
+
+
 class LexicoSemanticsAnalyzer:
-    def __init__(self, spacy_model='en_core_web_sm', lm_model='gpt2', corpus_freqs=None, device=None):
-        """
-        spacy_model: spaCy model for parsing
-        lm_model: Hugging Face causal LM for computing token log probabilities
-        corpus_freqs: dict mapping words -> corpus frequency
-        device: 'cuda' or 'cpu' (default: auto)
-        """
+    def __init__(self, spacy_model='en_core_web_sm', corpus_freqs=None):
         self.nlp = spacy.load(spacy_model)
         self.corpus_freqs = corpus_freqs or {}
 
-        # Initialize LLM
-        self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
-        self.tokenizer = AutoTokenizer.from_pretrained(lm_model)
-        self.model = AutoModelForCausalLM.from_pretrained(lm_model).to(self.device)
-        self.model.eval()
 
-    # -------------------------------
-    # 1. Vocabulary metrics
-    # -------------------------------
+
+
     def compute_vocabulary_metrics(self, doc):
         words = [token.text.lower() for token in doc if token.is_alpha]
         types = set(words)
@@ -91,23 +77,16 @@ class LexicoSemanticsAnalyzer:
             "content_function_ratio": content_function_ratio
         }
 
-    # -------------------------------
-    # 2. Compute token log probabilities
-    # -------------------------------
-    def compute_log_probs(self, text):
-        inputs = self.tokenizer(text, return_tensors="pt").to(self.device)
-        with torch.no_grad():
-            outputs = self.model(**inputs, labels=inputs["input_ids"])
-            logits = outputs.logits
-            labels = inputs["input_ids"]
-            log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
-            token_log_probs = log_probs.gather(2, labels.unsqueeze(-1)).squeeze(-1)
-            return token_log_probs[0].tolist()
 
-    # -------------------------------
-    # 3. Information content
-    # -------------------------------
+
+
     def compute_information_content(self, text):
+        """
+        CHANGE THIS TO TAKE PRECOMPUTED LOG PROBS FROM PREVIOUS MODULE 
+        
+        
+        """
+
         log_probs = self.compute_log_probs(text)
         mean_surprisal = round(statistics.mean([-lp for lp in log_probs]), 3)
         surprisal_variance = round(statistics.variance([-lp for lp in log_probs]), 3) if len(log_probs) > 1 else 0
@@ -116,25 +95,40 @@ class LexicoSemanticsAnalyzer:
             "surprisal_variance": surprisal_variance
         }
 
-    # -------------------------------
-    # 4. Semantic structures
-    # -------------------------------
+
+
+
     def extract_semantic_structures(self, doc):
         structures = []
         for sent in doc.sents:
             for token in sent:
-                if token.dep_ == "ROOT" and token.pos_ == "VERB":
-                    # Clause type (simple proxy)
-                    clause_type = "main" if token.head == token else "subordinate"
+                # Focus on verbs as predicates
+                if token.pos_ == "VERB":
+                    # Determine clause type
+                    if token.dep_ == "ROOT":
+                        clause_type = "main"
+                    elif "advcl" in token.dep_ or "ccomp" in token.dep_ or "xcomp" in token.dep_:
+                        clause_type = "subordinate"
+                    elif "conj" in token.dep_:
+                        clause_type = "coordinate"
+                    else:
+                        continue  # Skip verbs that are not clearly part of a clause
 
-                    # Subject (agent)
-                    subject = [child.text for child in token.children if "subj" in child.dep_]
-                    agent = " ".join(subject) if subject else None
+                    # Extract agent (subject) - full subtree
+                    subjects = [child for child in token.children if "subj" in child.dep_]
+                    agent_phrases = []
+                    for subj in subjects:
+                        agent_phrases.append(" ".join([t.text for t in subj.subtree]))
+                    agent = "; ".join(agent_phrases) if agent_phrases else None
 
-                    # Object (patient)
-                    obj = [child.text for child in token.children if "obj" in child.dep_]
-                    patient = " ".join(obj) if obj else None
+                    # Extract patient (object) - full subtree
+                    objects = [child for child in token.children if "obj" in child.dep_]
+                    patient_phrases = []
+                    for obj in objects:
+                        patient_phrases.append(" ".join([t.text for t in obj.subtree]))
+                    patient = "; ".join(patient_phrases) if patient_phrases else None
 
+                    # All tokens in clause (subtree)
                     clause_tokens = [t.text for t in token.subtree]
 
                     structures.append({

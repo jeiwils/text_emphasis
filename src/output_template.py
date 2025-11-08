@@ -3,9 +3,9 @@
 
 
 
+########### SENTENCE BY SENTENCE 
 
-
-{
+{ 
   "text": "<original_sentence>",                       
   "source": "<source_text_or_corpus>",                  
   "sentence_id": "<unique_sentence_id>",               
@@ -15,8 +15,9 @@
     "syntax": { 
         "embedding": {                
             "max_depth": "<max_syntactic_depth>",
-            "avg_depth": "<average_syntactic_depth>",
+            "mean_depth": "<mean_syntactic_depth>", 
             "median_depth": "<median_syntactic_depth>"
+            "depth_skew": "<mean_minus_median_depth>"
         },
         "clause_metrics": {
             "counts": {
@@ -25,25 +26,27 @@
                 "coordinate": "<count>"
             },
             "ratios": {
-                "clause_density": "<clauses_per_100_tokens>",
                 "subordination_ratio": "<subordinate_to_main_ratio>"
+                "coordinoation_ratio": "<coordinate_to_main_ratio>"
             }
         "dependency_complexity": { 
             "avg_dependents_per_head": {
-            "main_clause": "<mean_dependents_main>",
-            "subordinate_clause": "<mean_dependents_subordinate>",
-            "coordinate_clause": "<mean_dependents_coordinate>"
+                "main_clause": "<mean_dependents_main>",
+                "subordinate_clause": "<mean_dependents_subordinate>",
+                "coordinate_clause": "<mean_dependents_coordinate>"
             },
             "max_dependents_per_head": "<max_dependents_any_head>",
             "mean_dependency_distance": "<avg_linear_head_dependent_distance>"
         }
     },
 
+
   
     
 
+
     "lexico_semantics": {
-        "vocabulary": {
+        "vocabulary": { # I NEED TO PASS ANALYTICS ABOUT THE WHOLE CORPUS TO CALCULATE THESE
             "mattr_score": "<moving_average_type_token_ratio>", # proxy for lexical diversity 
             "avg_word_freq": "<mean_corpus_frequency>", # proxy for vocabulary rareness - in relation to whole corpus (i.e individual story)
             "content_function_ratio": "<content_words / total>" # proxy for density of informational content vs descriptive
@@ -66,8 +69,6 @@
 
 
 
-
-
     "discourse": { # according to PDTB
         "relations": [
             {
@@ -84,6 +85,25 @@
         ]
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+#### SLIDING WINDOW
+
+clause density per 100 tokens 
+
+
+
+
+
 
 
 """

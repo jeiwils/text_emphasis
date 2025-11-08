@@ -9,14 +9,13 @@ import statistics
 
 
 
-check echkec cehkce 
-
-
     "syntax": { 
         "embedding": {                
             "max_depth": "<max_syntactic_depth>",
-            "avg_depth": "<average_syntactic_depth>",
+            "mean_depth": "<mean_syntactic_depth>", 
             "median_depth": "<median_syntactic_depth>"
+            "depth_skew": "<mean_minus_median_depth>"
+
         },
         "clause_metrics": {
             "counts": {
@@ -25,14 +24,14 @@ check echkec cehkce
                 "coordinate": "<count>"
             },
             "ratios": {
-                "clause_density": "<clauses_per_100_tokens>",
                 "subordination_ratio": "<subordinate_to_main_ratio>"
+                "coordination_ratio": "<coordinate_to_main_ratio>"
             }
         "dependency_complexity": { 
             "avg_dependents_per_head": {
-            "main_clause": "<mean_dependents_main>",
-            "subordinate_clause": "<mean_dependents_subordinate>",
-            "coordinate_clause": "<mean_dependents_coordinate>"
+                "main_clause": "<mean_dependents_main>",
+                "subordinate_clause": "<mean_dependents_subordinate>",
+                "coordinate_clause": "<mean_dependents_coordinate>"
             },
             "max_dependents_per_head": "<max_dependents_any_head>",
             "mean_dependency_distance": "<avg_linear_head_dependent_distance>"
@@ -48,10 +47,9 @@ class SyntaxAnalyzer:
     def __init__(self, model='en_core_web_sm'):
         self.nlp = spacy.load(model)
 
-    # -------------------------------
-    # 1. Embedding metrics
-    # -------------------------------
-    def compute_embedding(self, doc):
+
+
+    def compute_clause_embedding_metrics(self, doc):
         def token_depth(token):
             depth = 0
             while token.head != token:
@@ -63,13 +61,16 @@ class SyntaxAnalyzer:
 
         return {
             "max_depth": max(all_depths) if all_depths else 0,
-            "avg_depth": round(statistics.mean(all_depths), 2) if all_depths else 0,
-            "median_depth": statistics.median(all_depths) if all_depths else 0
+            "mean_depth": round(statistics.mean(all_depths), 2) if all_depths else 0,
+            "median_depth": statistics.median(all_depths) if all_depths else 0,
+            "depth_skew": round(
+                (statistics.mean(all_depths) - statistics.median(all_depths)), 2
+            ) if all_depths else 0
         }
 
-    # -------------------------------
-    # 2. Clause metrics
-    # -------------------------------
+
+
+
     def compute_clause_metrics(self, doc):
         main_counts = 0
         sub_counts = 0
@@ -84,9 +85,9 @@ class SyntaxAnalyzer:
                 elif 'conj' in token.dep_:
                     coord_counts += 1
 
-        total_tokens = len(doc)
-        clause_density = (main_counts + sub_counts + coord_counts) / total_tokens * 100 if total_tokens else 0
         sub_to_main_ratio = sub_counts / main_counts if main_counts else 0
+
+        coord_to_main_ratio = coord_counts / main_counts if main_counts else 0
 
         return {
             "counts": {
@@ -95,14 +96,14 @@ class SyntaxAnalyzer:
                 "coordinate": coord_counts
             },
             "ratios": {
-                "clause_density": round(clause_density, 2),
-                "subordination_ratio": round(sub_to_main_ratio, 2)
+                "subordination_ratio": round(sub_to_main_ratio, 2),
+                "coordination_ratio": round(coord_to_main_ratio, 2)
             }
         }
 
-    # -------------------------------
-    # 3. Dependency complexity
-    # -------------------------------
+
+
+
     def compute_dependency_complexity(self, doc):
         dependents_per_head = {
             "main_clause": [],
