@@ -9,8 +9,7 @@ import spacy
 
 
     "lexico_semantics": {
-        "vocabulary": { # I NEED TO PASS ANALYTICS ABOUT THE WHOLE CORPUS TO CALCULATE THESE
-            "mattr_score": "<moving_average_type_token_ratio>", # proxy for lexical diversity 
+        "vocabulary": { 
             "avg_word_freq": "<mean_corpus_frequency>", # proxy for vocabulary rareness - in relation to whole corpus (i.e individual story)
             "content_function_ratio": "<content_words / total>" # proxy for density of informational content vs descriptive
         },
@@ -44,52 +43,46 @@ class LexicoSemanticsAnalyzer:
 
 
 
-    def compute_vocabulary_metrics(self, doc):
+    def compute_avg_word_frequency(self, doc):
+        """
+        takes word frequencies from whole text, initialised in the class, then calculates for individual sentences
+
+
+        """
         words = [token.text.lower() for token in doc if token.is_alpha]
-        types = set(words)
         total_tokens = len(words)
 
-        # Moving Average Type-Token Ratio (mattr)
-        window_size = 50
-        if total_tokens < window_size:
-            mattr = len(types) / total_tokens if total_tokens else 0
-        else:
-            ttr_values = []
-            for i in range(total_tokens - window_size + 1):
-                window = words[i:i+window_size]
-                ttr_values.append(len(set(window)) / window_size)
-            mattr = round(statistics.mean(ttr_values), 3)
-
-        # Average word frequency (proxy for rareness)
-        if self.corpus_freqs:
-            freqs = [self.corpus_freqs.get(w, 1) for w in words]  # default freq=1
+        # Average corpus frequency
+        if self.corpus_freqs and words:
+            freqs = [self.corpus_freqs.get(w, 1) for w in words]  # default 1 if missing
             avg_word_freq = round(statistics.mean(freqs), 3)
         else:
             avg_word_freq = 0
 
-        # Content vs function words
+        # Content vs function words ratio
         content_words = [token for token in doc if token.pos_ in {"NOUN", "VERB", "ADJ", "ADV"}]
         content_function_ratio = round(len(content_words) / total_tokens, 3) if total_tokens else 0
 
         return {
-            "mattr_score": mattr,
             "avg_word_freq": avg_word_freq,
             "content_function_ratio": content_function_ratio
         }
 
 
 
-
-    def compute_information_content(self, text):
+    def compute_information_content(self, log_probs):
         """
-        CHANGE THIS TO TAKE PRECOMPUTED LOG PROBS FROM PREVIOUS MODULE 
-        
-        
-        """
+        takes precomputed log probs to calculate surprisal of individual sentence
 
-        log_probs = self.compute_log_probs(text)
-        mean_surprisal = round(statistics.mean([-lp for lp in log_probs]), 3)
-        surprisal_variance = round(statistics.variance([-lp for lp in log_probs]), 3) if len(log_probs) > 1 else 0
+        """
+        if not log_probs:
+            return {"mean_surprisal": 0, "surprisal_variance": 0}
+
+        # Surprisal is -log(prob)
+        surprisals = [-lp for lp in log_probs]
+        mean_surprisal = round(statistics.mean(surprisals), 3)
+        surprisal_variance = round(statistics.variance(surprisals), 3) if len(surprisals) > 1 else 0
+
         return {
             "mean_surprisal": mean_surprisal,
             "surprisal_variance": surprisal_variance
@@ -99,6 +92,11 @@ class LexicoSemanticsAnalyzer:
 
 
     def extract_semantic_structures(self, doc):
+        """
+        
+        
+        
+        """
         structures = []
         for sent in doc.sents:
             for token in sent:
@@ -112,7 +110,7 @@ class LexicoSemanticsAnalyzer:
                     elif "conj" in token.dep_:
                         clause_type = "coordinate"
                     else:
-                        continue  # Skip verbs that are not clearly part of a clause
+                        continue  # Skip verbs that are not clearly part of a clause ##### anything else better to do with these?
 
                     # Extract agent (subject) - full subtree
                     subjects = [child for child in token.children if "subj" in child.dep_]

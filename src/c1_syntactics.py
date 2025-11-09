@@ -43,6 +43,10 @@ import statistics
 
 """
 
+
+
+
+
 class SyntaxAnalyzer:
     def __init__(self, model='en_core_web_sm'):
         self.nlp = spacy.load(model)

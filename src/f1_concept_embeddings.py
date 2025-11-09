@@ -20,15 +20,22 @@ class ConceptExtractor:
         """Initialize with specified models."""
         self.encoder = SentenceTransformer(model_name)
         self.nlp = spacy.load(language)
+
+
+
         
     def extract_noun_phrases(self, text: str) -> List[str]:
         """Extract noun phrases from text."""
         doc = self.nlp(text)
         return [chunk.text for chunk in doc.noun_chunks]
+    
+
         
-    def embed_phrases(self, phrases: List[str]) -> np.ndarray:
+    def embed_phrases(self, phrases: List[str]) -> np.ndarray: #### seems like a ridiculous thing to have as an individual function?
         """Encode phrases into embeddings."""
         return self.encoder.encode(phrases)
+    
+
         
     def cluster_embeddings(self, 
                           embeddings: np.ndarray,
