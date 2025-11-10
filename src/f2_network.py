@@ -1,4 +1,13 @@
-"""Module for network and structural metrics analysis."""
+"""
+
+
+
+TO DO:
+- add clusters = {k: v for k, v in clusters.items() if k != -1} somewhere??
+
+
+
+"""
 
 from typing import List, Dict, Tuple
 import numpy as np

@@ -1,23 +1,60 @@
+
+
+from typing import Optional
+from pathlib import Path
+
+
+
 def sliding_windows(seq, n):
     """
-    Generate sliding windows over a sequence.
-    - Pads with the last element if len(seq) < n or for end windows.
-
-
-    I believe there is some issue with the padding here? what's the normal approach if the window ends early? can't I just end it early?... so there are 2 sentences there, instead of 3? 
-
 
     """
     seq = list(seq)
-    if not seq:
-        return
-    if n <= 1:
-        for item in seq:
-            yield [item]
-    else:
-        for i in range(len(seq)):
-            window = seq[i:i+n]
-            # Pad with last element if window too short
-            while len(window) < n:
-                window.append(seq[-1])
-            yield window
+    for i in range(len(seq) - n + 1):
+        yield seq[i:i+n]
+
+
+
+
+
+
+def raw_text_path(filename: Optional[str] = None, base_dir: str = "data/raw_texts") -> Path:
+    """
+
+    """
+    path = Path(base_dir)
+    if filename:
+        path = path / filename
+    return path
+
+
+
+
+
+def processed_text_path(
+    folder_type: str, 
+    filename: Optional[str] = None, 
+    base_dir: str = "data/texts"
+) -> Path:
+    """
+
+    
+    
+    """
+    folder_map = {
+        "cleaned": "cleaned_texts",
+        "corpus": "corpus_analytics",
+        "window": "window_metrics",
+        "concept": "concept_embeddings",
+        "network": "network_analysis"
+    }
+    
+    if folder_type not in folder_map:
+        raise ValueError(f"folder_type must be one of {list(folder_map.keys())}")
+    
+    path = Path(base_dir) / folder_map[folder_type]
+    
+    if filename:
+        path = path / filename
+    
+    return path

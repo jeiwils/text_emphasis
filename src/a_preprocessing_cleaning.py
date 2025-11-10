@@ -12,8 +12,9 @@ THIS WOULD OUTPUT TO CLEANED_TEXTS
 
 from typing import List, Optional
 import spacy
-from spacy.language import Language
+
 import re
+import pdfplumber
 
 class TextPreprocessor:
     def __init__(self, language: str = "en_core_web_sm"):
@@ -51,4 +52,15 @@ class TextPreprocessor:
         """Lemmatize tokens to their base form."""
         doc = self.nlp(' '.join(tokens))
         return [token.lemma_ for token in doc]
+    
+
+    def pdf_to_text(self, pdf_path: str) -> str:
+        """Extract text from a text-based PDF."""
+        text = ""
+        with pdfplumber.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+        return text
     
