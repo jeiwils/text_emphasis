@@ -1,36 +1,6 @@
 import statistics
 import spacy
-
-"""
-
-
-
-
-
-
-    "lexico_semantics": {
-        "vocabulary": { 
-            "avg_word_freq": "<mean_corpus_frequency>", # proxy for vocabulary rareness - in relation to whole corpus (i.e individual story)
-            "content_function_ratio": "<content_words / total>" # proxy for density of informational content vs descriptive
-        },
-        "information_content": {
-            "mean_surprisal": "<avg_llm_logprob_or_entropy>",
-            "surprisal_variance": "<variance_llm_logprob>"
-        },
-        "semantic_structures": [ 
-            {
-            "clause_level": "<main/subordinate/coordinate>",
-            "predicate": "<main_verb_lemma>",
-            "agent": "<subject_phrase_or_token>",
-            "patient": "<object_phrase_or_token>",
-            "clause_tokens": ["<list_of_tokens_in_clause>"]
-            }
-        ]
-        }
-
-
-
-"""
+from .z_utils import sliding_windows
 
 
 
@@ -42,98 +12,133 @@ class LexicoSemanticsAnalyzer:
 
 
 
-
-    def compute_avg_word_frequency(self, doc):
-        """
-        takes word frequencies from whole text, initialised in the class, then calculates for individual sentences
-
-
-        """
-        words = [token.text.lower() for token in doc if token.is_alpha]
-        total_tokens = len(words)
-
-        # Average corpus frequency
-        if self.corpus_freqs and words:
-            freqs = [self.corpus_freqs.get(w, 1) for w in words]  # default 1 if missing
-            avg_word_freq = round(statistics.mean(freqs), 3)
-        else:
-            avg_word_freq = 0
-
-        # Content vs function words ratio
-        content_words = [token for token in doc if token.pos_ in {"NOUN", "VERB", "ADJ", "ADV"}]
-        content_function_ratio = round(len(content_words) / total_tokens, 3) if total_tokens else 0
-
-        return {
-            "avg_word_freq": avg_word_freq,
-            "content_function_ratio": content_function_ratio
-        }
-
-
-
-    def compute_information_content(self, log_probs):
-        """
-        takes precomputed log probs to calculate surprisal of individual sentence
-
-        """
-        if not log_probs:
-            return {"mean_surprisal": 0, "surprisal_variance": 0}
-
-        # Surprisal is -log(prob)
-        surprisals = [-lp for lp in log_probs]
-        mean_surprisal = round(statistics.mean(surprisals), 3)
-        surprisal_variance = round(statistics.variance(surprisals), 3) if len(surprisals) > 1 else 0
-
-        return {
-            "mean_surprisal": mean_surprisal,
-            "surprisal_variance": surprisal_variance
-        }
-
-
-
-
-    def extract_semantic_structures(self, doc):
-        """
-        
-        
-        
-        """
-        structures = []
+    # ----------------------------
+    # Average word frequency per sentence + sliding window
+    # ----------------------------
+    def compute_avg_word_frequency(self, doc, window_size=None):
+        sent_metrics = []
         for sent in doc.sents:
+            words = [token.text.lower() for token in sent if token.is_alpha]
+            total_tokens = len(words)
+            if self.corpus_freqs and words:
+                freqs = [self.corpus_freqs.get(w, 1) for w in words]
+                avg_word_freq = round(statistics.mean(freqs), 3)
+            else:
+                avg_word_freq = 0
+
+            content_words = [token for token in sent if token.pos_ in {"NOUN", "VERB", "ADJ", "ADV"}]
+            content_function_ratio = round(len(content_words)/total_tokens, 3) if total_tokens else 0
+
+            sent_metrics.append({
+                "avg_word_freq": avg_word_freq,
+                "content_function_ratio": content_function_ratio
+            })
+
+        # Apply sliding window if requested
+        if window_size and window_size > 1:
+            windowed_metrics = []
+            for window in sliding_windows(sent_metrics, window_size):
+                avg_freq = round(statistics.mean(d["avg_word_freq"] for d in window), 3)
+                avg_cfr = round(statistics.mean(d["content_function_ratio"] for d in window), 3)
+                windowed_metrics.append({
+                    "avg_word_freq": avg_freq,
+                    "content_function_ratio": avg_cfr
+                })
+            return windowed_metrics
+
+
+    # ----------------------------
+    # Information content (surprisal) per sentence + sliding window
+    # ----------------------------
+    def compute_information_content(self, log_probs_list, window_size=None):
+        sent_metrics = []
+        for log_probs in log_probs_list:
+            if not log_probs:
+                sent_metrics.append({"mean_surprisal": 0, "surprisal_variance": 0})
+                continue
+            surprisals = [-lp for lp in log_probs]
+            mean_surprisal = round(statistics.mean(surprisals), 3)
+            surprisal_variance = round(statistics.variance(surprisals), 3) if len(surprisals) > 1 else 0
+            sent_metrics.append({
+                "mean_surprisal": mean_surprisal,
+                "surprisal_variance": surprisal_variance
+            })
+
+        if window_size and window_size > 1:
+            windowed_metrics = []
+            for window in sliding_windows(sent_metrics, window_size):
+                avg_mean = round(statistics.mean(d["mean_surprisal"] for d in window), 3)
+                avg_var = round(statistics.mean(d["surprisal_variance"] for d in window), 3)
+                windowed_metrics.append({
+                    "mean_surprisal": avg_mean,
+                    "surprisal_variance": avg_var
+                })
+            return windowed_metrics
+
+
+    # ----------------------------
+    # Extract semantic structures per clause + sliding window aggregation
+    # ----------------------------
+    def extract_semantic_structures(self, doc, window_size=None):
+        clause_metrics_per_sentence = []
+
+        for sent in doc.sents:
+            clauses = []
             for token in sent:
-                # Focus on verbs as predicates
-                if token.pos_ == "VERB":
-                    # Determine clause type
-                    if token.dep_ == "ROOT":
-                        clause_type = "main"
-                    elif "advcl" in token.dep_ or "ccomp" in token.dep_ or "xcomp" in token.dep_:
-                        clause_type = "subordinate"
-                    elif "conj" in token.dep_:
-                        clause_type = "coordinate"
-                    else:
-                        continue  # Skip verbs that are not clearly part of a clause ##### anything else better to do with these?
+                if token.pos_ != "VERB":
+                    continue
 
-                    # Extract agent (subject) - full subtree
-                    subjects = [child for child in token.children if "subj" in child.dep_]
-                    agent_phrases = []
-                    for subj in subjects:
-                        agent_phrases.append(" ".join([t.text for t in subj.subtree]))
-                    agent = "; ".join(agent_phrases) if agent_phrases else None
+                # Determine clause type
+                if token.dep_ == "ROOT":
+                    clause_type = "main"
+                elif "advcl" in token.dep_ or "ccomp" in token.dep_ or "xcomp" in token.dep_:
+                    clause_type = "subordinate"
+                elif token.dep_ == "conj":
+                    clause_type = "coordinate"
+                else:
+                    continue  # skip verbs that are not part of a clause
 
-                    # Extract patient (object) - full subtree
-                    objects = [child for child in token.children if "obj" in child.dep_]
-                    patient_phrases = []
-                    for obj in objects:
-                        patient_phrases.append(" ".join([t.text for t in obj.subtree]))
-                    patient = "; ".join(patient_phrases) if patient_phrases else None
+                # Extract agent (subject) - full subtree
+                subjects = [child for child in token.children if "subj" in child.dep_]
+                agent_phrases = [" ".join([t.text for t in subj.subtree]) for subj in subjects]
+                agent = "; ".join(agent_phrases) if agent_phrases else None
 
-                    # All tokens in clause (subtree)
-                    clause_tokens = [t.text for t in token.subtree]
+                # Extract patient (object) - full subtree
+                objects = [child for child in token.children if "obj" in child.dep_]
+                patient_phrases = [" ".join([t.text for t in obj.subtree]) for obj in objects]
+                patient = "; ".join(patient_phrases) if patient_phrases else None
 
-                    structures.append({
-                        "clause_level": clause_type,
-                        "predicate": token.lemma_,
-                        "agent": agent,
-                        "patient": patient,
-                        "clause_tokens": clause_tokens
-                    })
-        return structures
+                clause_tokens = [t.text for t in token.subtree]
+
+                clauses.append({
+                    "clause_level": clause_type,
+                    "predicate": token.lemma_,
+                    "agent": agent,
+                    "patient": patient,
+                    "clause_tokens": clause_tokens
+                })
+
+            clause_metrics_per_sentence.append({
+                "sentence": sent.text,
+                "clauses": clauses,
+                "num_clauses": len(clauses),
+                "num_agents": sum(1 for c in clauses if c["agent"]),
+                "num_patients": sum(1 for c in clauses if c["patient"])
+            })
+
+        # Sliding window aggregation
+        if window_size and window_size > 1:
+            windowed_metrics = []
+            for window in sliding_windows(clause_metrics_per_sentence, window_size):
+                total_clauses = sum(d["num_clauses"] for d in window)
+                total_agents = sum(d["num_agents"] for d in window)
+                total_patients = sum(d["num_patients"] for d in window)
+
+                windowed_metrics.append({
+                    "sentences": [d["sentence"] for d in window],
+                    "total_clauses": total_clauses,
+                    "total_agents": total_agents,
+                    "total_patients": total_patients
+                })
+            return windowed_metrics
+

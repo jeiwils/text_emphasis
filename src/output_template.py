@@ -12,12 +12,14 @@
 
   
 
+
     "syntax": { 
         "embedding": {                
             "max_depth": "<max_syntactic_depth>",
             "mean_depth": "<mean_syntactic_depth>", 
             "median_depth": "<median_syntactic_depth>"
             "depth_skew": "<mean_minus_median_depth>"
+
         },
         "clause_metrics": {
             "counts": {
@@ -27,7 +29,7 @@
             },
             "ratios": {
                 "subordination_ratio": "<subordinate_to_main_ratio>"
-                "coordinoation_ratio": "<coordinate_to_main_ratio>"
+                "coordination_ratio": "<coordinate_to_main_ratio>"
             }
         "dependency_complexity": { 
             "avg_dependents_per_head": {
@@ -41,13 +43,13 @@
     },
 
 
+
   
     
 
 
     "lexico_semantics": {
-        "vocabulary": { # I NEED TO PASS ANALYTICS ABOUT THE WHOLE CORPUS TO CALCULATE THESE
-            "mattr_score": "<moving_average_type_token_ratio>", # proxy for lexical diversity 
+        "vocabulary": { 
             "avg_word_freq": "<mean_corpus_frequency>", # proxy for vocabulary rareness - in relation to whole corpus (i.e individual story)
             "content_function_ratio": "<content_words / total>" # proxy for density of informational content vs descriptive
         },

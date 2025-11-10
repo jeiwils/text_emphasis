@@ -7,6 +7,10 @@ from collections import Counter
 module for anything text-wide that needs processing before the sentence level analytics are done 
 
 
+TO DO:
+- CHECK IF ANYTHING ELSE NEEDS TO GO HERE
+
+
 
 
 """
