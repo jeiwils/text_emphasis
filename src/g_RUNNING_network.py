@@ -9,7 +9,7 @@ import networkx as nx
 def run_text_pipeline(cleaned_text_filename: str):
     """
     Run concept extraction and network analysis on a pre-cleaned text file.
-    
+
     cleaned_text_filename: str, e.g. "the_black_cat_cleaned.txt"
     """
     # Initialize modules
@@ -51,9 +51,13 @@ def run_text_pipeline(cleaned_text_filename: str):
     with open(concept_path_embeddings, "wb") as f:
         pickle.dump(embeddings, f)
 
-    # ---- Build network ----
-    nodes = [phrases[idx] for cluster in clusters.values() for idx in cluster]
-    G = net_analyzer.build_network(nodes, embeddings)
+    # ---- Build network using phrases as node labels ----
+    # Flatten clusters to get all node indices
+    node_indices = [idx for cluster in clusters.values() for idx in cluster]
+    node_labels = [phrases[idx] for idx in node_indices]
+    node_embeddings = embeddings[node_indices]
+
+    G = net_analyzer.build_network(node_labels, node_embeddings)
 
     # ---- Save network-related outputs ----
     network_dir = processed_text_path("network", base_name)
@@ -77,14 +81,16 @@ def run_text_pipeline(cleaned_text_filename: str):
     plt.figure(figsize=(12, 12))
     pos = nx.spring_layout(G, seed=42)
     nx.draw(
-        G, pos, 
-        with_labels=True, 
-        node_size=500, 
-        node_color="skyblue", 
-        edge_color="gray", 
+        G, pos,
+        labels=nx.get_node_attributes(G, "text"),  # ensure node labels are words
+        with_labels=True,
+        node_size=500,
+        node_color="skyblue",
+        edge_color="gray",
         font_size=8
     )
     plt.title(f"Network graph for {base_name}")
+    plt.tight_layout()
     plt.savefig(network_png_path, dpi=300)
     plt.close()
 
