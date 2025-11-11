@@ -66,107 +66,18 @@ class TextPreprocessor:
 
 
 
-"""
-
-BOOK_CONFIGS = {
-    "siddhartha": {
-        "pages": list(range(1, 54)),  # 1–53 inclusive
-        "patterns": [
-            r"Part\s+\w+",             # the parts are written as Part One, Part Two... etc... update for this 
-            # EVERYTHING BEFORE 'In the shade of the house' - remove everything before this 
-            # there are some centralised parts - headers - how to detect those? 
-            # stop at '****' on page 53
-        ],
-    },
-
-    "the_dead": {
-        "pages": list(range(1, 27)),  # 1–26 inclusive
-        "patterns": [
-            # starts at 'Lily, the caretaker's daughter' on page 1 - remove everything before this
-            # remove single numeric page numbers 
-        ],
-    },
-
-    "metamorphosis": {
-        "pages": list(range(2, 71)),  # 2–70 inclusive
-        "patterns": [
-
-            # starts at 'One morning, when Gregor Samsa woke' - remove everything before this
-            # occasional boilerplate: E-BooksDirectory.com - remove
-            # sections/chapters are written just in roman numerals.... remove these without removing 'I's in sentences
-            # ends at 'stretch out her young body.' - remove everything after this 
-        ],
-    },
-
-    "the_case_of_charles_dexter_ward": {
-        "pages": list(range(3, 97)),  # 3–96 inclusive
-        "patterns": [
-            r"chapter\s+\w+", 
-            r"\bCHAPTER\s+[IVXLC]+\b", # Roman numerals
-            r"page\s+\d+",
-            # starts at 'From a private hospital for the insane near Providence,' - remove everything before this
-            # remove 'PART + roman numerals from I to V and anything between that and 'CHAPTER' - use regex for roman numerals - all in caps
-            # ends on 'thin coating of fine bluish-grey dust.' - remove everything after this 
-        ],
-    },
-
-    "a_clockwork_orange": {
-        "pages": list(range(10, 178)),  # 10–177 inclusive
-        "patterns": [
-            r"PART\s+\w+",               # does this match 'PART ONE'... 'PART TWO' etc? 
-            r"chapter\s+\w+",
-            # sections/chapters are written just in roman numerals.... remove these without removing 'I's in sentences
-
-        ],
-    },
-
-    "coraline": {
-        "pages": list(range(11, 200)),  # 11–199 inclusive
-        "patterns": [
-            r"\b[IVXLC]+\.",             # Roman numerals followed by a period
-        ],
-    },
-
-    "animal_farm": {
-        "pages": list(range(5, 108)),  # 5–107 inclusive
-        "patterns": [
-            r"\bCHAPTER\s+[IVXLC]+\b",
-            r"page\s+\d+",
-            # remove 'Animal Farm, by George Orwell'
-            # remove 'https://ebooks.adelaide.edu.au/o/orwell/george/o79a/chapter2.html \b Last updated' then any date in full like 'Sunday, March 27, 2016, at 11:58'
-            # ends on 'was impossible to say which was which' - remove everything after on p107
-        ],
-    },
-
-    "american_psycho": {
-        "pages": list(range(6, 458)),  # 6–457 inclusive
-        "patterns": [
-            # chapters/parts are just single words/phrases without a full stop... 'Morning', 'April Fools'
-        ],
-    },
-
-    "the_handmaids_tale": {
-        "pages": list(range(8, 270)),  # 8–269 inclusive
-        "patterns": [
-            # r"\bCHAPTER\s+(ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN|ELEVEN|TWELVE|THIRTEEN|FOURTEEN|FIFTEEN|SIXTEEN|SEVENTEEN|EIGHTEEN|NINETEEN|TWENTY|THIRTY|FORTY|FORTY[- ]ONE|FORTY[- ]TWO|FORTY[- ]THREE|FORTY[- ]FOUR|FORTY[- ]FIVE|FORTY[- ]SIX)\b",     ### IS THERE NO WAY TO DO THIS WITH A FOR LOOP? OR CHAPTER IN CAPS FOLLOWED BY A REGEX PATTERN MATCHING ALL OF THESE?
-            r"\b[IVXLC]+\b",           # Roman numeral sections # sections are caps roman numerals, followed by a linebreak... followed by a word/phrase with no punctuation, in capitals 
-
-        ],
-    },
-}
-"""
 
 
 BOOK_CONFIGS = {
-    "siddhartha": {
-        "pages": list(range(1, 54)),
-        "start_marker": "In the shade of the house",
-        "end_marker": "****",  # Anything after this on page 53 will be removed
-        "patterns": [
-            r"Part\s+(One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten)",
-            r"\n\s*[A-Z][A-Za-z\s]{1,40}\s*\n",  # Likely detects centralized headers/titles
-        ],
-    },
+    # "siddhartha": {
+    #     "pages": list(range(1, 54)),
+    #     "start_marker": "In the shade of the house",
+    #     "end_marker": "****",  # Anything after this on page 53 will be removed
+    #     "patterns": [
+    #         r"Part\s+(One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten)",
+    #         r"\n\s*[A-Z][A-Za-z\s]{1,40}\s*\n",  # Likely detects centralized headers/titles
+    #     ],
+    # },
 
     "the_dead": {
         "pages": list(range(1, 27)),
@@ -222,7 +133,7 @@ BOOK_CONFIGS = {
     "animal_farm": {
         "pages": list(range(5, 108)),
         "start_marker": None,
-        "end_marker": "was impossible to say which was which",
+        "end_marker": "was impossible to say which was which.",
         "patterns": [
             r"\bCHAPTER\s+[IVXLC]+\b",
             r"page\s+\d+",

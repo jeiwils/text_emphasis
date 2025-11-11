@@ -1,12 +1,7 @@
 """
-
-
-
 TO DO:
 - lemmatize the tokens?
-
-
-
+- is there any way to do this with a language model, so that it's not just surface level? So that it's with IDEAS/CONCEPTS rather than WORDS
 
 
 """
@@ -77,3 +72,9 @@ class ConceptExtractor:
             clusters[label].append(idx)
 
         return clusters
+
+
+
+
+
+

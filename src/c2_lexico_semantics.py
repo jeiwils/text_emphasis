@@ -15,22 +15,34 @@ class LexicoSemanticsAnalyzer:
     # ----------------------------
     # Average word frequency per sentence + sliding window
     # ----------------------------
-    def compute_avg_word_frequency(self, doc, window_size=None):
+    def compute_avg_word_frequency(self, doc, global_avg_freq=None, window_size=None):
+        """
+        Compute average word frequency and content/function ratio per sentence or window,
+        normalized by global frequency statistics if provided.
+        """
         sent_metrics = []
+
         for sent in doc.sents:
             words = [token.text.lower() for token in sent if token.is_alpha]
             total_tokens = len(words)
             if self.corpus_freqs and words:
                 freqs = [self.corpus_freqs.get(w, 1) for w in words]
-                avg_word_freq = round(statistics.mean(freqs), 3)
+                avg_word_freq = statistics.mean(freqs)
             else:
                 avg_word_freq = 0
 
-            content_words = [token for token in sent if token.pos_ in {"NOUN", "VERB", "ADJ", "ADV"}]
+            # Normalization relative to global mean
+            if global_avg_freq and global_avg_freq > 0:
+                norm_freq = round(avg_word_freq / global_avg_freq, 3)
+            else:
+                norm_freq = round(avg_word_freq, 3)
+
+            content_words = [t for t in sent if t.pos_ in {"NOUN", "VERB", "ADJ", "ADV"}]
             content_function_ratio = round(len(content_words)/total_tokens, 3) if total_tokens else 0
 
             sent_metrics.append({
-                "avg_word_freq": avg_word_freq,
+                "avg_word_freq": round(avg_word_freq, 3),
+                "normalized_freq": norm_freq,
                 "content_function_ratio": content_function_ratio
             })
 
@@ -38,42 +50,63 @@ class LexicoSemanticsAnalyzer:
         if window_size and window_size > 1:
             windowed_metrics = []
             for window in sliding_windows(sent_metrics, window_size):
-                avg_freq = round(statistics.mean(d["avg_word_freq"] for d in window), 3)
-                avg_cfr = round(statistics.mean(d["content_function_ratio"] for d in window), 3)
+                avg_freq = statistics.mean(d["avg_word_freq"] for d in window)
+                avg_norm = statistics.mean(d["normalized_freq"] for d in window)
+                avg_cfr = statistics.mean(d["content_function_ratio"] for d in window)
                 windowed_metrics.append({
-                    "avg_word_freq": avg_freq,
-                    "content_function_ratio": avg_cfr
+                    "avg_word_freq": round(avg_freq, 3),
+                    "normalized_freq": round(avg_norm, 3),
+                    "content_function_ratio": round(avg_cfr, 3)
                 })
             return windowed_metrics
+
+        return sent_metrics
+
 
 
     # ----------------------------
     # Information content (surprisal) per sentence + sliding window
     # ----------------------------
-    def compute_information_content(self, log_probs_list, window_size=None):
+    def compute_information_content(self, log_probs_list, global_avg_surprisal=None, window_size=None):
+        """
+        Compute per-sentence surprisal and variance, normalized by global average surprisal.
+        """
         sent_metrics = []
         for log_probs in log_probs_list:
             if not log_probs:
                 sent_metrics.append({"mean_surprisal": 0, "surprisal_variance": 0})
                 continue
+
             surprisals = [-lp for lp in log_probs]
-            mean_surprisal = round(statistics.mean(surprisals), 3)
-            surprisal_variance = round(statistics.variance(surprisals), 3) if len(surprisals) > 1 else 0
+            mean_surprisal = statistics.mean(surprisals)
+            surprisal_variance = statistics.variance(surprisals) if len(surprisals) > 1 else 0
+
+            if global_avg_surprisal and global_avg_surprisal > 0:
+                norm_surprisal = round(mean_surprisal / global_avg_surprisal, 3)
+            else:
+                norm_surprisal = round(mean_surprisal, 3)
+
             sent_metrics.append({
-                "mean_surprisal": mean_surprisal,
-                "surprisal_variance": surprisal_variance
+                "mean_surprisal": round(mean_surprisal, 3),
+                "normalized_surprisal": norm_surprisal,
+                "surprisal_variance": round(surprisal_variance, 3)
             })
 
+        # Optional sliding window
         if window_size and window_size > 1:
             windowed_metrics = []
             for window in sliding_windows(sent_metrics, window_size):
-                avg_mean = round(statistics.mean(d["mean_surprisal"] for d in window), 3)
-                avg_var = round(statistics.mean(d["surprisal_variance"] for d in window), 3)
+                avg_mean = statistics.mean(d["mean_surprisal"] for d in window)
+                avg_norm = statistics.mean(d["normalized_surprisal"] for d in window)
+                avg_var = statistics.mean(d["surprisal_variance"] for d in window)
                 windowed_metrics.append({
-                    "mean_surprisal": avg_mean,
-                    "surprisal_variance": avg_var
+                    "mean_surprisal": round(avg_mean, 3),
+                    "normalized_surprisal": round(avg_norm, 3),
+                    "surprisal_variance": round(avg_var, 3)
                 })
             return windowed_metrics
+
+        return sent_metrics
 
 
     # ----------------------------

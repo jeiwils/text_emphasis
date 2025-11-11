@@ -1,7 +1,17 @@
 import spacy
 import statistics
 from itertools import islice
-from .z_utils import sliding_windows
+from .z_utils import sliding_windows, processed_text_path
+
+"""
+takes .txt from each subdir of cleaned_texts
+processed them
+outputs 
+
+
+"""
+
+
 
 class SyntaxAnalyzer:
     def __init__(self, model='en_core_web_sm'):
