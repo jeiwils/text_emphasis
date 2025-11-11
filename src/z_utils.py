@@ -18,16 +18,19 @@ def sliding_windows(seq, n):
 
 
 
-def raw_text_path(filename: Optional[str] = None, base_dir: str = "data/raw_texts") -> Path:
+def raw_text_path(
+    category: Optional[str] = None,
+    base_dir: str = "data/raw_texts"
+) -> Path:
     """
 
     """
     path = Path(base_dir)
-    if filename:
-        path = path / filename
+
+    if category:
+        path = path / category
+
     return path
-
-
 
 
 
