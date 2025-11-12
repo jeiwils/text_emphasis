@@ -3,7 +3,13 @@ import spacy
 from .z_utils import sliding_windows
 
 
+"""
 
+dependent on whole text analytics
+
+
+
+"""
 
 class LexicoSemanticsAnalyzer:
     def __init__(self, spacy_model='en_core_web_sm', corpus_freqs=None):

@@ -2,6 +2,13 @@ import spacy
 import statistics
 from itertools import islice
 from .z_utils import sliding_windows, processed_text_path
+import json
+from pathlib import Path
+from typing import Optional
+
+from statistics import mean
+
+
 
 """
 takes .txt from each subdir of cleaned_texts
@@ -160,3 +167,92 @@ class SyntaxAnalyzer:
             })
 
         return windowed_metrics
+
+
+
+
+
+
+def run_syntax_analysis(window_size=3, use_existing=True):
+    """
+    Efficient syntax analysis for all cleaned texts.
+    Computes sentence-level metrics once per doc, then aggregates windows.
+    Saves JSON to 'window_metrics' directory.
+    """
+    analyzer = SyntaxAnalyzer()
+    cleaned_root = processed_text_path("cleaned")
+    output_root = processed_text_path("window")
+
+    for subdir in cleaned_root.iterdir():
+        if not subdir.is_dir():
+            continue
+        print(f"Processing category: {subdir.name}")
+        out_subdir = output_root / subdir.name
+        out_subdir.mkdir(parents=True, exist_ok=True)
+
+        for file in subdir.glob("*.txt"):
+            output_file = out_subdir / f"{file.stem}_syntax.json"
+            if use_existing and output_file.exists():
+                print(f"Skipping {file.name} (exists)")
+                continue
+
+            text = file.read_text(encoding="utf-8")
+            doc = analyzer.nlp(text)
+            sentences = list(doc.sents)
+            num_sentences = len(sentences)
+
+            print(f"→ Computing syntax metrics for {file.name} ({num_sentences} sentences)...")
+
+            # --- Compute sentence-level metrics once ---
+            clause_sent_metrics = analyzer.compute_clause_metrics(doc, window_size=1)
+            clause_embed_sent_metrics = analyzer.compute_clause_embedding_metrics(doc, window_size=1)
+            dependency_sent_metrics = analyzer.compute_dependency_complexity(doc, window_size=1)
+
+            # --- Aggregate metrics in sliding windows ---
+            def aggregate_windows(sent_metrics):
+                windows = []
+                for i in range(0, num_sentences - window_size + 1):
+                    window_sents = sent_metrics[i:i + window_size]
+
+                    # Aggregate metrics
+                    agg = {}
+                    for key in window_sents[0]:
+                        if isinstance(window_sents[0][key], dict):
+                            # Nested dict
+                            agg[key] = {k: round(mean(d[key][k] for d in window_sents), 2)
+                                        for k in window_sents[0][key]}
+                        else:
+                            # Scalar metric
+                            agg[key] = round(mean(d[key] for d in window_sents), 2)
+
+                    # Add metadata
+                    agg["start_sentence"] = i
+                    agg["end_sentence"] = i + window_size - 1
+                    agg["text_snippet"] = " ".join([s.text for s in sentences[i:i+window_size]])[:200]
+                    windows.append(agg)
+                return windows
+
+            clause_metrics = aggregate_windows(clause_sent_metrics)
+            clause_embed_metrics = aggregate_windows(clause_embed_sent_metrics)
+            dependency_metrics = aggregate_windows(dependency_sent_metrics)
+
+            # --- Save JSON ---
+            result = {
+                "filename": file.name,
+                "num_sentences": num_sentences,
+                "clause_metrics": clause_metrics,
+                "clause_embedding_metrics": clause_embed_metrics,
+                "dependency_metrics": dependency_metrics
+            }
+
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2)
+
+            print(f"✅ Saved syntax metrics to {output_file}")
+
+    print("🎉 All done.")
+
+
+# Example call
+if __name__ == "__main__":
+    run_syntax_analysis(window_size=3, use_existing=True)
