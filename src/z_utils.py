@@ -2,7 +2,7 @@
 
 from typing import Optional
 from pathlib import Path
-
+import json
 
 
 def sliding_windows(seq, n):
@@ -15,6 +15,10 @@ def sliding_windows(seq, n):
 
 
 
+
+def load_json(path):
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 
@@ -98,6 +102,7 @@ def graph_path(
 
     folder_map = {
         "network": "network_analysis",
+        "syntactic": "syntactic_graphs"
     }
 
     if graph_type not in folder_map:

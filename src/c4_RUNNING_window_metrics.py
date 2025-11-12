@@ -1,7 +1,7 @@
 import json
 from z_utils import processed_text_path
 from c1_syntactics import SyntaxAnalyzer
-from c2_lexico_semantics import LexicoSemanticsAnalyzer
+from src.c2_lexico_semantics_TODO_DEPENDS_ON_CORPUS import LexicoSemanticsAnalyzer
 import spacy
 
 def run_windowed_metrics(window_size=3, use_existing=True):

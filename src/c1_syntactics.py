@@ -1,11 +1,15 @@
 import spacy
 import statistics
 from itertools import islice
-from .z_utils import sliding_windows, processed_text_path
+from .z_utils import sliding_windows, processed_text_path, load_json, graph_path
 import json
 from pathlib import Path
 from typing import Optional
-
+import json
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from pathlib import Path
 from statistics import mean
 
 
@@ -253,6 +257,151 @@ def run_syntax_analysis(window_size=3, use_existing=True):
     print("🎉 All done.")
 
 
-# Example call
+
+
+
+class SyntaxVisualiser:
+    def __init__(self, json_file: str):
+        self.json_file = Path(json_file)
+        self.data = load_json(self.json_file)
+
+    def plot_clause_complexity(self, save_path: Path = None):
+        """Stacked bar chart showing subordinate and coordinate clause composition across the text."""
+        snippets = [
+            (c["start_sentence"] + c["end_sentence"]) // 2
+            for c in self.data["clause_metrics"]
+        ]
+        sub_counts = [c["avg_counts"]["subordinate"] for c in self.data["clause_metrics"]]
+        coord_counts = [c["avg_counts"]["coordinate"] for c in self.data["clause_metrics"]]
+
+        bar_width = 0.8
+        plt.figure(figsize=(12, 6))
+
+        # Subordinate layer
+        plt.bar(snippets, sub_counts, width=bar_width, label="Subordinate", color="#377eb8")
+
+        # Coordinate stacked on top of subordinate
+        plt.bar(
+            snippets,
+            coord_counts,
+            width=bar_width,
+            bottom=sub_counts,
+            label="Coordinate",
+            color="#e41a1c"
+        )
+
+        plt.xlabel("Snippet midpoint (sentence index)")
+        plt.ylabel("Average clause count")
+        plt.title(f"Clause Composition per Snippet: {self.data['filename']}")
+        plt.legend()
+        plt.tight_layout()
+
+        if save_path:
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(save_path, dpi=300)
+        plt.close()
+
+
+
+    def plot_depth_metrics(self, save_path: Path = None):
+        """Line plot showing syntactic depth metrics across windows."""
+        metrics = self.data["clause_embedding_metrics"]
+
+        snippets = [
+            (c["start_sentence"] + c["end_sentence"]) // 2
+            for c in metrics
+        ]
+        max_depth = [c["avg_max_depth"] for c in metrics]
+        mean_depth = [c["avg_mean_depth"] for c in metrics]
+        median_depth = [c["avg_median_depth"] for c in metrics]
+        skew = [c["avg_depth_skew"] for c in metrics]
+
+        plt.figure(figsize=(12, 6))
+        plt.plot(snippets, max_depth, label="Max Depth", linewidth=2)
+        plt.plot(snippets, mean_depth, label="Mean Depth", linestyle="--")
+        plt.plot(snippets, median_depth, label="Median Depth", linestyle=":")
+        plt.plot(snippets, skew, label="Depth Skew", linestyle="-.", alpha=0.7)
+
+        plt.xlabel("Snippet midpoint (sentence index)")
+        plt.ylabel("Depth Value")
+        plt.title(f"Syntactic Depth per Snippet: {self.data['filename']}")
+        plt.legend()
+        plt.tight_layout()
+
+        if save_path:
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(save_path, dpi=300)
+        plt.close()
+
+
+    def plot_depth_area(self, save_path: Path = None):
+        """Area plot of max/mean/median depth over text."""
+        metrics = self.data["clause_embedding_metrics"]
+        snippets = [
+            (c["start_sentence"] + c["end_sentence"]) // 2
+            for c in metrics
+        ]
+        plt.figure(figsize=(12, 6))
+        plt.stackplot(
+            snippets,
+            [c["avg_median_depth"] for c in metrics],
+            [c["avg_mean_depth"] for c in metrics],
+            [c["avg_max_depth"] for c in metrics],
+            labels=["Median Depth", "Mean Depth", "Max Depth"],
+            alpha=0.7
+        )
+
+        plt.xlabel("Snippet midpoint (sentence index)")
+        plt.ylabel("Depth Value")
+        plt.title(f"Stacked Syntactic Depth: {self.data['filename']}")
+        plt.legend(loc="upper left")
+        plt.tight_layout()
+
+        if save_path:
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(save_path, dpi=300)
+        plt.close()
+
+
+
+
+# ----------------------------
+# Example: Iterate through all window metrics
+# ----------------------------
+# ----------------------------
+# Main: Iterate through all window metrics and generate plots
+# ----------------------------
 if __name__ == "__main__":
-    run_syntax_analysis(window_size=3, use_existing=True)
+    window_folder = processed_text_path("window")
+    json_files = list(window_folder.rglob("*.json"))
+
+    for jf in json_files:
+        visualiser = SyntaxVisualiser(jf)
+
+        # Preserve relative folder structure
+        rel_path = jf.relative_to(window_folder).with_suffix("")
+        subdir = rel_path.parent
+
+        output_dir = graph_path("syntactic") / subdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # 1️⃣ Clause complexity plot
+        clause_plot_path = output_dir / f"{jf.stem}_clause_bar.png"
+        visualiser.plot_clause_complexity(save_path=clause_plot_path)
+
+        # 2️⃣ Depth metrics line plot
+        depth_line_path = output_dir / f"{jf.stem}_depth_line.png"
+        visualiser.plot_depth_metrics(save_path=depth_line_path)
+
+        # 3️⃣ Depth area plot
+        depth_area_path = output_dir / f"{jf.stem}_depth_area.png"
+        visualiser.plot_depth_area(save_path=depth_area_path)
+
+        print(f"✅ Saved all plots for {jf.name} in {subdir}")
+
+
+
+# if __name__ == "__main__":
+#     #run_syntax_analysis(window_size=3, use_existing=True)
+
+
