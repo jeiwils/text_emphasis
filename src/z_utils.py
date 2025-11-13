@@ -37,14 +37,13 @@ def raw_text_path(
     return path
 
 
-
 def processed_text_path(
     folder_type: str,
+    subfolder: Optional[str] = None,
     filename: Optional[str] = None,
 ) -> Path:
     """
 
-    
     """
     base_dir = "data/texts"
 
@@ -58,11 +57,12 @@ def processed_text_path(
         raise ValueError(f"folder_type must be one of {list(folder_map.keys())}")
 
     path = Path(base_dir) / folder_map[folder_type]
-
+    if subfolder:
+        path = path / subfolder
     if filename:
         path = path / filename
-
     return path
+
 
 
 def embeddings_path(
@@ -91,8 +91,10 @@ def embeddings_path(
     return path
 
 
+
 def graph_path(
     graph_type: str,
+    subfolder: Optional[str] = None,
     filename: Optional[str] = None,
 ) -> Path:
     """
@@ -102,15 +104,15 @@ def graph_path(
 
     folder_map = {
         "network": "network_analysis",
-        "syntactic": "syntactic_graphs"
+        "syntactic": "syntactic_graphs",
     }
 
     if graph_type not in folder_map:
         raise ValueError(f"graph_type must be one of {list(folder_map.keys())}")
 
     path = Path(base_dir) / folder_map[graph_type]
-
+    if subfolder:
+        path = path / subfolder
     if filename:
         path = path / filename
-
     return path

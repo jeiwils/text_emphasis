@@ -7,12 +7,10 @@ TO DO:
 
 
 
-- Thurs 
 
-= separate metrics: window metrics includes both clause-level and dependency-level in one json
+
+
 = get to grips better with the actual metrics i'm using - max, median, mean, depth skew etc
-= get rid of random punctuation in the embeddings/network 
-= organise the graphs better - directories etc
 = significance of distance in network graph?
 
 

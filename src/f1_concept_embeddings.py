@@ -1,6 +1,5 @@
 """
-TO DO:
-- lemmatize the tokens?
+
 - is there any way to do this with a language model, so that it's not just surface level? So that it's with IDEAS/CONCEPTS rather than WORDS
 
 
@@ -12,9 +11,14 @@ from sentence_transformers import SentenceTransformer
 from sklearn.cluster import HDBSCAN
 import spacy
 from nltk.corpus import stopwords
+import re
+
+
+"""
 
 
 
+"""
 
 class ConceptExtractor:
     def __init__(self, 
@@ -36,29 +40,51 @@ class ConceptExtractor:
             lemmatized = []
             for phrase in phrases:
                 phrase_doc = self.nlp(phrase)
-                lemmatized.append(' '.join([token.lemma_ for token in phrase_doc]))
+                tokens = []
+                for token in phrase_doc:
+                    if token.is_punct or token.is_space:
+                        continue
+                    if token.text.lower() in {"'s", "’s"}:
+                        continue
+                    lemma = token.lemma_.lower().strip("-'’")
+                    if lemma and any(c.isalnum() for c in lemma):
+                        tokens.append(lemma)
+                if tokens:
+                    lemmatized.append(" ".join(tokens))
             phrases = lemmatized
+
 
         # Remove stopwords (phrase-level)
         filtered = []
         for phrase in phrases:
-            # skip if any token is a stopword
-            if all(token.lower() not in self.stop_words for token in phrase.split()):
-                # skip if phrase is too short or just punctuation
-                clean_phrase = phrase.strip()
-                if len(clean_phrase) > 1 and any(c.isalnum() for c in clean_phrase):
-                    filtered.append(clean_phrase)
-        phrases = filtered
+            tokens = [t for t in phrase.split() if t.lower() not in self.stop_words]
+            if len(tokens) > 1 or (tokens and tokens[0].isalpha()):
+                filtered.append(" ".join(tokens))
+
+        phrases = filtered  # <-- continue from cleaned version
+
+        # Remove stray punctuation and possessives
+        cleaned_phrases = []
+        for phrase in phrases:
+            clean_phrase = phrase.strip().lower()
+            if re.fullmatch(r"['’]s", clean_phrase):
+                continue
+            if re.fullmatch(r"[-–—]+", clean_phrase):
+                continue
+            if not re.search(r"[a-zA-Z]", clean_phrase):
+                continue
+            cleaned_phrases.append(clean_phrase)
 
         # Deduplicate while preserving order
         seen = set()
         unique_phrases = []
-        for p in phrases:
+        for p in cleaned_phrases:   # <-- FIXED: use cleaned_phrases here
             if p not in seen:
                 unique_phrases.append(p)
                 seen.add(p)
 
         return unique_phrases
+
 
 
     
