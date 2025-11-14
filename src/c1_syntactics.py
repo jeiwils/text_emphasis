@@ -1,7 +1,7 @@
 import spacy
 import statistics
 from itertools import islice
-from .z_utils import sliding_windows, processed_text_path, load_json, graph_path
+from .z_utils import sliding_windows, processed_text_path, load_json, graph_path, aggregate_windows
 from pathlib import Path
 from typing import Optional
 import json
@@ -14,8 +14,6 @@ from statistics import mean
 
 
 """
-TO DO:
-= improve naming of files/directories 
 
 
 """
@@ -23,61 +21,13 @@ TO DO:
 
 
 class SyntaxAnalyzer:
-    def __init__(self, model='en_core_web_sm'):
-        self.nlp = spacy.load(model)
-
-
-    # ----------------------------
-    # Clause Embedding Metrics
-    # ----------------------------
-    def compute_clause_embedding_depth(self, doc, window_size=3):
-        """
-
-        """
-        def token_depth(token):
-            depth = 0
-            while token.head != token:
-                depth += 1
-                token = token.head
-            return depth
-
-        sentence_depths = []
-
-        for sent in doc.sents:
-            sent_depths = [token_depth(token) for token in sent]
-            if sent_depths:
-                sentence_depths.append({
-                    "max_depth": max(sent_depths),
-                    "mean_depth": statistics.mean(sent_depths),
-                    "median_depth": statistics.median(sent_depths),
-                    "depth_skew": statistics.mean(sent_depths) - statistics.median(sent_depths)
-                })
-
-        # Compute sliding window averages
-        windowed_metrics = []
-        for window in sliding_windows(sentence_depths, window_size):
-            avg_max = round(statistics.mean(d["max_depth"] for d in window), 2)
-            avg_mean = round(statistics.mean(d["mean_depth"] for d in window), 2)
-            avg_median = round(statistics.mean(d["median_depth"] for d in window), 2)
-            avg_skew = round(statistics.mean(d["depth_skew"] for d in window), 2)
-            windowed_metrics.append({
-                "avg_max_depth": avg_max,
-                "avg_mean_depth": avg_mean,
-                "avg_median_depth": avg_median,
-                "avg_depth_skew": avg_skew
-            })
-
-        return windowed_metrics
+    def __init__(self, nlp):
+        self.nlp = nlp
 
     # ----------------------------
     # Clause Counts Metrics
     # ----------------------------
     def compute_clause_metrics(self, doc, window_size=3):
-
-        """
-
-        
-        """
         sentence_metrics = []
 
         for sent in doc.sents:
@@ -94,46 +44,49 @@ class SyntaxAnalyzer:
             coord_to_main_ratio = coord_counts / main_counts if main_counts else 0
 
             sentence_metrics.append({
-                "main": main_counts,
-                "subordinate": sub_counts,
-                "coordinate": coord_counts,
-                "subordination_ratio": round(sub_to_main_ratio, 2),
-                "coordination_ratio": round(coord_to_main_ratio, 2)
-            })
-
-        # Sliding window averages
-        windowed_metrics = []
-        for window in sliding_windows(sentence_metrics, window_size):
-            avg_main = round(statistics.mean(d["main"] for d in window), 2)
-            avg_sub = round(statistics.mean(d["subordinate"] for d in window), 2)
-            avg_coord = round(statistics.mean(d["coordinate"] for d in window), 2)
-            avg_sub_ratio = round(statistics.mean(d["subordination_ratio"] for d in window), 2)
-            avg_coord_ratio = round(statistics.mean(d["coordination_ratio"] for d in window), 2)
-
-            windowed_metrics.append({
                 "avg_counts": {
-                    "main": avg_main,
-                    "subordinate": avg_sub,
-                    "coordinate": avg_coord
+                    "main": main_counts,
+                    "subordinate": sub_counts,
+                    "coordinate": coord_counts
                 },
                 "avg_ratios": {
-                    "subordination_ratio": avg_sub_ratio,
-                    "coordination_ratio": avg_coord_ratio
+                    "subordination_ratio": round(sub_to_main_ratio, 2),
+                    "coordination_ratio": round(coord_to_main_ratio, 2)
                 }
             })
 
-        return windowed_metrics
+        # Aggregate over windows
+        return aggregate_windows(sentence_metrics, window_size)
+
+    # ----------------------------
+    # Clause Embedding Depth (syntactic depth)
+    # ----------------------------
+    def compute_clause_embedding_depth(self, doc, window_size=3):
+        def token_depth(token):
+            depth = 0
+            while token.head != token:
+                depth += 1
+                token = token.head
+            return depth
+
+        sentence_depths = []
+        for sent in doc.sents:
+            sent_depths = [token_depth(token) for token in sent]
+            if sent_depths:
+                sentence_depths.append({
+                    "max_depth": max(sent_depths),
+                    "mean_depth": round(statistics.mean(sent_depths), 2),
+                    "median_depth": round(statistics.median(sent_depths), 2),
+                    "depth_skew": round(statistics.mean(sent_depths) - statistics.median(sent_depths), 2)
+                })
+
+        # Aggregate over windows
+        return aggregate_windows(sentence_depths, window_size)
 
     # ----------------------------
     # Dependency Complexity Metrics
     # ----------------------------
     def compute_dependency_complexity(self, doc, window_size=3):
-        """
-
-        
-        """
-
-
         sentence_metrics = []
 
         for sent in doc.sents:
@@ -159,30 +112,13 @@ class SyntaxAnalyzer:
                     "subordinate_clause": round(statistics.mean(dependents_per_head['subordinate_clause']), 2) if dependents_per_head['subordinate_clause'] else 0,
                     "coordinate_clause": round(statistics.mean(dependents_per_head['coordinate_clause']), 2) if dependents_per_head['coordinate_clause'] else 0
                 },
-                "max_dependents_per_head": max(all_dependents, default=0),
-                "mean_dependency_distance": round(statistics.mean(dependency_distances), 2) if dependency_distances else 0
+                "avg_max_dependents_per_head": max(all_dependents, default=0),
+                "avg_mean_dependency_distance": round(statistics.mean(dependency_distances), 2) if dependency_distances else 0
             })
 
-        # Sliding window averages
-        windowed_metrics = []
-        for window in sliding_windows(sentence_metrics, window_size):
-            avg_main = round(statistics.mean(d["avg_dependents_per_head"]["main_clause"] for d in window), 2)
-            avg_sub = round(statistics.mean(d["avg_dependents_per_head"]["subordinate_clause"] for d in window), 2)
-            avg_coord = round(statistics.mean(d["avg_dependents_per_head"]["coordinate_clause"] for d in window), 2)
-            avg_max = round(statistics.mean(d["max_dependents_per_head"] for d in window), 2)
-            avg_dep_dist = round(statistics.mean(d["mean_dependency_distance"] for d in window), 2)
+        # Aggregate over windows
+        return aggregate_windows(sentence_metrics, window_size)
 
-            windowed_metrics.append({
-                "avg_dependents_per_head": {
-                    "main_clause": avg_main,
-                    "subordinate_clause": avg_sub,
-                    "coordinate_clause": avg_coord
-                },
-                "avg_max_dependents_per_head": avg_max,
-                "avg_mean_dependency_distance": avg_dep_dist
-            })
-
-        return windowed_metrics
 
 
 
@@ -324,7 +260,8 @@ def run_syntax_analysis(window_size=3, use_existing=True):
     Computes sentence-level metrics once per doc, then aggregates windows.
     Saves JSON to 'window_metrics' directory.
     """
-    analyzer = SyntaxAnalyzer()
+    nlp = spacy.load("en_core_web_sm")
+    analyzer = SyntaxAnalyzer(nlp)
     cleaned_root = processed_text_path("cleaned")
     output_root = processed_text_path("window")
 
@@ -348,52 +285,29 @@ def run_syntax_analysis(window_size=3, use_existing=True):
 
             print(f"→ Computing syntax metrics for {file.name} ({num_sentences} sentences)...")
 
-            # --- Compute sentence-level metrics once ---
-            clause_sent_metrics = analyzer.compute_clause_metrics(doc, window_size=1)
-            clause_embed_depth_metrics = analyzer.compute_clause_embedding_depth(doc, window_size=1)
-            dependency_sent_metrics = analyzer.compute_dependency_complexity(doc, window_size=1)
+            # --- Compute metrics with window aggregation ---
+            clause_metrics = analyzer.compute_clause_metrics(doc, window_size=window_size)
+            clause_embed_metrics = analyzer.compute_clause_embedding_depth(doc, window_size=window_size)
+            dependency_metrics = analyzer.compute_dependency_complexity(doc, window_size=window_size)
 
-            # --- Aggregate metrics in sliding windows ---
-            def aggregate_windows(sent_metrics):
-                windows = []
-                for i in range(0, num_sentences - window_size + 1):
-                    window_sents = sent_metrics[i:i + window_size]
 
-                    # Aggregate metrics
-                    agg = {}
-                    for key in window_sents[0]:
-                        if isinstance(window_sents[0][key], dict):
-                            # Nested dict
-                            agg[key] = {k: round(mean(d[key][k] for d in window_sents), 2)
-                                        for k in window_sents[0][key]}
-                        else:
-                            # Scalar metric
-                            agg[key] = round(mean(d[key] for d in window_sents), 2)
 
-                    # Add metadata
-                    agg["start_sentence"] = i
-                    agg["end_sentence"] = i + window_size - 1
-                    agg["text_snippet"] = " ".join([s.text for s in sentences[i:i+window_size]])[:200]
-                    windows.append(agg)
-                return windows
 
-            clause_metrics = aggregate_windows(clause_sent_metrics)
-            clause_embed_metrics = aggregate_windows(clause_embed_depth_metrics)
-            dependency_metrics = aggregate_windows(dependency_sent_metrics)
+            # --- Save separate JSONs ---
+            (output_file.parent / f"{file.stem}_clause_counts.json").write_text(
+                json.dumps(clause_metrics, indent=2), encoding="utf-8"
+            )
+            (output_file.parent / f"{file.stem}_clause_depth.json").write_text(
+                json.dumps(clause_embed_metrics, indent=2), encoding="utf-8"
+            )
+            (output_file.parent / f"{file.stem}_clause_dependencies.json").write_text(
+                json.dumps(dependency_metrics, indent=2), encoding="utf-8"
+            )
 
-            # --- Save JSON ---
-            result = {
-                "filename": file.name,
-                "num_sentences": num_sentences,
-                "clause_metrics": clause_metrics,
-                "clause_embedding_metrics": clause_embed_metrics,
-                "dependency_metrics": dependency_metrics
-            }
 
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(result, f, indent=2)
 
-            print(f"✅ Saved syntax metrics to {output_file}")
+            print(f"✅ Saved clause_counts, clause_depth, and clause_dependencies for {file.name}")
+
 
     print("🎉 All done.")
 
@@ -407,8 +321,6 @@ if __name__ == "__main__":
     # Step 1: Compute and save syntax metrics
     run_syntax_analysis(window_size=3, use_existing=True)
 
-
-    
     window_folder = processed_text_path("window")
     json_files = list(window_folder.rglob("*.json"))
 
