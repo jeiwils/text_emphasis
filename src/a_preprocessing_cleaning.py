@@ -17,6 +17,7 @@ from typing import List, Optional
 import spacy
 import re
 import pdfplumber
+from transformers import pipeline
 
 
 
@@ -25,6 +26,9 @@ class TextPreprocessor:
     def __init__(self, language: str = "en_core_web_sm"):
         """Initialize the preprocessor with specified language model."""
         self.nlp = spacy.load(language)
+        self._asr_pipeline = None
+        self._asr_model_name = None
+        self._asr_chunk_length_s = None
     
 
 
@@ -52,6 +56,46 @@ class TextPreprocessor:
         doc = self.nlp(' '.join(tokens))
         return [token.lemma_ for token in doc]
     
+
+    def transcribe_audio(
+        self,
+        audio_path: str,
+        model_name: str = "openai/whisper-small",
+        chunk_length_s: int = 30,
+        device: Optional[int] = None,
+    ) -> str:
+        """
+        Transcribe spoken audio to text using a Whisper ASR model.
+
+        Audio can be any format supported by ffmpeg. Requires the model to be
+        available locally (or network access for first-time download).
+        """
+        needs_new_pipeline = (
+            self._asr_pipeline is None
+            or self._asr_model_name != model_name
+            or self._asr_chunk_length_s != chunk_length_s
+        )
+
+        if needs_new_pipeline:
+            try:
+                self._asr_pipeline = pipeline(
+                    task="automatic-speech-recognition",
+                    model=model_name,
+                    chunk_length_s=chunk_length_s,
+                    device=device,
+                )
+                self._asr_model_name = model_name
+                self._asr_chunk_length_s = chunk_length_s
+            except Exception as exc:  # noqa: BLE001
+                raise RuntimeError(
+                    f"Failed to load ASR model '{model_name}'. Ensure it is installed locally "
+                    "or downloadable in your environment."
+                ) from exc
+
+        result = self._asr_pipeline(audio_path)
+        transcript = result["text"]
+        return self.clean_text(transcript)
+
 
     def pdf_to_text(self, pdf_path: str) -> str:
         """Extract text from a text-based PDF."""
@@ -172,6 +216,13 @@ DEFAULT_BOOK_CONFIG = {
 
 
 
+def _normalize_book_key(name: str) -> str:
+    """
+    Normalize a filename stem to a config key: lowercase and collapse non-alnum to underscores.
+    """
+    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+
+
 def extract_pdf_pages(pdf_path: Path, pages: Optional[List[int]] = None) -> str:
     """
     Extract text from specific PDF pages.
@@ -186,6 +237,12 @@ def extract_pdf_pages(pdf_path: Path, pages: Optional[List[int]] = None) -> str:
 
     with pdfplumber.open(pdf_path) as pdf:
         total_pages = len(pdf.pages)
+        if pages is not None:
+            invalid_pages = [p for p in pages if not isinstance(p, int) or p < 1]
+            if invalid_pages:
+                raise ValueError(
+                    f"Page numbers must be positive integers (1-based). Invalid: {invalid_pages}"
+                )
         normalized_indices = (
             range(total_pages) if pages is None else [page - 1 for page in pages]
         )
@@ -257,12 +314,8 @@ def preprocess_pdf(
             "Add an entry to BOOK_CONFIGS in src/a_preprocessing_cleaning.py to customize page ranges or patterns."
         )
     save_dir = processed_text_path("cleaned", base_name)
-
-    if save_dir.exists():
-        print(f"[SKIP] {pdf_path.name} already processed.")
-        return None
-
     save_dir.mkdir(parents=True, exist_ok=True)
+    cleaned_path = save_dir / f"{base_name}_cleaned.txt"
 
     # Extract selected pages
     pages = active_config.get("pages")
@@ -280,7 +333,6 @@ def preprocess_pdf(
     cleaned_text = preproc.clean_text(cleaned_text)
 
     # Save
-    cleaned_path = save_dir / f"{base_name}_cleaned.txt"
     with open(cleaned_path, "w", encoding="utf-8") as f:
         f.write(cleaned_text)
 
@@ -288,7 +340,35 @@ def preprocess_pdf(
     return cleaned_path
 
 
+def preprocess_audio_file(
+    audio_path: Path,
+    preproc: "TextPreprocessor",
+    model_name: str = "openai/whisper-small",
+    chunk_length_s: int = 30,
+    device: Optional[int] = None,
+    save: bool = True,
+):
+    """
+    Transcribe and clean an audio file; optionally save the transcript.
 
+    Returns the cleaned transcript path when saving, otherwise the text.
+    """
+    transcript = preproc.transcribe_audio(
+        str(audio_path),
+        model_name=model_name,
+        chunk_length_s=chunk_length_s,
+        device=device,
+    )
+
+    if not save:
+        return transcript
+
+    save_dir = processed_text_path("audio", audio_path.stem)
+    save_dir.mkdir(parents=True, exist_ok=True)
+    transcript_path = save_dir / f"{audio_path.stem}_transcript.txt"
+    transcript_path.write_text(transcript, encoding="utf-8")
+    print(f"[INFO] Transcript saved to {transcript_path}")
+    return transcript_path
 
 
 
@@ -312,13 +392,13 @@ def preprocess_all_pdfs(process_unknown: bool = True):
         print(f"[INFO] Processing {len(pdf_files)} PDFs in {subdir}...")
 
         for pdf_file in pdf_files:
-            book_name = pdf_file.stem.lower()
-            config = BOOK_CONFIGS.get(book_name)
+            normalized_name = _normalize_book_key(pdf_file.stem)
+            config = BOOK_CONFIGS.get(normalized_name)
             preprocess_pdf(
                 pdf_file,
                 preproc,
                 config=config,
-                book_name=book_name,
+                book_name=normalized_name,
                 allow_default_config=process_unknown,
             )
 

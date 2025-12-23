@@ -81,7 +81,16 @@ class SyntaxAnalyzer:
                 })
 
         # Aggregate over windows
-        return aggregate_windows(sentence_depths, window_size)
+        aggregated = aggregate_windows(sentence_depths, window_size)
+
+        # Rename aggregated keys to match plotting expectations
+        for window in aggregated:
+            window["avg_max_depth"] = window.pop("max_depth", 0)
+            window["avg_mean_depth"] = window.pop("mean_depth", 0)
+            window["avg_median_depth"] = window.pop("median_depth", 0)
+            window["avg_depth_skew"] = window.pop("depth_skew", 0)
+
+        return aggregated
 
     # ----------------------------
     # Dependency Complexity Metrics
@@ -304,6 +313,22 @@ def run_syntax_analysis(window_size=3, use_existing=True):
                 json.dumps(dependency_metrics, indent=2), encoding="utf-8"
             )
 
+            # --- Save consolidated JSON for downstream visualisation ---
+            output_file.write_text(
+                json.dumps(
+                    {
+                        "filename": file.name,
+                        "window_size": window_size,
+                        "num_sentences": num_sentences,
+                        "clause_metrics": clause_metrics,
+                        "clause_embedding_metrics": clause_embed_metrics,
+                        "dependency_metrics": dependency_metrics,
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
 
 
             print(f"✅ Saved clause_counts, clause_depth, and clause_dependencies for {file.name}")
@@ -322,7 +347,7 @@ if __name__ == "__main__":
     run_syntax_analysis(window_size=3, use_existing=True)
 
     window_folder = processed_text_path("window")
-    json_files = list(window_folder.rglob("*.json"))
+    json_files = list(window_folder.rglob("*_syntax.json"))
 
     for jf in json_files:
         visualiser = SyntaxVisualiser(jf)

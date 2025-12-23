@@ -1,141 +1,290 @@
-import torch
-import torch.nn as nn
-from transformers import AutoTokenizer, AutoModel, AutoConfig
 import json
+import statistics
+from collections import Counter
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
+import spacy
 
-
-
-"""
-
-LOTS OF WORK NEEDS DOING ON THIS!!!
-I THINK I NEED TO TRAIN A LM FOR EACH TEXT???
-
-
-
-
-
-
-
-    "discourse": { # according to PDTB
-        "relations": [
-            {
-            "level1": "<Temporal | Contingency | Comparison | Expansion>",
-            "level2": "<Cause | Condition | Contrast | Concession | Conjunction | Instantiation | Restatement | Alternative | Exception | ...>",
-            "level3": "<Reason | Result | Purpose | etc_or_null>",
-
-            "arg1_span": "<text_span_or_reference>",
-            "arg2_span": "<text_span_or_reference>",
-            "connective": "<explicit_marker_or_null>",
-            "explicit": "<true | false>",
-            "direction": "<forward | backward | bidirectional>"
-            }
-        ]
-    }
-
-
-
+from .z_utils import aggregate_windows, processed_text_path
 
 
 """
+Discourse-level metrics built on simple heuristics.
+
+This module avoids model training and instead offers:
+    - Explicit connective detection mapped to PDTB Level-1 senses.
+    - Cohesion signals via entity/content overlap across adjacent sentences.
+    - Shallow tense tracking to flag temporal shifts.
+
+Outputs are sentence-level annotations, sliding-window aggregates,
+and a short summary block that can be written to JSON.
+"""
 
 
+CONNECTIVE_LEXICON: Dict[str, Sequence[str]] = {
+    # PDTB-inspired level-1 groupings
+    "Temporal": [
+        "before",
+        "after",
+        "when",
+        "while",
+        "once",
+        "until",
+        "meanwhile",
+        "as soon as",
+    ],
+    "Contingency": [
+        "because",
+        "since",
+        "therefore",
+        "thus",
+        "so",
+        "hence",
+        "consequently",
+        "if",
+        "unless",
+    ],
+    "Comparison": [
+        "but",
+        "however",
+        "although",
+        "though",
+        "whereas",
+        "instead",
+        "yet",
+        "nevertheless",
+        "on the other hand",
+    ],
+    "Expansion": [
+        "and",
+        "also",
+        "moreover",
+        "furthermore",
+        "besides",
+        "in addition",
+        "for example",
+        "for instance",
+        "indeed",
+    ],
+}
 
-class PDTBShallowParser:
-    """
-    A shallow discourse parser class for PDTB‑style relations: explicit + implicit.
-    Pipeline: (1) connective detection, (2) arg1/arg2 extraction, (3) sense classification.
-    """
-    def __init__(self, backbone_model_name="bert-base-uncased", device=None):
-        self.device = device if device else ("cuda" if torch.cuda.is_available() else "cpu")
-        self.tokenizer = AutoTokenizer.from_pretrained(backbone_model_name)
-        self.backbone = AutoModel.from_pretrained(backbone_model_name)
-        self.backbone.to(self.device)
-        
-        # Example heads (you’ll need to define and fine‑tune in practice)
-        hidden_size = self.backbone.config.hidden_size
-        # Head for connective detection: binary token‑classification (connective or not)
-        self.connective_head = nn.Linear(hidden_size, 2).to(self.device)
-        # Head for span tagging: e.g., IOB tagging for arg1/arg2
-        self.span_head = nn.Linear(hidden_size, 3).to(self.device)  # tags: O, ARG1, ARG2
-        # Head for sense classification: multi‑class classification among (level1 × level2 × level3)
-        num_senses = 50  # placeholder: set to size of your sense taxonomy
-        self.sense_head = nn.Linear(hidden_size, num_senses).to(self.device)
-        
-        # Softmax/logits etc
-        self.softmax = nn.Softmax(dim=-1)
-        self.loss_fn = nn.CrossEntropyLoss()
-    
-    def _encode(self, text):
-        inputs = self.tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        outputs = self.backbone(**inputs)
-        # outputs.last_hidden_state shape: (batch_size=1, seq_len, hidden_size)
-        return inputs, outputs.last_hidden_state
-    
-    def detect_connectives(self, inputs, hidden_states):
-        # Token‑level logits for connective detection
-        logits = self.connective_head(hidden_states)  # (1, seq_len, 2)
-        probs = self.softmax(logits)
-        # Simple heuristic: select tokens where connective label prob > threshold
-        threshold = 0.5
-        connective_indices = (probs[...,1] > threshold).nonzero(as_tuple=False)
-        # Return list of token indices labelled as connectives
-        return connective_indices
-    
-    def extract_args(self, inputs, hidden_states, connective_indices):
-        # Token‐level tagging for ARG1 / ARG2 / O
-        logits = self.span_head(hidden_states)  # (1, seq_len, 3)
-        tag_ids = torch.argmax(logits, dim=-1).squeeze(0)  # (seq_len,)
-        # Map tag_ids to spans: here naive method, you’d want a proper span extractor
-        tokens = self.tokenizer.convert_ids_to_tokens(inputs["input_ids"].squeeze(0))
-        arg1_tokens = [tokens[i] for i, tag in enumerate(tag_ids.tolist()) if tag == 1]
-        arg2_tokens = [tokens[i] for i, tag in enumerate(tag_ids.tolist()) if tag == 2]
-        arg1_span = self.tokenizer.convert_tokens_to_string(arg1_tokens)
-        arg2_span = self.tokenizer.convert_tokens_to_string(arg2_tokens)
-        return arg1_span, arg2_span
-    
-    def classify_sense(self, hidden_states, arg1_span, arg2_span):
-        # For simplicity: use the [CLS] vector to classify sense
-        cls_vector = hidden_states[:,0,:]  # (1, hidden_size)
-        logits = self.sense_head(cls_vector)
-        sense_id = torch.argmax(logits, dim=-1).item()
-        # Map sense_id → (level1, level2, level3) via your taxonomy
-        # For now return placeholder
-        sense = {
-            "level1": "Expansion",
-            "level2": "Conjunction",
-            "level3": None
-        }
-        return sense
-    
-    def parse(self, text):
-        inputs, hidden_states = self._encode(text)
-        conn_idxs = self.detect_connectives(inputs, hidden_states)
-        # Choose first connective (naive)
-        connective = None
-        if len(conn_idxs) > 0:
-            tok_idx = conn_idxs[0].item()
-            tokens = self.tokenizer.convert_ids_to_tokens(inputs["input_ids"].squeeze(0))
-            connective = tokens[tok_idx]
-        arg1_span, arg2_span = self.extract_args(inputs, hidden_states, conn_idxs)
-        sense = self.classify_sense(hidden_states, arg1_span, arg2_span)
-        
-        result = {
-            "discourse": {
-                "relations": [
-                    {
-                        "level1": sense["level1"],
-                        "level2": sense["level2"],
-                        "level3": sense["level3"],
-                        "arg1_span": arg1_span,
-                        "arg2_span": arg2_span,
-                        "connective": connective,
-                        "explicit": str(connective is not None).lower(),
-                        # direction: heuristic — e.g., if arg1 before arg2 then “forward”
-                        "direction": "forward"
-                    }
-                ]
+
+class DiscourseAnalyzer:
+    def __init__(self, nlp=None):
+        self.nlp = nlp or spacy.load("en_core_web_sm")
+        self._lexicon_phrases = self._prepare_lexicon()
+
+    def _prepare_lexicon(self) -> List[Tuple[str, List[str], str]]:
+        phrases = []
+        for category, markers in CONNECTIVE_LEXICON.items():
+            for marker in markers:
+                phrases.append((category, marker.split(), marker))
+        # Sort longer markers first to avoid partial matches (e.g., "as soon as" before "as")
+        return sorted(phrases, key=lambda x: len(x[1]), reverse=True)
+
+    def _overlap(self, previous: Iterable[str], current: Iterable[str]) -> Tuple[int, float]:
+        prev_set, curr_set = set(previous), set(current)
+        if not prev_set or not curr_set:
+            return 0, 0.0
+        overlap = len(prev_set & curr_set)
+        ratio = overlap / max(len(curr_set), 1)
+        return overlap, round(ratio, 3)
+
+    def _infer_tense(self, sent) -> Optional[str]:
+        """Very small heuristic for tense: majority vote of verb POS tags and modals."""
+        past_tags = {"VBD", "VBN"}
+        present_tags = {"VBP", "VBZ", "VBG"}
+        counts = Counter()
+
+        tokens = list(sent)
+        for token in tokens:
+            if token.tag_ in past_tags:
+                counts["past"] += 1
+            elif token.tag_ in present_tags:
+                counts["present"] += 1
+
+        # Simple future proxy
+        if any(t.lower_ in {"will", "shall", "gonna", "going"} for t in tokens):
+            counts["future"] += 1
+
+        if not counts:
+            return None
+
+        return counts.most_common(1)[0][0]
+
+    def _find_connectives(self, sent) -> List[Dict[str, object]]:
+        tokens = [t.text.lower() for t in sent if not t.is_space]
+        matches: List[Dict[str, object]] = []
+
+        for category, marker_tokens, marker_str in self._lexicon_phrases:
+            span_len = len(marker_tokens)
+            if span_len == 0 or len(tokens) < span_len:
+                continue
+            for i in range(len(tokens) - span_len + 1):
+                if tokens[i : i + span_len] == marker_tokens:
+                    matches.append(
+                        {
+                            "marker": marker_str,
+                            "category": category,
+                            "start": i,
+                            "end": i + span_len - 1,
+                        }
+                    )
+                    break  # avoid double-counting the same marker
+        return matches
+
+    def _empty_connective_counts(self) -> Dict[str, int]:
+        return {category: 0 for category in CONNECTIVE_LEXICON}
+
+    def _dominant_relation(self, counts: Dict[str, int]) -> Optional[str]:
+        if not counts:
+            return None
+        category, value = max(counts.items(), key=lambda item: item[1])
+        return category if value > 0 else None
+
+    def compute_sentence_metrics(self, doc, window_size: Optional[int] = None):
+        """
+        Compute per-sentence discourse markers and cohesion signals.
+        """
+        sent_metrics: List[Dict[str, object]] = []
+        annotations: List[Dict[str, object]] = []
+
+        prev_entities: set = set()
+        prev_content: set = set()
+        prev_tense: Optional[str] = None
+
+        for idx, sent in enumerate(doc.sents):
+            tokens = [t for t in sent if not t.is_space]
+            connectives = self._find_connectives(sent)
+            connective_counts = self._empty_connective_counts()
+            for c in connectives:
+                connective_counts[c["category"]] += 1
+
+            # Cohesion signals: noun overlap and content-word overlap
+            noun_lemmas = {t.lemma_.lower() for t in sent if t.pos_ in {"NOUN", "PROPN"} and t.is_alpha}
+            content_lemmas = {
+                t.lemma_.lower()
+                for t in sent
+                if t.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "ADV"} and t.is_alpha
             }
+
+            entity_overlap, entity_ratio = self._overlap(prev_entities, noun_lemmas)
+            content_overlap, content_ratio = self._overlap(prev_content, content_lemmas)
+
+            pronoun_count = sum(1 for t in sent if t.pos_ == "PRON")
+            pronoun_ratio = round(pronoun_count / len(tokens), 3) if tokens else 0.0
+
+            tense = self._infer_tense(sent)
+            tense_shift = int(prev_tense is not None and tense is not None and tense != prev_tense)
+
+            sent_metrics.append(
+                {
+                    "sentence_index": idx,
+                    "num_tokens": len(tokens),
+                    "explicit_connectives": len(connectives),
+                    "connective_counts": connective_counts,
+                    "entity_overlap": entity_overlap,
+                    "entity_overlap_ratio": entity_ratio,
+                    "content_overlap": content_overlap,
+                    "content_overlap_ratio": content_ratio,
+                    "pronoun_ratio": pronoun_ratio,
+                    "tense_shift": tense_shift,
+                }
+            )
+
+            annotations.append(
+                {
+                    "sentence_index": idx,
+                    "text": sent.text.strip(),
+                    "connectives": connectives,
+                    "dominant_relation": self._dominant_relation(connective_counts),
+                    "verb_tense": tense,
+                }
+            )
+
+            prev_entities = noun_lemmas
+            prev_content = content_lemmas
+            prev_tense = tense
+
+        windowed_metrics = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
+
+        return sent_metrics, annotations, windowed_metrics
+
+    def summarize(self, sentence_metrics: List[Dict[str, object]]) -> Dict[str, object]:
+        if not sentence_metrics:
+            return {
+                "total_sentences": 0,
+                "total_connectives": 0,
+                "relation_totals": {},
+                "avg_pronoun_ratio": 0.0,
+                "avg_entity_overlap": 0.0,
+                "avg_content_overlap": 0.0,
+                "tense_switch_rate": 0.0,
+            }
+
+        relation_counter: Counter = Counter()
+        for m in sentence_metrics:
+            relation_counter.update(m["connective_counts"])
+
+        total_sentences = len(sentence_metrics)
+        avg_pronoun = statistics.mean(m["pronoun_ratio"] for m in sentence_metrics)
+        avg_entity_overlap = statistics.mean(m["entity_overlap_ratio"] for m in sentence_metrics)
+        avg_content_overlap = statistics.mean(m["content_overlap_ratio"] for m in sentence_metrics)
+
+        tense_switches = sum(m["tense_shift"] for m in sentence_metrics)
+        tense_switch_rate = tense_switches / max(total_sentences - 1, 1)
+
+        return {
+            "total_sentences": total_sentences,
+            "total_connectives": sum(m["explicit_connectives"] for m in sentence_metrics),
+            "relation_totals": dict(relation_counter),
+            "avg_pronoun_ratio": round(avg_pronoun, 3),
+            "avg_entity_overlap": round(avg_entity_overlap, 3),
+            "avg_content_overlap": round(avg_content_overlap, 3),
+            "tense_switch_rate": round(tense_switch_rate, 3),
         }
-        return result
+
+    def analyze_text(self, text: str, window_size: int = 3) -> Dict[str, object]:
+        doc = self.nlp(text)
+        sentence_metrics, annotations, windowed_metrics = self.compute_sentence_metrics(doc, window_size=window_size)
+        summary = self.summarize(sentence_metrics)
+
+        return {
+            "sentence_metrics": sentence_metrics,
+            "sentence_annotations": annotations,
+            "window_metrics": windowed_metrics,
+            "summary": summary,
+        }
+
+
+def run_discourse_analysis(window_size: int = 3, use_existing: bool = True):
+    """
+    Run discourse analysis across cleaned texts and save JSON outputs alongside other window metrics.
+    """
+    cleaned_root = processed_text_path("cleaned")
+    output_root = processed_text_path("window")
+    analyzer = DiscourseAnalyzer()
+
+    for subdir in cleaned_root.iterdir():
+        if not subdir.is_dir():
+            continue
+
+        out_subdir = output_root / subdir.name
+        out_subdir.mkdir(parents=True, exist_ok=True)
+
+        for file in subdir.glob("*.txt"):
+            output_file = out_subdir / f"{file.stem}_discourse.json"
+            if use_existing and output_file.exists():
+                print(f"Skipping {file.name} (exists)")
+                continue
+
+            text = file.read_text(encoding="utf-8")
+            result = analyzer.analyze_text(text, window_size=window_size)
+            result["filename"] = file.name
+            result["window_size"] = window_size
+
+            output_file.write_text(
+                json.dumps(result, indent=2),
+                encoding="utf-8",
+            )
+            print(f"Saved discourse metrics for {file.name}")

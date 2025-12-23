@@ -1,8 +1,8 @@
 import json
 import spacy
-from z_utils import processed_text_path
-from c1_syntactics import SyntaxAnalyzer
-from src.c2_lexico_semantics_TODO_DEPENDS_ON_CORPUS import LexicoSemanticsAnalyzer
+from .z_utils import processed_text_path
+from .c1_syntactics import SyntaxAnalyzer
+from .c2_lexico_semantics_TODO_DEPENDS_ON_CORPUS import LexicoSemanticsAnalyzer
 
 def run_windowed_metrics(window_size=3, use_existing=True):
     """
@@ -34,10 +34,16 @@ def run_windowed_metrics(window_size=3, use_existing=True):
             # Load precomputed corpus metrics
             data = json.load(file.open("r", encoding="utf-8"))
             text_content = data.get("text")  # make sure you saved raw text or chunks
-            corpus_freqs = {w: f for w, f in data.get("top_words", [])}
+            if not text_content:
+                # Fallback: stitch chunk text if raw text was not stored
+                chunks = data.get("chunks", [])
+                text_content = " ".join(chunk.get("text", "") for chunk in chunks if isinstance(chunk, dict))
+
+            corpus_word_freqs = data.get("word_frequencies") or {w: f for w, f in data.get("top_words", [])}
 
             # Initialize analyzers
-            lex_analyzer = LexicoSemanticsAnalyzer(nlp, corpus_freqs=corpus_freqs)
+            lex_analyzer = LexicoSemanticsAnalyzer(nlp, corpus_freqs=corpus_word_freqs)
+            doc = nlp(text_content or "")
 
             # ------------------------
             # Syntax metrics
@@ -50,6 +56,9 @@ def run_windowed_metrics(window_size=3, use_existing=True):
             # Lexico-semantic metrics
             # ------------------------
             avg_word_freq_metrics = lex_analyzer.compute_avg_word_frequency(doc, window_size=window_size)
+            lexical_information_content = lex_analyzer.analyze_information_content(
+                doc, word_frequencies=corpus_word_freqs, window_size=window_size
+            )
             
             # Use token log-probs if available
             log_probs_list = []
@@ -67,6 +76,7 @@ def run_windowed_metrics(window_size=3, use_existing=True):
                 "clause_embedding_metrics": clause_embed_metrics,
                 "dependency_complexity_metrics": dep_complexity_metrics,
                 "avg_word_freq_metrics": avg_word_freq_metrics,
+                "lexical_information_content": lexical_information_content,
                 "information_content_metrics": info_content_metrics,
                 "semantic_structures": semantic_structures
             }

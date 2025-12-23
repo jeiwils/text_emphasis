@@ -1,10 +1,10 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from collections import Counter
-from z_utils import processed_text_path
+from .z_utils import processed_text_path
 import os 
 import json 
-from x_configs import model
+from .x_configs import model
 
 """
 
@@ -54,22 +54,30 @@ class WholeTextMetrics:
 
 
     def compute_log_probs_chunked(self, text, chunk_size=2048, stride=0):
+        if stride >= chunk_size:
+            raise ValueError("stride must be smaller than chunk_size")
         tokens = self.tokenizer.encode(text, add_special_tokens=False)
+        if not tokens:
+            return []
         results = []
 
         for i in range(0, len(tokens), chunk_size - stride):
             chunk_tokens = tokens[i : i + chunk_size]
+            if len(chunk_tokens) < 2:
+                continue
             inputs = torch.tensor([chunk_tokens]).to(self.device)
 
             with torch.no_grad():
-                outputs = self.model(inputs, labels=inputs)
-                logits = outputs.logits
+                outputs = self.model(inputs)
+                logits = outputs.logits[:, :-1]
+                target_tokens = inputs[:, 1:]
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
-                token_log_probs = log_probs.gather(2, inputs.unsqueeze(-1)).squeeze(-1)
-                log_probs_list = token_log_probs[0].tolist()
+                token_log_probs = log_probs.gather(2, target_tokens.unsqueeze(-1)).squeeze(-1)
+                log_probs_list = [float(x) for x in token_log_probs[0].tolist()]
 
             avg_log_prob = sum(log_probs_list) / len(log_probs_list)
-            text_snippet = self.tokenizer.decode(chunk_tokens[:50])  # first 50 tokens as preview
+            chunk_text = self.tokenizer.decode(chunk_tokens, skip_special_tokens=True)
+            text_snippet = self.tokenizer.decode(chunk_tokens[:50], skip_special_tokens=True)  # first 50 tokens as preview
 
             results.append({
                 "chunk_id": len(results),
@@ -77,7 +85,9 @@ class WholeTextMetrics:
                 "end_token": i + len(chunk_tokens),
                 "avg_log_prob": avg_log_prob,
                 "num_tokens": len(chunk_tokens),
-                "text_snippet": text_snippet
+                "text": chunk_text,
+                "text_snippet": text_snippet,
+                "log_probs": log_probs_list,
             })
 
         return results
@@ -147,17 +157,20 @@ def run_whole_text_metrics(use_existing=True):
             # Example: token log-probabilities
             log_prob_chunks = metrics.compute_log_probs_chunked(text, chunk_size=2048)
 
-            avg_log_prob = sum(c["avg_log_prob"] for c in log_prob_chunks) / len(log_prob_chunks)
-
+            avg_log_prob = None
+            if log_prob_chunks:
+                avg_log_prob = sum(c["avg_log_prob"] for c in log_prob_chunks) / len(log_prob_chunks)
 
             # Example: corpus-level frequencies
-            corpus_freq = metrics.compute_corpus_frequencies([text], min_freq=2)
+            corpus_freq = metrics.compute_corpus_frequencies([text], min_freq=1)
 
             result = {
                 "filename": file.name,
                 "model": model,
+                "text": text,
                 "avg_log_prob": avg_log_prob,
                 "num_tokens": sum(c["num_tokens"] for c in log_prob_chunks),
+                "word_frequencies": corpus_freq,
                 "top_words": sorted(corpus_freq.items(), key=lambda x: x[1], reverse=True)[:50]
             }
 

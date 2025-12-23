@@ -36,7 +36,10 @@ class LexicoSemanticsAnalyzer:
                 "lexical_density": len(content_words) / len(tokens) if tokens else None,
             })
 
-        return aggregate_windows(sent_metrics, window_size)
+        if window_size and window_size > 1:
+            return aggregate_windows(sent_metrics, window_size)
+
+        return sent_metrics
 
 
     # ---------------------
@@ -59,7 +62,10 @@ class LexicoSemanticsAnalyzer:
                 "ic_values": ics,
             })
 
-        return aggregate_windows(sent_metrics, window_size)
+        if window_size and window_size > 1:
+            return aggregate_windows(sent_metrics, window_size)
+
+        return sent_metrics
 
 
     # ---------------------
@@ -83,7 +89,10 @@ class LexicoSemanticsAnalyzer:
 
             prev_sent_content = words
 
-        return aggregate_windows(sent_metrics, window_size)
+        if window_size and window_size > 1:
+            return aggregate_windows(sent_metrics, window_size)
+
+        return sent_metrics
 
 
     # ---------------------
@@ -108,7 +117,10 @@ class LexicoSemanticsAnalyzer:
                 "role_count": len(roles),
             })
 
-        return aggregate_windows(sent_metrics, window_size)
+        if window_size and window_size > 1:
+            return aggregate_windows(sent_metrics, window_size)
+
+        return sent_metrics
 
 # ----------------------------
 # Average word frequency per sentence + sliding window
