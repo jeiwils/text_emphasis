@@ -163,7 +163,12 @@ BOOK_CONFIGS = {
 }
 
 
-
+DEFAULT_BOOK_CONFIG = {
+    "pages": None,
+    "start_marker": None,
+    "end_marker": None,
+    "patterns": None,
+}
 
 
 
@@ -171,22 +176,38 @@ def extract_pdf_pages(pdf_path: Path, pages: Optional[List[int]] = None) -> str:
     """
     Extract text from specific PDF pages.
     If `pages` is None, extracts all pages.
+
+    Note: page indices provided via `pages` are expected to be 1-based and are
+    normalized to zero-based before iteration to align with pdfplumber's
+    indexing.
     """
     text = ""
+    processed_pages = 0
+
     with pdfplumber.open(pdf_path) as pdf:
-        if pages is None:
-            pages = range(len(pdf.pages))
-        for i in pages:
+        total_pages = len(pdf.pages)
+        normalized_indices = (
+            range(total_pages) if pages is None else [page - 1 for page in pages]
+        )
+
+        for idx in normalized_indices:
             try:
-                page = pdf.pages[i - 1]  # convert to zero-indexed
+                page = pdf.pages[idx]
                 page_text = page.extract_text()
                 if page_text:
                     text += page_text + "\n"
+                processed_pages += 1
             except IndexError:
-                print(f"[WARN] Page {i} not found in {pdf_path.name}")
+                human_page = idx + 1
+                print(f"[WARN] Page {human_page} not found in {pdf_path.name}")
+
+    if pages is None and processed_pages != total_pages:
+        raise AssertionError(
+            f"Expected to process {total_pages} pages from {pdf_path.name}, "
+            f"but processed {processed_pages}."
+        )
 
     return text
-
 
 
 def remove_boilerplate(text: str, patterns: Optional[List[str]] = None,
@@ -214,15 +235,27 @@ def remove_boilerplate(text: str, patterns: Optional[List[str]] = None,
     return text
 
 
-
-
 def preprocess_pdf(
     pdf_path: Path,
     preproc: "TextPreprocessor",
-    config: dict,
+    config: Optional[dict] = None,
+    book_name: Optional[str] = None,
+    allow_default_config: bool = True,
 ):
     """Extract, clean, and save a single PDF with optional page and boilerplate filtering."""
     base_name = pdf_path.stem
+    book_label = book_name or base_name
+    active_config = config or (DEFAULT_BOOK_CONFIG if allow_default_config else None)
+
+    if active_config is None:
+        print(f"[WARN] No config found for {book_label}, skipping because default processing is disabled.")
+        return None
+
+    if config is None:
+        print(
+            f"[WARN] No config found for '{book_label}'. Using default processing (all pages, no boilerplate removal). "
+            "Add an entry to BOOK_CONFIGS in src/a_preprocessing_cleaning.py to customize page ranges or patterns."
+        )
     save_dir = processed_text_path("cleaned", base_name)
 
     if save_dir.exists():
@@ -232,15 +265,15 @@ def preprocess_pdf(
     save_dir.mkdir(parents=True, exist_ok=True)
 
     # Extract selected pages
-    pages = config.get("pages")
+    pages = active_config.get("pages")
     raw_text = extract_pdf_pages(pdf_path, pages)
 
     # Remove boilerplate, trim start/end markers, apply regex patterns
     cleaned_text = remove_boilerplate(
         raw_text,
-        patterns=config.get("patterns"),
-        start_marker=config.get("start_marker"),
-        end_marker=config.get("end_marker")
+        patterns=active_config.get("patterns"),
+        start_marker=active_config.get("start_marker"),
+        end_marker=active_config.get("end_marker")
     )
 
     # Normalize whitespace only
@@ -257,7 +290,9 @@ def preprocess_pdf(
 
 
 
-def preprocess_all_pdfs():
+
+
+def preprocess_all_pdfs(process_unknown: bool = True):
     preproc = TextPreprocessor()
     base_raw_dir = raw_text_path()
 
@@ -279,14 +314,12 @@ def preprocess_all_pdfs():
         for pdf_file in pdf_files:
             book_name = pdf_file.stem.lower()
             config = BOOK_CONFIGS.get(book_name)
-            if config is None:
-                print(f"[WARN] No config found for {book_name}, skipping.")
-                continue
-
             preprocess_pdf(
                 pdf_file,
                 preproc,
-                config=config
+                config=config,
+                book_name=book_name,
+                allow_default_config=process_unknown,
             )
 
 

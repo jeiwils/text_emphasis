@@ -1,8 +1,8 @@
 import json
+import spacy
 from z_utils import processed_text_path
 from c1_syntactics import SyntaxAnalyzer
 from src.c2_lexico_semantics_TODO_DEPENDS_ON_CORPUS import LexicoSemanticsAnalyzer
-import spacy
 
 def run_windowed_metrics(window_size=3, use_existing=True):
     """
@@ -15,6 +15,8 @@ def run_windowed_metrics(window_size=3, use_existing=True):
     corpus_root = processed_text_path("corpus")
     output_root = processed_text_path("window")
     output_root.mkdir(parents=True, exist_ok=True)
+    nlp = spacy.load("en_core_web_sm")
+    syntax_analyzer = SyntaxAnalyzer(nlp)
 
     for subdir in corpus_root.iterdir():
         if not subdir.is_dir():
@@ -35,16 +37,13 @@ def run_windowed_metrics(window_size=3, use_existing=True):
             corpus_freqs = {w: f for w, f in data.get("top_words", [])}
 
             # Initialize analyzers
-            syntax_analyzer = SyntaxAnalyzer()
-            lex_analyzer = LexicoSemanticsAnalyzer(corpus_freqs=corpus_freqs)
-            nlp = spacy.load("en_core_web_sm")
-            doc = nlp(text_content)
+            lex_analyzer = LexicoSemanticsAnalyzer(nlp, corpus_freqs=corpus_freqs)
 
             # ------------------------
             # Syntax metrics
             # ------------------------
             clause_metrics = syntax_analyzer.compute_clause_metrics(doc, window_size=window_size)
-            clause_embed_metrics = syntax_analyzer.compute_clause_embedding_metrics(doc, window_size=window_size)
+            clause_embed_metrics = syntax_analyzer.compute_clause_embedding_depth(doc, window_size=window_size)
             dep_complexity_metrics = syntax_analyzer.compute_dependency_complexity(doc, window_size=window_size)
 
             # ------------------------
