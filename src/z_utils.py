@@ -12,6 +12,11 @@ def sliding_windows(seq, n):
     there may be issues with this - what happens with truncation? 
     """
     seq = list(seq)
+    if n <= 0:
+        raise ValueError("window size must be positive")
+    if len(seq) < n:
+        yield seq
+        return
     for i in range(len(seq) - n + 1):
         yield seq[i:i+n]
 
@@ -23,12 +28,12 @@ def aggregate_windows(sent_metrics, window_size):
     Each window includes 'start_sentence' and 'end_sentence'.
     """
     windows = []
-    n = len(sent_metrics)
-    if n == 0:
+    if not sent_metrics:
         return windows
+    if window_size <= 0:
+        raise ValueError("window_size must be a positive integer")
 
-    for i in range(0, n, window_size):
-        window_sents = sent_metrics[i:i + window_size]  # handles last partial window
+    for i, window_sents in enumerate(sliding_windows(sent_metrics, window_size)):
         agg = {}
 
         for key in window_sents[0]:

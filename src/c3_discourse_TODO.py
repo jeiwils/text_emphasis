@@ -245,6 +245,72 @@ class DiscourseAnalyzer:
         }
 
     def analyze_text(self, text: str, window_size: int = 3) -> Dict[str, object]:
+        """
+        Analyze a single text and return discourse metrics.
+
+        Output shape (dict):
+        {
+          "sentence_metrics": [ ... ],    # One row per sentence with numeric metrics.
+          "sentence_annotations": [ ... ],# One row per sentence with text + discourse labels.
+          "window_metrics": [ ... ],      # One row per window with averaged numeric metrics.
+          "summary": { ... },             # Corpus-level summary aggregated over all sentences.
+          ...
+        }
+
+        Detailed fields:
+        {
+          "sentence_metrics": [
+            {
+              "sentence_index": int,  # 0-based index of the sentence in the document.
+              "num_tokens": int,  # Non-space token count for the sentence.
+              "explicit_connectives": int,  # Number of matched connective phrases.
+              "connective_counts": {"Temporal": int, "Contingency": int, ...},  # Count by relation.
+              "entity_overlap": int,  # Shared noun/proper-noun lemmas vs. previous sentence.
+              "entity_overlap_ratio": float,  # Overlap ratio for noun/proper-noun lemmas.
+              "content_overlap": int,  # Shared content-word lemmas vs. previous sentence.
+              "content_overlap_ratio": float,  # Overlap ratio for content-word lemmas.
+              "pronoun_ratio": float,  # Pronoun count divided by total tokens.
+              "tense_shift": int  # 1 if tense changed vs. previous sentence, else 0.
+            },
+            ...
+          ],
+          "sentence_annotations": [
+            {
+              "sentence_index": int,  # 0-based index of the sentence in the document.
+              "text": str,  # Raw sentence text.
+              "connectives": [
+                {
+                  "marker": str,  # Matched connective phrase.
+                  "category": str,  # PDTB-inspired relation category.
+                  "start": int,  # Start token index within the sentence.
+                  "end": int  # End token index within the sentence.
+                },
+                ...
+              ],
+              "dominant_relation": Optional[str],  # Relation with highest count, if any.
+              "verb_tense": Optional[str]  # Heuristic tense label ("past"/"present"/"future").
+            },
+            ...
+          ],
+          "window_metrics": [
+            {
+              "...": "averaged numeric fields from sentence_metrics",
+              "start_sentence": int,  # 0-based index of the first sentence in the window.
+              "end_sentence": int  # 0-based index of the last sentence in the window.
+            },
+            ...
+          ],
+          "summary": {
+            "total_sentences": int,  # Number of sentences in the document.
+            "total_connectives": int,  # Total explicit connective matches.
+            "relation_totals": {"Temporal": int, ...},  # Totals by relation category.
+            "avg_pronoun_ratio": float,  # Mean pronoun ratio across sentences.
+            "avg_entity_overlap": float,  # Mean noun/proper-noun overlap ratio.
+            "avg_content_overlap": float,  # Mean content-word overlap ratio.
+            "tense_switch_rate": float  # Tense shifts divided by sentence transitions.
+          }
+        }
+        """
         doc = self.nlp(text)
         sentence_metrics, annotations, windowed_metrics = self.compute_sentence_metrics(doc, window_size=window_size)
         summary = self.summarize(sentence_metrics)
@@ -288,3 +354,20 @@ def run_discourse_analysis(window_size: int = 3, use_existing: bool = True):
                 encoding="utf-8",
             )
             print(f"Saved discourse metrics for {file.name}")
+
+
+
+
+
+
+
+
+
+
+
+def main():
+    run_discourse_analysis()
+
+
+if __name__ == "__main__":
+    main()

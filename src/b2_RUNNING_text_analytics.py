@@ -4,7 +4,7 @@ from collections import Counter
 from .z_utils import processed_text_path
 import os 
 import json 
-from .x_configs import model
+from x_configs import model
 
 """
 
@@ -75,7 +75,14 @@ class WholeTextMetrics:
                 token_log_probs = log_probs.gather(2, target_tokens.unsqueeze(-1)).squeeze(-1)
                 log_probs_list = [float(x) for x in token_log_probs[0].tolist()]
 
-            avg_log_prob = sum(log_probs_list) / len(log_probs_list)
+            if stride > 0 and i > 0:
+                scored_log_probs = log_probs_list[stride:]
+            else:
+                scored_log_probs = log_probs_list
+            if not scored_log_probs:
+                continue
+
+            avg_log_prob = sum(scored_log_probs) / len(scored_log_probs)
             chunk_text = self.tokenizer.decode(chunk_tokens, skip_special_tokens=True)
             text_snippet = self.tokenizer.decode(chunk_tokens[:50], skip_special_tokens=True)  # first 50 tokens as preview
 
@@ -85,9 +92,10 @@ class WholeTextMetrics:
                 "end_token": i + len(chunk_tokens),
                 "avg_log_prob": avg_log_prob,
                 "num_tokens": len(chunk_tokens),
+                "num_scored_tokens": len(scored_log_probs),
                 "text": chunk_text,
                 "text_snippet": text_snippet,
-                "log_probs": log_probs_list,
+                "log_probs": scored_log_probs,
             })
 
         return results
@@ -162,15 +170,13 @@ def run_whole_text_metrics(use_existing=True):
                 avg_log_prob = sum(c["avg_log_prob"] for c in log_prob_chunks) / len(log_prob_chunks)
 
             # Example: corpus-level frequencies
-            corpus_freq = metrics.compute_corpus_frequencies([text], min_freq=1)
+            corpus_freq = metrics.compute_corpus_frequencies([text], min_freq=2)
 
             result = {
                 "filename": file.name,
                 "model": model,
-                "text": text,
                 "avg_log_prob": avg_log_prob,
                 "num_tokens": sum(c["num_tokens"] for c in log_prob_chunks),
-                "word_frequencies": corpus_freq,
                 "top_words": sorted(corpus_freq.items(), key=lambda x: x[1], reverse=True)[:50]
             }
 
