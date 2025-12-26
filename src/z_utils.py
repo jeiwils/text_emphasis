@@ -63,33 +63,6 @@ def aggregate_windows(sent_metrics, window_size):
 
 
 
-# def aggregate_windows(sent_metrics, window_size):
-#     windows = []
-#     for i in range(0, len(sent_metrics) - window_size + 1):
-#         window_sents = sent_metrics[i:i + window_size]
-
-#         agg = {}
-#         for key in window_sents[0]:
-#             if isinstance(window_sents[0][key], dict):
-#                 # Collect all keys that appear in any dict in the window
-#                 all_inner_keys = set(k for d in window_sents for k in d[key].keys())
-#                 agg[key] = {}
-#                 for k in all_inner_keys:
-#                     nums = [d[key][k] for d in window_sents if k in d[key] and isinstance(d[key][k], (int, float))]
-#                     agg[key][k] = round(mean(nums), 2) if nums else 0
-#             elif isinstance(window_sents[0][key], (int, float)):
-#                 nums = [d[key] for d in window_sents if isinstance(d[key], (int, float))]
-#                 agg[key] = round(mean(nums), 2) if nums else 0
-#             else:
-#                 # Keep strings or other non-numeric fields as-is
-#                 agg[key] = window_sents[0][key]
-
-#         # Add metadata
-#         agg["start_sentence"] = i
-#         agg["end_sentence"] = i + window_size - 1
-#         windows.append(agg)
-
-#     return windows
 
 
 
@@ -142,7 +115,20 @@ def processed_text_path(
         path = path / filename
     return path
 
-
+def topic_modelling_path(
+    category: Optional[str] = None,
+    filename: Optional[str] = None,
+) -> Path:
+    """
+    Path helper for topic modelling outputs (British English spelling).
+    """
+    base_dir = "data/topic_modelling"
+    path = Path(base_dir)
+    if category:
+        path = path / category
+    if filename:
+        path = path / filename
+    return path
 
 def embeddings_path(
     embedding_type: str,

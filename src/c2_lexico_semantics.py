@@ -1,5 +1,4 @@
 import statistics
-import spacy
 from .z_utils import sliding_windows, aggregate_windows
 import numpy as np
 
@@ -47,14 +46,16 @@ class LexicoSemanticsAnalyzer:
     # ---------------------
     def analyze_information_content(self, doc, word_frequencies, window_size=None):
         sent_metrics = []
+        total_count = sum(word_frequencies.values()) if word_frequencies else 0
 
         for sent in doc.sents:
             ics = []
             for token in sent:
                 if token.is_alpha:
-                    freq = word_frequencies.get(token.text.lower())
-                    if freq:
-                        ics.append(-np.log(freq))
+                    freq = word_frequencies.get(token.text.lower(), 0)
+                    if freq and total_count > 0:
+                        prob = freq / total_count
+                        ics.append(-np.log(prob))
 
             sent_metrics.append({
                 "sentence_text": sent.text,
@@ -66,6 +67,7 @@ class LexicoSemanticsAnalyzer:
             return aggregate_windows(sent_metrics, window_size)
 
         return sent_metrics
+
 
 
     # ---------------------

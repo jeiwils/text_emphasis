@@ -3,8 +3,7 @@ import statistics
 from collections import Counter
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-import spacy
-
+from x_configs import load_spacy_model
 from .z_utils import aggregate_windows, processed_text_path
 
 
@@ -71,7 +70,7 @@ CONNECTIVE_LEXICON: Dict[str, Sequence[str]] = {
 
 class DiscourseAnalyzer:
     def __init__(self, nlp=None):
-        self.nlp = nlp or spacy.load("en_core_web_sm")
+        self.nlp = nlp or load_spacy_model()
         self._lexicon_phrases = self._prepare_lexicon()
 
     def _prepare_lexicon(self) -> List[Tuple[str, List[str], str]]:
@@ -104,7 +103,15 @@ class DiscourseAnalyzer:
                 counts["present"] += 1
 
         # Simple future proxy
-        if any(t.lower_ in {"will", "shall", "gonna", "going"} for t in tokens):
+        has_modal_future = any(t.lower_ in {"will", "shall", "gonna"} for t in tokens)
+        has_going_to = any(
+            tokens[i].lower_ == "going"
+            and i + 2 < len(tokens)
+            and tokens[i + 1].lower_ == "to"
+            and tokens[i + 2].pos_ == "VERB"
+            for i in range(len(tokens) - 2)
+        )
+        if has_modal_future or has_going_to:
             counts["future"] += 1
 
         if not counts:
@@ -112,7 +119,7 @@ class DiscourseAnalyzer:
 
         return counts.most_common(1)[0][0]
 
-    def _find_connectives(self, sent) -> List[Dict[str, object]]:
+    def find_connectives(self, sent) -> List[Dict[str, object]]:
         tokens = [t.text.lower() for t in sent if not t.is_space]
         matches: List[Dict[str, object]] = []
 
@@ -130,7 +137,6 @@ class DiscourseAnalyzer:
                             "end": i + span_len - 1,
                         }
                     )
-                    break  # avoid double-counting the same marker
         return matches
 
     def _empty_connective_counts(self) -> Dict[str, int]:
@@ -155,7 +161,7 @@ class DiscourseAnalyzer:
 
         for idx, sent in enumerate(doc.sents):
             tokens = [t for t in sent if not t.is_space]
-            connectives = self._find_connectives(sent)
+            connectives = self.find_connectives(sent)
             connective_counts = self._empty_connective_counts()
             for c in connectives:
                 connective_counts[c["category"]] += 1

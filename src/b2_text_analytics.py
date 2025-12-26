@@ -166,8 +166,13 @@ def run_whole_text_metrics(use_existing=True):
             log_prob_chunks = metrics.compute_log_probs_chunked(text, chunk_size=2048)
 
             avg_log_prob = None
-            if log_prob_chunks:
-                avg_log_prob = sum(c["avg_log_prob"] for c in log_prob_chunks) / len(log_prob_chunks)
+            total_scored_tokens = sum(c.get("num_scored_tokens", 0) for c in log_prob_chunks)
+            if log_prob_chunks and total_scored_tokens > 0:
+                total_log_prob = sum(
+                    c["avg_log_prob"] * c.get("num_scored_tokens", 0)
+                    for c in log_prob_chunks
+                )
+                avg_log_prob = total_log_prob / total_scored_tokens
 
             # Example: corpus-level frequencies
             corpus_freq = metrics.compute_corpus_frequencies([text], min_freq=2)
@@ -176,16 +181,9 @@ def run_whole_text_metrics(use_existing=True):
                 "filename": file.name,
                 "model": model,
                 "avg_log_prob": avg_log_prob,
-                "num_tokens": sum(c["num_tokens"] for c in log_prob_chunks),
+                "num_tokens": total_scored_tokens,
                 "top_words": sorted(corpus_freq.items(), key=lambda x: x[1], reverse=True)[:50]
             }
-
-
-            result["chunks"] = log_prob_chunks
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(result, f, indent=2)
-
-
 
             print(f"✅ Saved metrics to {output_file.name}")
 

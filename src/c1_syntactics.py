@@ -1,15 +1,11 @@
-import spacy
 import statistics
-from itertools import islice
-from .z_utils import sliding_windows, processed_text_path, load_json, graph_path, aggregate_windows
 from pathlib import Path
 from typing import Optional
 import json
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
-from pathlib import Path
-from statistics import mean
+from x_configs import load_spacy_model
+from .z_utils import processed_text_path, load_json, graph_path, aggregate_windows
 
 
 
@@ -269,7 +265,7 @@ def run_syntax_analysis(window_size=3, use_existing=True):
     Computes sentence-level metrics once per doc, then aggregates windows.
     Saves JSON to 'window_metrics' directory.
     """
-    nlp = spacy.load("en_core_web_sm")
+    nlp = load_spacy_model()
     analyzer = SyntaxAnalyzer(nlp)
     cleaned_root = processed_text_path("cleaned")
     output_root = processed_text_path("window")
@@ -292,7 +288,7 @@ def run_syntax_analysis(window_size=3, use_existing=True):
             sentences = list(doc.sents)
             num_sentences = len(sentences)
 
-            print(f"→ Computing syntax metrics for {file.name} ({num_sentences} sentences)...")
+            print(f"Computing syntax metrics for {file.name} ({num_sentences} sentences)...")
 
             # --- Compute metrics with window aggregation ---
             clause_metrics = analyzer.compute_clause_metrics(doc, window_size=window_size)
@@ -331,10 +327,10 @@ def run_syntax_analysis(window_size=3, use_existing=True):
 
 
 
-            print(f"✅ Saved clause_counts, clause_depth, and clause_dependencies for {file.name}")
+            print(f"Saved clause_counts, clause_depth, and clause_dependencies for {file.name}")
 
 
-    print("🎉 All done.")
+    print("All done.")
 
 
 
@@ -375,5 +371,5 @@ if __name__ == "__main__":
 
         
 
-        print(f"✅ Saved all plots for {jf.name} in {subdir}")
+        print(f"Saved all plots for {jf.name} in {subdir}")
 

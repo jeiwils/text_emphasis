@@ -14,14 +14,17 @@ Output:
 
 """
 
+import json
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import HDBSCAN
-import spacy
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+from .z_utils import processed_text_path, topic_modelling_path
+from x_configs import load_spacy_model
 
 
 @dataclass
@@ -52,7 +55,7 @@ class NeuralTopicModeler:
         stop_words: str = "english",
     ):
         self.encoder = SentenceTransformer(model_name)
-        self.nlp = spacy.load(language)
+        self.nlp = load_spacy_model(language)
         self.stop_words = stop_words
 
     def segment_sentences(self, text: str) -> List[TopicMention]:
@@ -167,3 +170,75 @@ class NeuralTopicModeler:
                 )
             )
         return results
+
+
+def serialize_topic_results(topic_results: List[TopicResult]) -> List[Dict[str, Any]]:
+    """Convert TopicResult objects to plain dicts for JSON output."""
+    return [
+        {
+            "topic_id": result.topic_id,
+            "keywords": result.keywords,
+            "mentions": [
+                {
+                    "sentence_index": mention.sentence_index,
+                    "start_char": mention.start_char,
+                    "end_char": mention.end_char,
+                    "text": mention.text,
+                }
+                for mention in result.mentions
+            ],
+        }
+        for result in topic_results
+    ]
+
+
+def count_mentions_per_sentence(topic_results: List[TopicResult]) -> Dict[int, int]:
+    """Count how many topic mentions occur in each sentence index."""
+    counts: Dict[int, int] = {}
+    for result in topic_results:
+        for mention in result.mentions:
+            counts[mention.sentence_index] = counts.get(mention.sentence_index, 0) + 1
+    return counts
+
+
+def run_topic_modelling(use_existing: bool = True):
+    """Batch topic modelling across all cleaned text files."""
+    modeler = NeuralTopicModeler()
+    cleaned_root = processed_text_path("cleaned")
+    output_root = topic_modelling_path()
+    output_root.mkdir(parents=True, exist_ok=True)
+
+    for subdir in cleaned_root.iterdir():
+        if not subdir.is_dir():
+            continue
+        print(f"Processing category: {subdir.name}")
+
+        out_subdir = output_root / subdir.name
+        out_subdir.mkdir(parents=True, exist_ok=True)
+
+        for file in subdir.glob("*.txt"):
+            output_file = out_subdir / f"{file.stem}_topics.json"
+            if use_existing and output_file.exists():
+                print(f"Skipping {file.name} (exists)")
+                continue
+
+            text = file.read_text(encoding="utf-8")
+            print(f"Extracting topics for {file.name}...")
+
+            topic_results = modeler.extract_topics(text)
+            result = {
+                "filename": file.name,
+                "topics": serialize_topic_results(topic_results),
+                "mentions_per_sentence": count_mentions_per_sentence(topic_results),
+            }
+
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2)
+
+            print(f"Saved topic modelling to {output_file.name}")
+
+    print("All done.")
+
+
+if __name__ == "__main__":
+    run_topic_modelling()

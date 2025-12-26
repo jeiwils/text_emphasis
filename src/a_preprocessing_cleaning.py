@@ -12,12 +12,14 @@ TO DO:
 """
 
 from pathlib import Path
-from .z_utils import processed_text_path, raw_text_path
 from typing import List, Optional
-import spacy
 import re
+
 import pdfplumber
 from transformers import pipeline
+
+from x_configs import load_spacy_model
+from .z_utils import processed_text_path, raw_text_path
 
 
 
@@ -25,10 +27,11 @@ from transformers import pipeline
 class TextPreprocessor:
     def __init__(self, language: str = "en_core_web_sm"):
         """Initialize the preprocessor with specified language model."""
-        self.nlp = spacy.load(language)
+        self.nlp = load_spacy_model(language)
         self._asr_pipeline = None
         self._asr_model_name = None
         self._asr_chunk_length_s = None
+        self._asr_device = None
     
 
 
@@ -74,6 +77,7 @@ class TextPreprocessor:
             self._asr_pipeline is None
             or self._asr_model_name != model_name
             or self._asr_chunk_length_s != chunk_length_s
+            or self._asr_device != device
         )
 
         if needs_new_pipeline:
@@ -86,6 +90,7 @@ class TextPreprocessor:
                 )
                 self._asr_model_name = model_name
                 self._asr_chunk_length_s = chunk_length_s
+                self._asr_device = device
             except Exception as exc:  # noqa: BLE001
                 raise RuntimeError(
                     f"Failed to load ASR model '{model_name}'. Ensure it is installed locally "
@@ -302,7 +307,10 @@ def preprocess_pdf(
     """Extract, clean, and save a single PDF with optional page and boilerplate filtering."""
     base_name = pdf_path.stem
     book_label = book_name or base_name
-    active_config = config or (DEFAULT_BOOK_CONFIG if allow_default_config else None)
+    if config is None:
+        active_config = DEFAULT_BOOK_CONFIG if allow_default_config else None
+    else:
+        active_config = config
 
     if active_config is None:
         print(f"[WARN] No config found for {book_label}, skipping because default processing is disabled.")
