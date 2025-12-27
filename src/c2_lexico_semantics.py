@@ -9,17 +9,75 @@ from .z_utils import sliding_windows, aggregate_windows
 """
 Lexical and semantic content metrics (computation only).
 
-Typical outputs:
-- Windowed MATTR over sentence windows:
-  {"mattr_score": 0.68, "token_count": 180, "window_token_span": 50, "start_sentence": 0, "end_sentence": 2}
-- Lexical density window:
-  {"lexical_density": 0.62, "token_count": 90, "content_count": 56, "start_sentence": 0, "end_sentence": 2}
-- Average word frequency window:
-  {"avg_word_freq": 14.2, "normalized_freq": 0.88, "content_function_ratio": 0.63}
-- Semantic structures window:
-  {"total_clauses": 5, "total_agents": 3, "total_patients": 2, "sentences": ["S1 text", "S2 text", "S3 text"]}
 
-Use with the d-layer orchestrator to persist results.
+{
+  "meta": {"window_size": 3, "num_sentences": 120},
+
+  "sentences": [
+    {
+      "sentence_id": 0,
+      "token_count": 12, 
+      "content_count": 8, 
+      "lexical_density": 0.62,
+      "information_content": 1.2, 
+      "information_content_values": [...],
+      "role_count": 2, 
+      "role_counts": {
+        "nsubj": 1, 
+        ...
+        },
+      "avg_word_freq": 14.2, 
+      "normalized_freq": 0.8, 
+      "content_function_ratio": 0.63,
+      "num_clauses": 2, 
+      "num_agents": 1, 
+      "num_patients": 1,
+      "semantic_structures": {
+        "clause_level_counts": {
+            "main": 1, 
+            ...
+            }, 
+        "num_clauses": 2, 
+            ...
+            }
+    },
+    ...
+  ],
+
+  "windows": [   # averaged numeric fields over the window
+    {
+      "start_sentence": 0,
+      "end_sentence": 2,
+      "lexical_density": 0.61, 
+      "information_content": 1.1, 
+      "avg_word_freq": 12.0,
+      "normalized_freq": 0.76, 
+      "content_function_ratio": 0.6,
+      "num_clauses": 5, 
+      "num_agents": 2, 
+      "num_patients": 1, 
+      "role_count": 6,
+           
+                     # attached source window payloads from individual analyzers
+                     # what are these????
+      "lexical_density_window": {
+        ...},
+      "information_content_window": {
+        ...},
+      "semantic_roles_window": {
+        ...},
+      "avg_word_freq_window": {
+        ...},
+      "semantic_structures_window": {
+        ...},
+      "mattr_window": {
+        ...}
+    },
+    ...
+  ]
+}
+
+
 """
 
 
@@ -78,16 +136,13 @@ class LexicoSemanticsAnalyzer:
             content_words = [t for t in tokens if t.pos_ in ["NOUN", "VERB", "ADJ", "ADV"]]
 
             sent_metrics.append({
-                "sentence_text": sent.text,
                 "token_count": len(tokens),
                 "content_count": len(content_words),
                 "lexical_density": len(content_words) / len(tokens) if tokens else None,
             })
 
-        if window_size and window_size > 1:
-            return aggregate_windows(sent_metrics, window_size)
-
-        return sent_metrics
+        windowed = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
+        return sent_metrics, windowed
 
     # ---------------------
     # Windowed MATTR over sentence windows
@@ -141,15 +196,12 @@ class LexicoSemanticsAnalyzer:
                         ics.append(-np.log(prob))
 
             sent_metrics.append({
-                "sentence_text": sent.text,
                 "information_content": float(np.mean(ics)) if ics else None,
                 "ic_values": ics,
             })
 
-        if window_size and window_size > 1:
-            return aggregate_windows(sent_metrics, window_size)
-
-        return sent_metrics
+        windowed = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
+        return sent_metrics, windowed
 
 
 
@@ -160,25 +212,18 @@ class LexicoSemanticsAnalyzer:
         sent_metrics = []
 
         for sent in doc.sents:
-            roles = []
+            role_counts = {"nsubj": 0, "dobj": 0, "iobj": 0, "pobj": 0}
             for token in sent:
                 if token.dep_ in ["nsubj", "dobj", "iobj", "pobj"]:
-                    roles.append({
-                        "role": token.dep_,
-                        "text": token.text,
-                        "head": token.head.text,
-                    })
+                    role_counts[token.dep_] += 1
 
             sent_metrics.append({
-                "sentence_text": sent.text,
-                "semantic_roles": roles,
-                "role_count": len(roles),
+                "role_counts": role_counts,
+                "role_count": sum(role_counts.values()),
             })
 
-        if window_size and window_size > 1:
-            return aggregate_windows(sent_metrics, window_size)
-
-        return sent_metrics
+        windowed = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
+        return sent_metrics, windowed
 
 # ----------------------------
 # Average word frequency per sentence + sliding window
@@ -209,27 +254,13 @@ class LexicoSemanticsAnalyzer:
             content_function_ratio = round(len(content_words)/total_tokens, 3) if total_tokens else 0
 
             sent_metrics.append({
-                "sentence_text": sent.text,
                 "avg_word_freq": round(avg_word_freq, 3),
                 "normalized_freq": norm_freq,
                 "content_function_ratio": content_function_ratio
             })
 
-        # Apply sliding window if requested
-        if window_size and window_size > 1:
-            windowed_metrics = []
-            for window in sliding_windows(sent_metrics, window_size):
-                avg_freq = statistics.mean(d["avg_word_freq"] for d in window)
-                avg_norm = statistics.mean(d["normalized_freq"] for d in window)
-                avg_cfr = statistics.mean(d["content_function_ratio"] for d in window)
-                windowed_metrics.append({
-                    "avg_word_freq": round(avg_freq, 3),
-                    "normalized_freq": round(avg_norm, 3),
-                    "content_function_ratio": round(avg_cfr, 3)
-                })
-            return windowed_metrics
-
-        return sent_metrics
+        windowed_metrics = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
+        return sent_metrics, windowed_metrics
 
 
 
@@ -241,6 +272,7 @@ class LexicoSemanticsAnalyzer:
 
         for sent in doc.sents:
             clauses = []
+            clause_level_counts = {"main": 0, "subordinate": 0, "coordinate": 0}
             for token in sent:
                 if token.pos_ != "VERB":
                     continue
@@ -254,6 +286,7 @@ class LexicoSemanticsAnalyzer:
                     clause_type = "coordinate"
                 else:
                     continue  # skip verbs that are not part of a clause
+                clause_level_counts[clause_type] += 1
 
                 # Extract agent (subject) - full subtree
                 subjects = [child for child in token.children if "subj" in child.dep_]
@@ -276,29 +309,124 @@ class LexicoSemanticsAnalyzer:
                 })
 
             clause_metrics_per_sentence.append({
-                "sentence": sent.text,
-                "sentence_text": sent.text,
-                "clauses": clauses,
+                "clause_level_counts": clause_level_counts,
                 "num_clauses": len(clauses),
                 "num_agents": sum(1 for c in clauses if c["agent"]),
                 "num_patients": sum(1 for c in clauses if c["patient"])
             })
 
-        # Sliding window aggregation
+        windowed_metrics = []
         if window_size and window_size > 1:
-            windowed_metrics = []
             for window in sliding_windows(clause_metrics_per_sentence, window_size):
                 total_clauses = sum(d["num_clauses"] for d in window)
                 total_agents = sum(d["num_agents"] for d in window)
                 total_patients = sum(d["num_patients"] for d in window)
+                clause_counts_window = {"main": 0, "subordinate": 0, "coordinate": 0}
+                for d in window:
+                    for level, count in d.get("clause_level_counts", {}).items():
+                        clause_counts_window[level] = clause_counts_window.get(level, 0) + count
 
                 windowed_metrics.append({
-                    "sentences": [d["sentence"] for d in window],
+                    "clause_level_counts": clause_counts_window,
                     "total_clauses": total_clauses,
                     "total_agents": total_agents,
                     "total_patients": total_patients
                 })
-            return windowed_metrics
 
-        return clause_metrics_per_sentence
+        return clause_metrics_per_sentence, windowed_metrics
 
+    def analyze_document(
+        self,
+        doc,
+        window_size=DEFAULT_WINDOW_SIZE,
+        mattr_window_size=50,
+        lowercase=True,
+        global_avg_freq=None,
+    ):
+        """
+        Build aligned per-sentence and windowed lexico-semantic metrics.
+        Window rows use aggregate_windows to average numeric fields over contiguous spans of size
+        `window_size`, tagging each window with inclusive start/end indices; no raw text is emitted.
+        """
+        sentences = list(doc.sents)
+        lexical_density_sent, lexical_density_win = self.analyze_lexical_density(doc, window_size=window_size)
+        info_content_sent, info_content_win = self.analyze_information_content(
+            doc, word_frequencies=self.corpus_freqs, window_size=window_size
+        )
+        semantic_roles_sent, semantic_roles_win = self.analyze_semantic_roles(doc, window_size=window_size)
+        avg_word_freq_sent, avg_word_freq_win = self.compute_avg_word_frequency(
+            doc, global_avg_freq=global_avg_freq, window_size=window_size
+        )
+        semantic_structures_sent, semantic_structures_win = self.extract_semantic_structures(
+            doc, window_size=window_size
+        )
+        mattr_windows = self.compute_windowed_mattr(
+            doc,
+            window_size=window_size,
+            mattr_window_size=mattr_window_size,
+            lowercase=lowercase,
+        )
+
+        combined_sentences = []
+        for idx, sent in enumerate(sentences):
+            combined_sentences.append(
+                {
+                    "sentence_id": idx,
+                    "lexical_density": lexical_density_sent[idx].get("lexical_density") if idx < len(lexical_density_sent) else None,
+                    "token_count": lexical_density_sent[idx].get("token_count") if idx < len(lexical_density_sent) else 0,
+                    "content_count": lexical_density_sent[idx].get("content_count") if idx < len(lexical_density_sent) else 0,
+                    "information_content": info_content_sent[idx].get("information_content") if idx < len(info_content_sent) else None,
+                    "role_count": semantic_roles_sent[idx].get("role_count") if idx < len(semantic_roles_sent) else 0,
+                    "role_counts": semantic_roles_sent[idx].get("role_counts") if idx < len(semantic_roles_sent) else {},
+                    "avg_word_freq": avg_word_freq_sent[idx].get("avg_word_freq") if idx < len(avg_word_freq_sent) else 0,
+                    "normalized_freq": avg_word_freq_sent[idx].get("normalized_freq") if idx < len(avg_word_freq_sent) else 0,
+                    "content_function_ratio": avg_word_freq_sent[idx].get("content_function_ratio") if idx < len(avg_word_freq_sent) else 0,
+                    "num_clauses": semantic_structures_sent[idx].get("num_clauses") if idx < len(semantic_structures_sent) else 0,
+                    "num_agents": semantic_structures_sent[idx].get("num_agents") if idx < len(semantic_structures_sent) else 0,
+                    "num_patients": semantic_structures_sent[idx].get("num_patients") if idx < len(semantic_structures_sent) else 0,
+                    "information_content_values": info_content_sent[idx].get("ic_values") if idx < len(info_content_sent) else [],
+                    "semantic_structures": semantic_structures_sent[idx] if idx < len(semantic_structures_sent) else {},
+                }
+            )
+
+        # Build window inputs with numeric fields only (avoid nested lists/dicts during aggregation)
+        window_inputs = [
+            {
+                "lexical_density": sent.get("lexical_density"),
+                "information_content": sent.get("information_content"),
+                "avg_word_freq": sent.get("avg_word_freq"),
+                "normalized_freq": sent.get("normalized_freq"),
+                "content_function_ratio": sent.get("content_function_ratio"),
+                "num_clauses": sent.get("num_clauses"),
+                "num_agents": sent.get("num_agents"),
+                "num_patients": sent.get("num_patients"),
+                "role_count": sent.get("role_count"),
+            }
+            for sent in combined_sentences
+        ]
+
+        windows = aggregate_windows(window_inputs, window_size) if window_inputs else []
+
+        # Attach window-level metrics from individual analyzers for richer payloads
+        for idx, win in enumerate(windows):
+            if idx < len(lexical_density_win):
+                win["lexical_density_window"] = lexical_density_win[idx]
+            if idx < len(info_content_win):
+                win["information_content_window"] = info_content_win[idx]
+            if idx < len(semantic_roles_win):
+                win["semantic_roles_window"] = semantic_roles_win[idx]
+            if idx < len(avg_word_freq_win):
+                win["avg_word_freq_window"] = avg_word_freq_win[idx]
+            if idx < len(semantic_structures_win):
+                win["semantic_structures_window"] = semantic_structures_win[idx]
+            if idx < len(mattr_windows):
+                win["mattr_window"] = mattr_windows[idx]
+
+        return {
+            "meta": {
+                "window_size": window_size,
+                "num_sentences": len(sentences),
+            },
+            "sentences": combined_sentences,
+            "windows": windows,
+        }

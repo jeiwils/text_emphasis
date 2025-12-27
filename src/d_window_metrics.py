@@ -19,26 +19,11 @@ Orchestrator for running all c-layer metrics and saving outputs.
 Flow:
 1) `run_corpus_metrics` reads cleaned texts from `data/texts/cleaned_texts/<category>/*.txt`
    and writes corpus metrics JSON to `data/texts/corpus_analytics/<category>/<name>_metrics.json`.
-   Each file matches the c0 example dict (log-probs, surprisal, top_words, etc.).
+   Each file matches the c0 meta/sentences/windows schema (log-probs, surprisal, etc.).
 2) `run_windowed_metrics` reads those corpus JSONs, recomputes sentence-level spaCy docs,
    and writes combined window metrics to `data/texts/window_metrics/<category>/<name>_metrics.json`
-   with keys: syntax (clause/depth/dependency), lexical density/frequency/MATTR, information content,
-   discourse window metrics, semantic roles/structures, and topic metrics.
-
-Example window metrics JSON (truncated):
-{
-  "filename": "book1.txt",
-  "model": "gpt2",
-  "window_size": 3,
-  "num_sentences": 120,
-  "clause_metrics": [...],
-  "dependency_complexity_metrics": [...],
-  "lexical_density_metrics": [...],
-  "information_content_metrics": [...],
-  "discourse_metrics": [...],
-  "topic_metrics": [{"topic_id": 3, "count": 4, "start_sentence": 0, "end_sentence": 2}, ...],
-  "lexical_diversity_windowed": [{"mattr_score": 0.71, "start_sentence": 0, "end_sentence": 2}, ...]
-}
+   with nested blocks: meta, syntax (meta/sentences/windows + heavy), lexico_semantics (same shape),
+   discourse (same shape), information_content_metrics (c0 windows), and topic_metrics.
 """
 
 
@@ -112,63 +97,42 @@ def run_windowed_metrics(window_size=DEFAULT_WINDOW_SIZE, mattr_window_size=50, 
                 continue
 
             data = json.load(file.open("r", encoding="utf-8"))
+            meta_block = data.get("meta", {}) if isinstance(data, dict) else {}
             text_content = data.get("text") or _load_text_from_cleaned(subdir, file)
 
-            corpus_word_freqs = data.get("word_frequencies") or {w: f for w, f in data.get("top_words", [])}
-
-            lex_analyzer = LexicoSemanticsAnalyzer(nlp, corpus_freqs=corpus_word_freqs)
+            lex_analyzer = LexicoSemanticsAnalyzer(nlp)
             doc = nlp(text_content or "")
             num_sentences = len(list(doc.sents))
             doc = nlp(text_content or "")  # reset iterator after counting
-            windowed_mattr_metrics = lex_analyzer.compute_windowed_mattr(
+            syntax_metrics = syntax_analyzer.analyze_document(doc, window_size=window_size)
+            lex_metrics = lex_analyzer.analyze_document(
                 doc,
                 window_size=window_size,
                 mattr_window_size=mattr_window_size,
             )
+            discourse_metrics = discourse_analyzer.analyze_text(text_content or "", window_size=window_size)
 
-            syntax_metrics = syntax_analyzer.analyze_document(doc, window_size=window_size)
-            clause_metrics = syntax_metrics["clause_metrics"]
-            clause_embed_metrics = syntax_metrics["clause_embedding_metrics"]
-            dep_complexity_metrics = syntax_metrics["dependency_metrics"]
-
-            avg_word_freq_metrics = lex_analyzer.compute_avg_word_frequency(doc, window_size=window_size)
-            lexical_density_metrics = lex_analyzer.analyze_lexical_density(doc, window_size=window_size)
-            lexical_information_content = lex_analyzer.analyze_information_content(
-                doc, word_frequencies=corpus_word_freqs, window_size=window_size
-            )
-            cohesion_metrics = discourse_analyzer.analyze_cohesion(doc, window_size=window_size)
-            semantic_role_metrics = lex_analyzer.analyze_semantic_roles(doc, window_size=window_size)
-
-            info_content_metrics = data.get("sentence_surprisal_metrics_windowed", [])
-
-            semantic_structures = lex_analyzer.extract_semantic_structures(doc, window_size=window_size)
-            _, _, discourse_metrics = discourse_analyzer.compute_sentence_metrics(
-                doc,
-                window_size=window_size,
-            )
+            info_content_metrics = data.get("windows", [])
 
             topics_data = load_topics_json(file)
             topic_mentions = collect_topic_mentions(topics_data)
-            topic_metrics = build_topic_window_metrics(topic_mentions, clause_metrics)
+            topic_metrics = build_topic_window_metrics(
+                topic_mentions,
+                syntax_metrics.get("windows", []),
+            )
 
             result = {
-                "filename": data.get("filename", file.name),
-                "model": data.get("model", ""),
-                "window_size": window_size,
-                "num_sentences": num_sentences,
-                "clause_metrics": clause_metrics,
-                "clause_embedding_metrics": clause_embed_metrics,
-                "dependency_complexity_metrics": dep_complexity_metrics,
-                "avg_word_freq_metrics": avg_word_freq_metrics,
-                "lexical_density_metrics": lexical_density_metrics,
-                "lexical_information_content": lexical_information_content,
-                "cohesion_metrics": cohesion_metrics,
-                "semantic_role_metrics": semantic_role_metrics,
+                "meta": {
+                    "filename": meta_block.get("filename", file.name),
+                    "model": meta_block.get("model", ""),
+                    "window_size": window_size,
+                    "num_sentences": num_sentences,
+                },
+                "syntax": syntax_metrics,
+                "lexico_semantics": lex_metrics,
                 "information_content_metrics": info_content_metrics,
-                "semantic_structures": semantic_structures,
-                "discourse_metrics": discourse_metrics,
+                "discourse": discourse_metrics,
                 "topic_metrics": topic_metrics,
-                "lexical_diversity_windowed": windowed_mattr_metrics,
             }
 
             with open(output_file, "w", encoding="utf-8") as f:

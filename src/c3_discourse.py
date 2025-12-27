@@ -7,32 +7,55 @@ from .z_utils import aggregate_windows
 
 """
 Discourse-level metrics and cohesion across sentences (heuristic, no training).
-Computation-only; the d-layer handles IO.
 
-Example output from `analyze_text`:
+
+Output shape (no IO):
 {
-  "sentence_metrics": [
-    {"sentence_index": 0, "num_tokens": 12, "explicit_connectives": 1,
-     "connective_counts": {"Temporal": 1, "Contingency": 0, "Comparison": 0, "Expansion": 0},
-     "entity_overlap": 0, "entity_overlap_ratio": 0.0,
-     "content_overlap": 0, "content_overlap_ratio": 0.0,
-     "pronoun_ratio": 0.08, "tense_shift": 0},
+  "meta": {"window_size": 3, "num_sentences": 80},
+
+  "sentences": [
+    {
+      "sentence_index": 0, 
+      "num_tokens": 12,
+      "explicit_connectives": 1, 
+      "connective_counts": {
+        "Temporal": 1, 
+        ...
+        },
+      "entity_overlap": 0, 
+      "entity_overlap_ratio": 0.0,
+      "content_overlap": 0, 
+      "content_overlap_ratio": 0.0,
+      "pronoun_ratio": 0.08, 
+      "tense_shift": 0,
+      "dominant_relation": "Temporal", 
+      "verb_tense": "past"
+    },
     ...
   ],
-  "sentence_annotations": [
-    {"sentence_index": 0, "text": "After he left...", "connectives": [{"marker": "after", "category": "Temporal"}],
-     "dominant_relation": "Temporal", "verb_tense": "past"},
+
+  "windows": [ # averaged over the window
+    {
+      "start_sentence": 0,
+      "end_sentence": 2,
+      "num_tokens": 11, 
+      "explicit_connectives": 0.3, 
+      "connective_counts": {
+        "Temporal": 0.3, 
+        ...
+        },
+      "entity_overlap": 0.3, 
+      "entity_overlap_ratio": 0.1,
+      "content_overlap": 0.6, 
+      "content_overlap_ratio": 0.2,
+      "pronoun_ratio": 0.05, 
+      "tense_shift": 0.3
+    },
     ...
-  ],
-  "window_metrics": [
-    {"entity_overlap_ratio": 0.1, "content_overlap_ratio": 0.2, "pronoun_ratio": 0.05,
-     "start_sentence": 0, "end_sentence": 2, "sentences": [...]},
-    ...
-  ],
-  "summary": {"total_sentences": 80, "total_connectives": 22, "relation_totals": {"Temporal": 10, ...},
-              "avg_pronoun_ratio": 0.07, "avg_entity_overlap": 0.12, "avg_content_overlap": 0.18,
-              "tense_switch_rate": 0.15}
+  ]
 }
+
+
 """
 
 
@@ -143,9 +166,7 @@ class DiscourseAnalyzer:
 
             sent_metrics.append(
                 {
-                    "sentence_text": sent.text,
                     "cohesion_overlap": overlap,
-                    "content_words": words,
                 }
             )
 
@@ -187,7 +208,6 @@ class DiscourseAnalyzer:
 
     def compute_sentence_metrics(self, doc, window_size: Optional[int] = None):
         sent_metrics: List[Dict[str, object]] = []
-        annotations: List[Dict[str, object]] = []
 
         prev_entities: set = set()
         prev_content: set = set()
@@ -228,14 +248,6 @@ class DiscourseAnalyzer:
                     "content_overlap_ratio": content_ratio,
                     "pronoun_ratio": pronoun_ratio,
                     "tense_shift": tense_shift,
-                }
-            )
-
-            annotations.append(
-                {
-                    "sentence_index": idx,
-                    "text": sent.text.strip(),
-                    "connectives": connectives,
                     "dominant_relation": self._dominant_relation(connective_counts),
                     "verb_tense": tense,
                 }
@@ -247,7 +259,7 @@ class DiscourseAnalyzer:
 
         windowed_metrics = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
 
-        return sent_metrics, annotations, windowed_metrics
+        return sent_metrics, windowed_metrics
 
     def summarize(self, sentence_metrics: List[Dict[str, object]]) -> Dict[str, object]:
         if not sentence_metrics:
@@ -284,13 +296,20 @@ class DiscourseAnalyzer:
         }
 
     def analyze_text(self, text: str, window_size: int = DEFAULT_WINDOW_SIZE) -> Dict[str, object]:
+        """
+        Analyze discourse cohesion for a raw string and return sentence + window payloads.
+        Window metrics are built with aggregate_windows: contiguous spans of `window_size` sentences are
+        averaged for numeric fields (including nested dicts) and tagged with inclusive start/end indices.
+        Raw sentence text and connective strings are not emitted.
+        """
         doc = self.nlp(text)
-        sentence_metrics, annotations, windowed_metrics = self.compute_sentence_metrics(doc, window_size=window_size)
-        summary = self.summarize(sentence_metrics)
+        sentence_metrics, windowed_metrics = self.compute_sentence_metrics(doc, window_size=window_size)
 
         return {
-            "sentence_metrics": sentence_metrics,
-            "sentence_annotations": annotations,
-            "window_metrics": windowed_metrics,
-            "summary": summary,
+            "meta": {
+                "window_size": window_size,
+                "num_sentences": len(sentence_metrics),
+            },
+            "sentences": sentence_metrics,
+            "windows": windowed_metrics,
         }

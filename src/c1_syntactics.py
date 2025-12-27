@@ -9,31 +9,71 @@ from .z_utils import aggregate_windows, graph_path, load_json
 
 """
 Sentence-level grammar metrics (clauses, syntactic depth, dependency complexity).
-Only computation/visualisation helpers live here; the d-layer handles reading/writing.
 
-Example output snippet from `analyze_document`:
+
 {
-  "window_size": 3,
-  "num_sentences": 120,
-  "clause_metrics": [
-    {"avg_counts": {"main": 1, "subordinate": 0, "coordinate": 1},
-     "avg_ratios": {"subordination_ratio": 0.0, "coordination_ratio": 1.0},
-     "sentences": ["S1...", "S2...", "S3..."],
-     "start_sentence": 0, "end_sentence": 2},
+  "meta": {"window_size": 3, "num_sentences": 120},
+
+  "sentences": [
+    {
+      "sentence_id": 0,
+      "clause_counts": {
+        "main": 1, 
+        ...
+        },
+      "clause_ratios": {
+        "subordination_ratio": 0.0, 
+        ...
+        },
+      "max_depth": 4, 
+      "mean_depth": 2.1, 
+      "median_depth": 2.0, 
+      "depth_skew": 0.1,
+      "avg_dependents_per_head": {
+        "main_clause": 2.1, 
+        ...
+        },
+      "avg_max_dependents_per_head": 5, 
+      "avg_mean_dependency_distance": 1.4
+    },
     ...
   ],
-  "clause_embedding_metrics": [
-    {"avg_max_depth": 4, "avg_mean_depth": 2.1, "avg_median_depth": 2.0, "avg_depth_skew": 0.1,
-     "sentences": [...], "start_sentence": 0, "end_sentence": 2},
-    ...
-  ],
-  "dependency_metrics": [
-    {"avg_dependents_per_head": {"main_clause": 2.1, "subordinate_clause": 1.0, "coordinate_clause": 0.5},
-     "avg_max_dependents_per_head": 5, "avg_mean_dependency_distance": 1.4,
-     "sentences": [...], "start_sentence": 0, "end_sentence": 2},
+
+  "windows": [
+    {
+      "start_sentence": 0,
+      "end_sentence": 2,
+      "clause_counts": { # averaged over the window
+        ...
+        }, 
+      "clause_ratios": { # averaged over the window
+        ...
+        },  
+      "max_depth": 3.3, 
+      "mean_depth": 1.9, 
+      "median_depth": 1.8, 
+      "depth_skew": 0.2,
+      "avg_dependents_per_head": {
+        ...
+        }, 
+      "avg_max_dependents_per_head": 4.3,
+      "avg_mean_dependency_distance": 1.5,
+      "avg_counts": {
+        ...
+        }, 
+      "avg_ratios": {
+        ...
+        }, 
+      "avg_max_depth": 3.3, 
+      "avg_mean_depth": 1.9,
+      "avg_median_depth": 1.8, 
+      "avg_depth_skew": 0.2
+    },
     ...
   ]
 }
+
+
 """
 
 
@@ -59,7 +99,6 @@ class SyntaxAnalyzer:
 
             sentence_metrics.append(
                 {
-                    "sentence_text": sent.text,
                     "avg_counts": {
                         "main": main_counts,
                         "subordinate": sub_counts,
@@ -72,7 +111,8 @@ class SyntaxAnalyzer:
                 }
             )
 
-        return aggregate_windows(sentence_metrics, window_size)
+        windowed = aggregate_windows(sentence_metrics, window_size)
+        return sentence_metrics, windowed
 
     def compute_clause_embedding_depth(self, doc, window_size=DEFAULT_WINDOW_SIZE):
         def token_depth(token):
@@ -88,7 +128,6 @@ class SyntaxAnalyzer:
             if sent_depths:
                 sentence_depths.append(
                     {
-                        "sentence_text": sent.text,
                         "max_depth": max(sent_depths),
                         "mean_depth": round(statistics.mean(sent_depths), 2),
                         "median_depth": round(statistics.median(sent_depths), 2),
@@ -103,7 +142,7 @@ class SyntaxAnalyzer:
             window["avg_median_depth"] = window.pop("median_depth", 0)
             window["avg_depth_skew"] = window.pop("depth_skew", 0)
 
-        return aggregated
+        return sentence_depths, aggregated
 
     def compute_dependency_complexity(self, doc, window_size=DEFAULT_WINDOW_SIZE):
         sentence_metrics = []
@@ -131,7 +170,6 @@ class SyntaxAnalyzer:
 
             sentence_metrics.append(
                 {
-                    "sentence_text": sent.text,
                     "avg_dependents_per_head": {
                         "main_clause": round(statistics.mean(dependents_per_head["main_clause"]), 2)
                         if dependents_per_head["main_clause"]
@@ -150,33 +188,67 @@ class SyntaxAnalyzer:
                 }
             )
 
-        return aggregate_windows(sentence_metrics, window_size)
+        return sentence_metrics, aggregate_windows(sentence_metrics, window_size)
 
     def analyze_document(self, doc, window_size=DEFAULT_WINDOW_SIZE):
         """
         Convenience wrapper to compute all syntax metrics for a spaCy Doc.
 
         Returns:
-            dict with clause_metrics, clause_embedding_metrics, dependency_metrics, window_size, num_sentences.
+            dict with meta, sentences (per-sentence combined syntax), windows (aggregated).
+            Window rows are built with aggregate_windows: contiguous spans of size `window_size`
+            are averaged across numeric fields and tagged with inclusive start/end sentence indices.
 
         Example:
             >>> from x_configs import load_spacy_model
             >>> nlp = load_spacy_model()
             >>> doc = nlp("One. Two. Three.")
-            >>> SyntaxAnalyzer(nlp).analyze_document(doc)["clause_metrics"][0]["avg_counts"]["main"]
-            1
+            >>> SyntaxAnalyzer(nlp).analyze_document(doc)["sentences"][0]["clause_counts"]["main"]
+            1.0
         """
         sentences = list(doc.sents)
-        clause_metrics = self.compute_clause_metrics(doc, window_size=window_size)
-        clause_embed_metrics = self.compute_clause_embedding_depth(doc, window_size=window_size)
-        dependency_metrics = self.compute_dependency_complexity(doc, window_size=window_size)
+        clause_sent, clause_windows = self.compute_clause_metrics(doc, window_size=window_size)
+        depth_sent, depth_windows = self.compute_clause_embedding_depth(doc, window_size=window_size)
+        dep_sent, dep_windows = self.compute_dependency_complexity(doc, window_size=window_size)
+
+        combined_sentences = []
+        for idx, sent in enumerate(sentences):
+            clause_payload = clause_sent[idx] if idx < len(clause_sent) else {}
+            depth_payload = depth_sent[idx] if idx < len(depth_sent) else {}
+            dep_payload = dep_sent[idx] if idx < len(dep_sent) else {}
+
+            combined_sentences.append(
+                {
+                    "sentence_id": idx,
+                    "clause_counts": clause_payload.get("avg_counts", {}),
+                    "clause_ratios": clause_payload.get("avg_ratios", {}),
+                    "max_depth": depth_payload.get("max_depth", 0),
+                    "mean_depth": depth_payload.get("mean_depth", 0),
+                    "median_depth": depth_payload.get("median_depth", 0),
+                    "depth_skew": depth_payload.get("depth_skew", 0),
+                    "avg_dependents_per_head": dep_payload.get("avg_dependents_per_head", {}),
+                    "avg_max_dependents_per_head": dep_payload.get("avg_max_dependents_per_head", 0),
+                    "avg_mean_dependency_distance": dep_payload.get("avg_mean_dependency_distance", 0),
+                }
+            )
+
+        windows = aggregate_windows(combined_sentences, window_size) if combined_sentences else []
+        # Merge per-metric windowed summaries so everything lives under `windows`.
+        for idx, window in enumerate(windows):
+            if idx < len(clause_windows):
+                window.update(clause_windows[idx])
+            if idx < len(depth_windows):
+                window.update(depth_windows[idx])
+            if idx < len(dep_windows):
+                window.update(dep_windows[idx])
 
         return {
-            "window_size": window_size,
-            "num_sentences": len(sentences),
-            "clause_metrics": clause_metrics,
-            "clause_embedding_metrics": clause_embed_metrics,
-            "dependency_metrics": dependency_metrics,
+            "meta": {
+                "window_size": window_size,
+                "num_sentences": len(sentences),
+            },
+            "sentences": combined_sentences,
+            "windows": windows,
         }
 
 
@@ -184,11 +256,34 @@ class SyntaxVisualiser:
     def __init__(self, json_file: str):
         self.json_file = Path(json_file)
         self.data = load_json(self.json_file)
+        self.windows = self.data.get("windows", [])
+
+    def _text_label(self) -> str:
+        return self.data.get("filename") or self.data.get("meta", {}).get("filename", "")
+
+    def _clause_metrics(self):
+        if "clause_metrics" in self.data:
+            return self.data["clause_metrics"]
+        return [w for w in self.windows if "avg_counts" in w and "avg_ratios" in w]
+
+    def _depth_metrics(self):
+        if "clause_embedding_metrics" in self.data:
+            return self.data["clause_embedding_metrics"]
+        return [w for w in self.windows if "avg_max_depth" in w]
+
+    def _dependency_metrics(self):
+        if "dependency_metrics" in self.data:
+            return self.data["dependency_metrics"]
+        return [w for w in self.windows if "avg_mean_dependency_distance" in w]
 
     def plot_clause_complexity(self, save_path: Optional[Path] = None):
-        snippets = [(c["start_sentence"] + c["end_sentence"]) // 2 for c in self.data["clause_metrics"]]
-        sub_counts = [c["avg_counts"]["subordinate"] for c in self.data["clause_metrics"]]
-        coord_counts = [c["avg_counts"]["coordinate"] for c in self.data["clause_metrics"]]
+        clause_metrics = self._clause_metrics()
+        if not clause_metrics:
+            return
+
+        snippets = [(c["start_sentence"] + c["end_sentence"]) // 2 for c in clause_metrics]
+        sub_counts = [c["avg_counts"]["subordinate"] for c in clause_metrics]
+        coord_counts = [c["avg_counts"]["coordinate"] for c in clause_metrics]
 
         plt.figure(figsize=(12, 6))
         plt.bar(snippets, sub_counts, label="Subordinate", color="#377eb8")
@@ -196,7 +291,7 @@ class SyntaxVisualiser:
 
         plt.xlabel("Snippet midpoint (sentence index)")
         plt.ylabel("Average clause count")
-        plt.title(f"Clause Composition: {self.data['filename']}")
+        plt.title(f"Clause Composition: {self._text_label()}")
         plt.legend()
         plt.tight_layout()
 
@@ -206,7 +301,9 @@ class SyntaxVisualiser:
         plt.close()
 
     def plot_clause_depth_metrics(self, save_path: Optional[Path] = None):
-        metrics = self.data["clause_embedding_metrics"]
+        metrics = self._depth_metrics()
+        if not metrics:
+            return
         snippets = [(c["start_sentence"] + c["end_sentence"]) // 2 for c in metrics]
 
         plt.figure(figsize=(12, 6))
@@ -217,7 +314,7 @@ class SyntaxVisualiser:
 
         plt.xlabel("Snippet midpoint (sentence index)")
         plt.ylabel("Depth Value")
-        plt.title(f"Syntactic Depth: {self.data['filename']}")
+        plt.title(f"Syntactic Depth: {self._text_label()}")
         plt.legend()
         plt.tight_layout()
 
@@ -227,7 +324,9 @@ class SyntaxVisualiser:
         plt.close()
 
     def plot_clause_depth_area(self, save_path: Optional[Path] = None):
-        metrics = self.data["clause_embedding_metrics"]
+        metrics = self._depth_metrics()
+        if not metrics:
+            return
         snippets = [(c["start_sentence"] + c["end_sentence"]) // 2 for c in metrics]
 
         plt.figure(figsize=(12, 6))
@@ -242,7 +341,7 @@ class SyntaxVisualiser:
 
         plt.xlabel("Snippet midpoint (sentence index)")
         plt.ylabel("Depth Value")
-        plt.title(f"Stacked Syntactic Depth: {self.data['filename']}")
+        plt.title(f"Stacked Syntactic Depth: {self._text_label()}")
         plt.legend(loc="upper left")
         plt.tight_layout()
 
@@ -252,7 +351,9 @@ class SyntaxVisualiser:
         plt.close()
 
     def plot_dependency_complexity(self, save_path: Optional[Path] = None):
-        metrics = self.data["dependency_metrics"]
+        metrics = self._dependency_metrics()
+        if not metrics:
+            return
         snippets = [(c["start_sentence"] + c["end_sentence"]) // 2 for c in metrics]
 
         mean_dep_dist = [c["avg_mean_dependency_distance"] for c in metrics]
@@ -270,7 +371,7 @@ class SyntaxVisualiser:
 
         plt.xlabel("Snippet midpoint (sentence index)")
         plt.ylabel("Complexity Metric Value")
-        plt.title(f"Dependency Complexity: {self.data['filename']}")
+        plt.title(f"Dependency Complexity: {self._text_label()}")
         plt.legend(loc="upper left")
         plt.tight_layout()
 

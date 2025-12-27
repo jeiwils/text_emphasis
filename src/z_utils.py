@@ -25,7 +25,7 @@ def aggregate_windows(sent_metrics, window_size):
     """
     Aggregate sentence-level metrics over sliding windows of sentences.
     Returns a flat list of dicts with averaged numeric values per window.
-    Each window includes 'start_sentence' and 'end_sentence'.
+    Each window includes 'start_sentence' and 'end_sentence'. Raw text is not preserved.
     """
     windows = []
     if not sent_metrics:
@@ -35,15 +35,10 @@ def aggregate_windows(sent_metrics, window_size):
 
     for i, window_sents in enumerate(sliding_windows(sent_metrics, window_size)):
         agg = {}
-        sentence_texts = [
-            d.get("sentence_text")
-            for d in window_sents
-            if isinstance(d.get("sentence_text"), str)
-        ]
 
         for key in window_sents[0]:
-            if key == "sentence_text":
-                # handled separately so we can preserve the whole window
+            if key in {"sentence_text", "sentences"}:
+                # skip raw text emission
                 continue
             if isinstance(window_sents[0][key], dict):
                 # Average numeric values in nested dict
@@ -60,9 +55,6 @@ def aggregate_windows(sent_metrics, window_size):
             else:
                 # Keep non-numeric fields (e.g., strings)
                 agg[key] = window_sents[0][key]
-
-        # Attach all sentence texts covered by the window (if available)
-        agg["sentences"] = sentence_texts
 
         # Add window metadata
         agg["start_sentence"] = i

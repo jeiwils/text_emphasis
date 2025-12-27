@@ -1,53 +1,69 @@
 import statistics
 from collections import Counter
-
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-
 from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model, model
 from .z_utils import aggregate_windows
 
 """
 Text-wide log-probability and surprisal metrics (no IO).
 
-What it produces (example dict for a single text):
 {
-  "filename": "book1.txt",
-  "window_size": 3,
-  "num_sentences": 120,
-  "avg_log_prob": -2.31,
-  "num_tokens": 18420,
-  "top_words": [["the", 621], ["and", 402], ...],
-  "sentence_log_probs": [[-3.1, -2.7, ...], ...],
-  "sentence_log_prob_metrics": [
-    {"sum_log_prob": -23.1, "mean_log_prob": -2.3, "perplexity": 9.97, "num_tokens": 10},
+  "meta": {
+    "filename": "book1.txt",
+    "window_size": 3,
+    "num_sentences": 120,
+    "model": "gpt2",
+    "avg_log_prob": -2.31,  # or null if no tokens scored
+  },
+
+  "sentences": [
+    {
+      "sentence_id": 0,
+      "sentence_log_probs": [-3.1, -2.7, ...],
+      "sentence_log_prob_metrics": {
+        "sum_log_prob": -23.1, 
+        "mean_log_prob": -2.3, 
+        "perplexity": 9.97, 
+        "num_tokens": 10
+        },
+      "sentence_surprisal_metrics": {
+        "mean_surprisal": 2.31, 
+        "surprisal_variance": 0.12, 
+        "num_tokens": 10
+    },
     ...
   ],
-  "sentence_log_prob_metrics_windowed": [
-    {"sum_log_prob": -69.3, "mean_log_prob": -2.31, "perplexity": 10.08, "num_tokens": 30,
-     "start_sentence": 0, "end_sentence": 2, "sentences": [...]},
+
+  "windows": [
+    {
+      "start_sentence": 0,
+      "end_sentence": 2,
+      "sentence_log_prob_metrics": {
+        "sum_log_prob": -69.3, 
+        "mean_log_prob": -2.31, 
+        "perplexity": 10.08, 
+        "num_tokens": 30
+        },
+      "sentence_surprisal_metrics": {
+        "mean_surprisal": 2.28, 
+        "surprisal_variance": 0.08, 
+        "num_tokens": 30
+        }
+    },
     ...
-  ],
-  "sentence_surprisal_metrics": [
-    {"sentence_text": "First sentence.", "mean_surprisal": 2.31, "surprisal_variance": 0.12, "num_tokens": 10},
-    ...
-  ],
-  "sentence_surprisal_metrics_windowed": [
-    {"mean_surprisal": 2.28, "surprisal_variance": 0.08, "num_tokens": 30,
-     "start_sentence": 0, "end_sentence": 2, "sentences": [...]},
-    ...
-  ],
-  "window_size": 3
+  ]
 }
-Use this module from the d-layer orchestrator to save outputs.
+
+
 """
 
 
 class WholeTextMetrics:
     """
     Compute LLM token log-probabilities and derived corpus-level metrics for a text.
-    Produces per-sentence scores and windowed aggregates; no file IO is performed here.
+    Produces per-sentence scores and windowed aggregates in the shared meta/sentences/windows schema; no file IO.
     """
 
     def __init__(self, lm_model=model, device=None):
@@ -149,20 +165,15 @@ class WholeTextMetrics:
         return metrics
 
     @staticmethod
-    def compute_sentence_surprisal_metrics(sentence_log_probs, window_size=None, sentence_texts=None):
+    def compute_sentence_surprisal_metrics(sentence_log_probs):
         """
-        Compute surprisal-based metrics from sentence log-probs, with optional window aggregation.
+        Compute surprisal-based metrics from sentence log-probs.
         """
         sent_metrics = []
-        for idx, log_probs in enumerate(sentence_log_probs):
-            sent_text = None
-            if sentence_texts and idx < len(sentence_texts):
-                sent_text = sentence_texts[idx]
-
+        for log_probs in sentence_log_probs:
             if not log_probs:
                 sent_metrics.append(
                     {
-                        "sentence_text": sent_text,
                         "mean_surprisal": 0.0,
                         "surprisal_variance": 0.0,
                         "num_tokens": 0,
@@ -176,15 +187,13 @@ class WholeTextMetrics:
 
             sent_metrics.append(
                 {
-                    "sentence_text": sent_text,
                     "mean_surprisal": round(mean_surprisal, 6),
                     "surprisal_variance": round(surprisal_variance, 6),
                     "num_tokens": len(surprisals),
                 }
             )
 
-        windowed = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
-        return sent_metrics, windowed
+        return sent_metrics
 
     def compute_corpus_frequencies(self, texts, lowercase=True, min_freq=1):
         """
@@ -203,11 +212,14 @@ class WholeTextMetrics:
         Compute corpus-level and windowed log-prob/surprisal metrics for a single text.
 
         Returns:
-            dict shaped like the module example (filename/window_size/num_sentences/model/word stats + per-sentence and windowed metrics).
+            dict with meta, sentences (per-sentence metrics), windows (aggregated), and optional heavy payloads.
+            Window rows are produced via aggregate_windows: contiguous spans of `window_size` sentences are
+            averaged for numeric values (including nested dicts) and tagged with inclusive start/end indices;
+            raw sentence strings are excluded.
 
         Example:
             >>> metrics = WholeTextMetrics().build_metrics_for_text("Short text.", "demo.txt")
-            >>> metrics["sentence_surprisal_metrics"][0]["mean_surprisal"]
+            >>> metrics["sentences"][0]["mean_surprisal"]
             2.1
         """
         nlp = nlp or load_spacy_model()
@@ -218,17 +230,9 @@ class WholeTextMetrics:
             chunk_size=2048,
         )
         sentence_log_prob_metrics = self.summarize_sentence_log_probs(sentence_log_probs)
-        windowed_sentence_log_prob_metrics = aggregate_windows(
-            sentence_log_prob_metrics, window_size
-        ) if sentence_log_prob_metrics else []
 
-        sentence_texts = [sent.text for sent in nlp(text).sents] if text else None
-        num_sentences = len(sentence_texts) if sentence_texts else 0
-        surprisal_metrics, windowed_surprisal_metrics = self.compute_sentence_surprisal_metrics(
-            sentence_log_probs,
-            window_size=window_size,
-            sentence_texts=sentence_texts,
-        )
+        num_sentences = len(sentence_log_probs)
+        surprisal_metrics = self.compute_sentence_surprisal_metrics(sentence_log_probs)
 
         avg_log_prob = None
         total_scored_tokens = sum(len(lp_list) for lp_list in sentence_log_probs)
@@ -236,21 +240,38 @@ class WholeTextMetrics:
             total_log_prob = sum(sum(lp_list) for lp_list in sentence_log_probs)
             avg_log_prob = total_log_prob / total_scored_tokens
 
-        corpus_freq = self.compute_corpus_frequencies([text], min_freq=2)
+        # Build aligned sentence-level payloads with nested metrics and raw log-probs
+        sentences = []
+        for idx, (lp_metrics, sp_metrics, log_probs) in enumerate(
+            zip(sentence_log_prob_metrics, surprisal_metrics, sentence_log_probs)
+        ):
+            sentences.append(
+                {
+                    "sentence_id": idx,
+                    "sentence_log_probs": log_probs,
+                    "sentence_log_prob_metrics": lp_metrics,
+                    "sentence_surprisal_metrics": sp_metrics,
+                }
+            )
+
+        # Aggregate window-level metrics aligned with the window payloads
+        window_inputs = [
+            {
+                "sentence_log_prob_metrics": sent.get("sentence_log_prob_metrics"),
+                "sentence_surprisal_metrics": sent.get("sentence_surprisal_metrics"),
+            }
+            for sent in sentences
+        ]
+        windows = aggregate_windows(window_inputs, window_size) if window_inputs else []
 
         return {
-            "filename": filename,
-            "window_size": window_size,
-            "num_sentences": num_sentences,
-            "text": text,
-            "model": model,
-            "avg_log_prob": avg_log_prob,
-            "num_tokens": total_scored_tokens,
-            "top_words": sorted(corpus_freq.items(), key=lambda x: x[1], reverse=True)[:50],
-            "sentence_log_probs": sentence_log_probs,
-            "sentence_log_prob_metrics": sentence_log_prob_metrics,
-            "sentence_log_prob_metrics_windowed": windowed_sentence_log_prob_metrics,
-            "sentence_surprisal_metrics": surprisal_metrics,
-            "sentence_surprisal_metrics_windowed": windowed_surprisal_metrics,
-            "window_size": window_size,
+            "meta": {
+                "filename": filename,
+                "window_size": window_size,
+                "num_sentences": num_sentences,
+                "model": model,
+                "avg_log_prob": avg_log_prob,
+            },
+            "sentences": sentences,
+            "windows": windows,
         }
