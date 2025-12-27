@@ -40,6 +40,7 @@ class SyntaxAnalyzer:
             coord_to_main_ratio = coord_counts / main_counts if main_counts else 0
 
             sentence_metrics.append({
+                "sentence_text": sent.text,
                 "avg_counts": {
                     "main": main_counts,
                     "subordinate": sub_counts,
@@ -70,6 +71,7 @@ class SyntaxAnalyzer:
             sent_depths = [token_depth(token) for token in sent]
             if sent_depths:
                 sentence_depths.append({
+                    "sentence_text": sent.text,
                     "max_depth": max(sent_depths),
                     "mean_depth": round(statistics.mean(sent_depths), 2),
                     "median_depth": round(statistics.median(sent_depths), 2),
@@ -112,6 +114,7 @@ class SyntaxAnalyzer:
             all_dependents = dependents_per_head['main_clause'] + dependents_per_head['subordinate_clause'] + dependents_per_head['coordinate_clause']
 
             sentence_metrics.append({
+                "sentence_text": sent.text,
                 "avg_dependents_per_head": {
                     "main_clause": round(statistics.mean(dependents_per_head['main_clause']), 2) if dependents_per_head['main_clause'] else 0,
                     "subordinate_clause": round(statistics.mean(dependents_per_head['subordinate_clause']), 2) if dependents_per_head['subordinate_clause'] else 0,

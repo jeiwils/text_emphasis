@@ -153,6 +153,7 @@ class LexicoSemanticsAnalyzer:
             content_function_ratio = round(len(content_words)/total_tokens, 3) if total_tokens else 0
 
             sent_metrics.append({
+                "sentence_text": sent.text,
                 "avg_word_freq": round(avg_word_freq, 3),
                 "normalized_freq": norm_freq,
                 "content_function_ratio": content_function_ratio
@@ -178,14 +179,27 @@ class LexicoSemanticsAnalyzer:
     # ----------------------------
     # Information content (surprisal) per sentence + sliding window
     # ----------------------------
-    def compute_information_content(self, log_probs_list, global_avg_surprisal=None, window_size=None):
+    def compute_information_content(
+        self,
+        log_probs_list,
+        global_avg_surprisal=None,
+        window_size=None,
+        sentence_texts=None,
+    ):
         """
         Compute per-sentence surprisal and variance, normalized by global average surprisal.
         """
         sent_metrics = []
-        for log_probs in log_probs_list:
+        for idx, log_probs in enumerate(log_probs_list):
+            sent_text = None
+            if sentence_texts and idx < len(sentence_texts):
+                sent_text = sentence_texts[idx]
             if not log_probs:
-                sent_metrics.append({"mean_surprisal": 0, "surprisal_variance": 0})
+                sent_metrics.append({
+                    "sentence_text": sent_text,
+                    "mean_surprisal": 0,
+                    "surprisal_variance": 0
+                })
                 continue
 
             surprisals = [-lp for lp in log_probs]
@@ -198,6 +212,7 @@ class LexicoSemanticsAnalyzer:
                 norm_surprisal = round(mean_surprisal, 3)
 
             sent_metrics.append({
+                "sentence_text": sent_text,
                 "mean_surprisal": round(mean_surprisal, 3),
                 "normalized_surprisal": norm_surprisal,
                 "surprisal_variance": round(surprisal_variance, 3)
@@ -264,6 +279,7 @@ class LexicoSemanticsAnalyzer:
 
             clause_metrics_per_sentence.append({
                 "sentence": sent.text,
+                "sentence_text": sent.text,
                 "clauses": clauses,
                 "num_clauses": len(clauses),
                 "num_agents": sum(1 for c in clauses if c["agent"]),
