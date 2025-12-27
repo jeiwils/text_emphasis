@@ -1,27 +1,42 @@
-import json
 import statistics
 from collections import Counter
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-from x_configs import load_spacy_model
-from .z_utils import aggregate_windows, processed_text_path
-
+from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
+from .z_utils import aggregate_windows
 
 """
-Discourse-level metrics built on simple heuristics.
+Discourse-level metrics and cohesion across sentences (heuristic, no training).
+Computation-only; the d-layer handles IO.
 
-This module avoids model training and instead offers:
-    - Explicit connective detection mapped to PDTB Level-1 senses.
-    - Cohesion signals via entity/content overlap across adjacent sentences.
-    - Shallow tense tracking to flag temporal shifts.
-
-Outputs are sentence-level annotations, sliding-window aggregates,
-and a short summary block that can be written to JSON.
+Example output from `analyze_text`:
+{
+  "sentence_metrics": [
+    {"sentence_index": 0, "num_tokens": 12, "explicit_connectives": 1,
+     "connective_counts": {"Temporal": 1, "Contingency": 0, "Comparison": 0, "Expansion": 0},
+     "entity_overlap": 0, "entity_overlap_ratio": 0.0,
+     "content_overlap": 0, "content_overlap_ratio": 0.0,
+     "pronoun_ratio": 0.08, "tense_shift": 0},
+    ...
+  ],
+  "sentence_annotations": [
+    {"sentence_index": 0, "text": "After he left...", "connectives": [{"marker": "after", "category": "Temporal"}],
+     "dominant_relation": "Temporal", "verb_tense": "past"},
+    ...
+  ],
+  "window_metrics": [
+    {"entity_overlap_ratio": 0.1, "content_overlap_ratio": 0.2, "pronoun_ratio": 0.05,
+     "start_sentence": 0, "end_sentence": 2, "sentences": [...]},
+    ...
+  ],
+  "summary": {"total_sentences": 80, "total_connectives": 22, "relation_totals": {"Temporal": 10, ...},
+              "avg_pronoun_ratio": 0.07, "avg_entity_overlap": 0.12, "avg_content_overlap": 0.18,
+              "tense_switch_rate": 0.15}
+}
 """
 
 
 CONNECTIVE_LEXICON: Dict[str, Sequence[str]] = {
-    # PDTB-inspired level-1 groupings
     "Temporal": [
         "before",
         "after",
@@ -78,7 +93,6 @@ class DiscourseAnalyzer:
         for category, markers in CONNECTIVE_LEXICON.items():
             for marker in markers:
                 phrases.append((category, marker.split(), marker))
-        # Sort longer markers first to avoid partial matches (e.g., "as soon as" before "as")
         return sorted(phrases, key=lambda x: len(x[1]), reverse=True)
 
     def _overlap(self, previous: Iterable[str], current: Iterable[str]) -> Tuple[int, float]:
@@ -90,7 +104,6 @@ class DiscourseAnalyzer:
         return overlap, round(ratio, 3)
 
     def _infer_tense(self, sent) -> Optional[str]:
-        """Very small heuristic for tense: majority vote of verb POS tags and modals."""
         past_tags = {"VBD", "VBN"}
         present_tags = {"VBP", "VBZ", "VBG"}
         counts = Counter()
@@ -102,7 +115,6 @@ class DiscourseAnalyzer:
             elif token.tag_ in present_tags:
                 counts["present"] += 1
 
-        # Simple future proxy
         has_modal_future = any(t.lower_ in {"will", "shall", "gonna"} for t in tokens)
         has_going_to = any(
             tokens[i].lower_ == "going"
@@ -118,6 +130,31 @@ class DiscourseAnalyzer:
             return None
 
         return counts.most_common(1)[0][0]
+
+    def analyze_cohesion(self, doc, window_size: Optional[int] = None):
+        prev_sent_content = None
+        sent_metrics: List[Dict[str, object]] = []
+
+        for sent in doc.sents:
+            words = [t.lemma_.lower() for t in sent if t.is_alpha]
+            overlap = None
+            if prev_sent_content is not None:
+                overlap = len(set(words) & set(prev_sent_content))
+
+            sent_metrics.append(
+                {
+                    "sentence_text": sent.text,
+                    "cohesion_overlap": overlap,
+                    "content_words": words,
+                }
+            )
+
+            prev_sent_content = words
+
+        if window_size and window_size > 1:
+            return aggregate_windows(sent_metrics, window_size)
+
+        return sent_metrics
 
     def find_connectives(self, sent) -> List[Dict[str, object]]:
         tokens = [t.text.lower() for t in sent if not t.is_space]
@@ -149,9 +186,6 @@ class DiscourseAnalyzer:
         return category if value > 0 else None
 
     def compute_sentence_metrics(self, doc, window_size: Optional[int] = None):
-        """
-        Compute per-sentence discourse markers and cohesion signals.
-        """
         sent_metrics: List[Dict[str, object]] = []
         annotations: List[Dict[str, object]] = []
 
@@ -166,7 +200,6 @@ class DiscourseAnalyzer:
             for c in connectives:
                 connective_counts[c["category"]] += 1
 
-            # Cohesion signals: noun overlap and content-word overlap
             noun_lemmas = {t.lemma_.lower() for t in sent if t.pos_ in {"NOUN", "PROPN"} and t.is_alpha}
             content_lemmas = {
                 t.lemma_.lower()
@@ -250,73 +283,7 @@ class DiscourseAnalyzer:
             "tense_switch_rate": round(tense_switch_rate, 3),
         }
 
-    def analyze_text(self, text: str, window_size: int = 3) -> Dict[str, object]:
-        """
-        Analyze a single text and return discourse metrics.
-
-        Output shape (dict):
-        {
-          "sentence_metrics": [ ... ],    # One row per sentence with numeric metrics.
-          "sentence_annotations": [ ... ],# One row per sentence with text + discourse labels.
-          "window_metrics": [ ... ],      # One row per window with averaged numeric metrics.
-          "summary": { ... },             # Corpus-level summary aggregated over all sentences.
-          ...
-        }
-
-        Detailed fields:
-        {
-          "sentence_metrics": [
-            {
-              "sentence_index": int,  # 0-based index of the sentence in the document.
-              "num_tokens": int,  # Non-space token count for the sentence.
-              "explicit_connectives": int,  # Number of matched connective phrases.
-              "connective_counts": {"Temporal": int, "Contingency": int, ...},  # Count by relation.
-              "entity_overlap": int,  # Shared noun/proper-noun lemmas vs. previous sentence.
-              "entity_overlap_ratio": float,  # Overlap ratio for noun/proper-noun lemmas.
-              "content_overlap": int,  # Shared content-word lemmas vs. previous sentence.
-              "content_overlap_ratio": float,  # Overlap ratio for content-word lemmas.
-              "pronoun_ratio": float,  # Pronoun count divided by total tokens.
-              "tense_shift": int  # 1 if tense changed vs. previous sentence, else 0.
-            },
-            ...
-          ],
-          "sentence_annotations": [
-            {
-              "sentence_index": int,  # 0-based index of the sentence in the document.
-              "text": str,  # Raw sentence text.
-              "connectives": [
-                {
-                  "marker": str,  # Matched connective phrase.
-                  "category": str,  # PDTB-inspired relation category.
-                  "start": int,  # Start token index within the sentence.
-                  "end": int  # End token index within the sentence.
-                },
-                ...
-              ],
-              "dominant_relation": Optional[str],  # Relation with highest count, if any.
-              "verb_tense": Optional[str]  # Heuristic tense label ("past"/"present"/"future").
-            },
-            ...
-          ],
-          "window_metrics": [
-            {
-              "...": "averaged numeric fields from sentence_metrics",
-              "start_sentence": int,  # 0-based index of the first sentence in the window.
-              "end_sentence": int  # 0-based index of the last sentence in the window.
-            },
-            ...
-          ],
-          "summary": {
-            "total_sentences": int,  # Number of sentences in the document.
-            "total_connectives": int,  # Total explicit connective matches.
-            "relation_totals": {"Temporal": int, ...},  # Totals by relation category.
-            "avg_pronoun_ratio": float,  # Mean pronoun ratio across sentences.
-            "avg_entity_overlap": float,  # Mean noun/proper-noun overlap ratio.
-            "avg_content_overlap": float,  # Mean content-word overlap ratio.
-            "tense_switch_rate": float  # Tense shifts divided by sentence transitions.
-          }
-        }
-        """
+    def analyze_text(self, text: str, window_size: int = DEFAULT_WINDOW_SIZE) -> Dict[str, object]:
         doc = self.nlp(text)
         sentence_metrics, annotations, windowed_metrics = self.compute_sentence_metrics(doc, window_size=window_size)
         summary = self.summarize(sentence_metrics)
@@ -327,53 +294,3 @@ class DiscourseAnalyzer:
             "window_metrics": windowed_metrics,
             "summary": summary,
         }
-
-
-def run_discourse_analysis(window_size: int = 3, use_existing: bool = True):
-    """
-    Run discourse analysis across cleaned texts and save JSON outputs alongside other window metrics.
-    """
-    cleaned_root = processed_text_path("cleaned")
-    output_root = processed_text_path("window")
-    analyzer = DiscourseAnalyzer()
-
-    for subdir in cleaned_root.iterdir():
-        if not subdir.is_dir():
-            continue
-
-        out_subdir = output_root / subdir.name
-        out_subdir.mkdir(parents=True, exist_ok=True)
-
-        for file in subdir.glob("*.txt"):
-            output_file = out_subdir / f"{file.stem}_discourse.json"
-            if use_existing and output_file.exists():
-                print(f"Skipping {file.name} (exists)")
-                continue
-
-            text = file.read_text(encoding="utf-8")
-            result = analyzer.analyze_text(text, window_size=window_size)
-            result["filename"] = file.name
-            result["window_size"] = window_size
-
-            output_file.write_text(
-                json.dumps(result, indent=2),
-                encoding="utf-8",
-            )
-            print(f"Saved discourse metrics for {file.name}")
-
-
-
-
-
-
-
-
-
-
-
-def main():
-    run_discourse_analysis()
-
-
-if __name__ == "__main__":
-    main()

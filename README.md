@@ -7,6 +7,17 @@ A Python package for analyzing textual emphasis through linguistic and network-b
 
 
 
+
+
+
+
+all metrics are taken from sentence windows, and these windows are then matched with the top topics 
+
+
+
+
+
+
 ## Pipeline modules (a–d)
 
 - **a – preprocessing/cleaning** (`src/a_preprocessing_cleaning.py`): spaCy-based tokenization, whitespace cleaning, and lemmatization; Whisper ASR transcription for audio; PDF extraction with per-book configs for page ranges, start/end markers, and boilerplate removal; helpers to preprocess all PDFs under `data/raw_texts` into `data/processed_texts/cleaned`.

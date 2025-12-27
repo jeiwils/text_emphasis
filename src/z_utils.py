@@ -23,7 +23,7 @@ def sliding_windows(seq, n):
 
 def aggregate_windows(sent_metrics, window_size):
     """
-    Aggregate sentence-level metrics over sliding windows.
+    Aggregate sentence-level metrics over sliding windows of sentences.
     Returns a flat list of dicts with averaged numeric values per window.
     Each window includes 'start_sentence' and 'end_sentence'.
     """

@@ -8,6 +8,8 @@ model = 'PUT MODEL NAME HERE'
 # Default spaCy pipeline configuration
 DEFAULT_SPACY_MODEL = "en_core_web_sm"
 DEFAULT_SPACY_DISABLE: Sequence[str] = ()
+# Shared window size (in sentences) for sliding window metrics
+DEFAULT_WINDOW_SIZE: int = 3
 
 
 @lru_cache(maxsize=None)
