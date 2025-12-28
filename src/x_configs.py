@@ -10,6 +10,7 @@ DEFAULT_SPACY_MODEL = "en_core_web_sm"
 DEFAULT_SPACY_DISABLE: Sequence[str] = ()
 # Shared window size (in sentences) for sliding window metrics
 DEFAULT_WINDOW_SIZE: int = 3
+# what does window_multiple do? multply this for the topic modelling window???
 
 
 @lru_cache(maxsize=None)

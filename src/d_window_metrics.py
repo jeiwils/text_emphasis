@@ -6,14 +6,14 @@ from .c0_log_prob_metrics import WholeTextMetrics
 from .c1_syntactics import SyntaxAnalyzer
 from .c2_lexico_semantics import LexicoSemanticsAnalyzer
 from .c3_discourse import DiscourseAnalyzer
-from .e_variance_report import (
-    build_topic_window_metrics,
-    collect_topic_mentions,
-    load_topics_json,
-)
 from .z_utils import processed_text_path
 
+
+
 """
+
+I NEED TO INCORPORATE TOPICS IN HERE
+
 Orchestrator for running all c-layer metrics and saving outputs.
 
 Flow:
@@ -23,7 +23,7 @@ Flow:
 2) `run_windowed_metrics` reads those corpus JSONs, recomputes sentence-level spaCy docs,
    and writes combined window metrics to `data/texts/window_metrics/<category>/<name>_metrics.json`
    with nested blocks: meta, syntax (meta/sentences/windows + heavy), lexico_semantics (same shape),
-   discourse (same shape), information_content_metrics (c0 windows), and topic_metrics.
+   discourse (same shape), information_content_metrics (c0 windows)
 """
 
 
@@ -72,7 +72,7 @@ def _load_text_from_cleaned(category: Path, metrics_file: Path) -> str:
 
 def run_windowed_metrics(window_size=DEFAULT_WINDOW_SIZE, mattr_window_size=50, use_existing=True):
     """
-    Compute window-level metrics by combining syntax, lexico-semantic, discourse, and topic metrics.
+    Compute window-level metrics by combining syntax, lexico-semantic, discourse
     Requires corpus outputs from run_corpus_metrics.
     """
     corpus_root = processed_text_path("corpus")
@@ -114,13 +114,6 @@ def run_windowed_metrics(window_size=DEFAULT_WINDOW_SIZE, mattr_window_size=50, 
 
             info_content_metrics = data.get("windows", [])
 
-            topics_data = load_topics_json(file)
-            topic_mentions = collect_topic_mentions(topics_data)
-            topic_metrics = build_topic_window_metrics(
-                topic_mentions,
-                syntax_metrics.get("windows", []),
-            )
-
             result = {
                 "meta": {
                     "filename": meta_block.get("filename", file.name),
@@ -132,7 +125,6 @@ def run_windowed_metrics(window_size=DEFAULT_WINDOW_SIZE, mattr_window_size=50, 
                 "lexico_semantics": lex_metrics,
                 "information_content_metrics": info_content_metrics,
                 "discourse": discourse_metrics,
-                "topic_metrics": topic_metrics,
             }
 
             with open(output_file, "w", encoding="utf-8") as f:

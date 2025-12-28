@@ -1,4 +1,7 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
+from collections import Counter
+from pathlib import Path
+import pickle
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import HDBSCAN
@@ -7,6 +10,7 @@ import nltk
 import re
 
 from x_configs import load_spacy_model
+from .z_utils import embeddings_path
 
 
 class ConceptExtractor:
@@ -126,3 +130,41 @@ class ConceptExtractor:
         for label, indices in index_clusters.items():
             phrase_clusters[label] = [phrases[i] for i in indices]
         return phrase_clusters
+
+
+def filter_top_n_phrases(phrases: List[str], n: int = 100) -> Tuple[List[str], List[int]]:
+    """Keep only the top-n most frequent phrases and return them with their indices."""
+    counts = Counter(phrases)
+    top_phrases = [phrase for phrase, _ in counts.most_common(n)]
+    filtered_indices = [i for i, p in enumerate(phrases) if p in top_phrases]
+    filtered_phrases = [phrases[i] for i in filtered_indices]
+    return filtered_phrases, filtered_indices
+
+
+def generate_embeddings(cleaned_text_path: Path, top_n: int = 100, use_existing: bool = True):
+    """Extract top-N noun phrases and generate or load embeddings."""
+    extractor = ConceptExtractor()
+    base_name = cleaned_text_path.stem.replace("_cleaned", "")
+
+    with open(cleaned_text_path, "r", encoding="utf-8") as f:
+        cleaned_text = f.read()
+
+    all_phrases = extractor.extract_noun_phrases(cleaned_text, lemmatize=True)
+    phrases, _ = filter_top_n_phrases(all_phrases, n=top_n)
+
+    concept_dir = embeddings_path("concept") / base_name
+    concept_dir.mkdir(parents=True, exist_ok=True)
+    phrases_path = concept_dir / f"{base_name}_phrases.pkl"
+    with open(phrases_path, "wb") as f:
+        pickle.dump(phrases, f)
+
+    embeddings_file = concept_dir / f"{base_name}_embeddings.pkl"
+    if use_existing and embeddings_file.exists():
+        with open(embeddings_file, "rb") as f:
+            embeddings = pickle.load(f)
+    else:
+        embeddings = extractor.embed_phrases(phrases)
+        with open(embeddings_file, "wb") as f:
+            pickle.dump(embeddings, f)
+
+    return cleaned_text, phrases, embeddings
