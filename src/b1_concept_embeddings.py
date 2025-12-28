@@ -8,6 +8,7 @@ from sklearn.cluster import HDBSCAN
 from nltk.corpus import stopwords
 import nltk
 import re
+import json
 
 from x_configs import load_spacy_model
 from .z_utils import embeddings_path
@@ -147,7 +148,8 @@ def generate_embeddings(normalised_text_path: Path, top_n: int = 100, use_existi
     base_name = normalised_text_path.stem.replace("_normalised", "")
 
     with open(normalised_text_path, "r", encoding="utf-8") as f:
-        normalised_text = f.read()
+        data = json.load(f)
+        normalised_text = data.get("text", "")
 
     all_phrases = extractor.extract_noun_phrases(normalised_text, lemmatize=True)
     phrases, _ = filter_top_n_phrases(all_phrases, n=top_n)

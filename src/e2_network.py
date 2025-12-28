@@ -12,7 +12,7 @@ import pickle
 from matplotlib.lines import Line2D
 from sklearn.metrics.pairwise import cosine_similarity
 
-from .b_concept_embeddings import generate_embeddings
+from .b1_concept_embeddings import generate_embeddings
 from x_configs import DEFAULT_WINDOW_SIZE
 from .z_utils import (
     processed_text_path,
@@ -271,14 +271,14 @@ def run_text_pipeline(normalised_text_path: Path, use_existing_embeddings: bool 
 
 
 def run_pipeline_all_texts(use_existing_embeddings: bool = True):
-    """Iterate over all *_normalised.txt files and build their concept networks."""
+    """Iterate over all *_normalised.json files and build their concept networks."""
     base_normalised_dir = processed_text_path("normalised")
     if not base_normalised_dir.exists():
         raise FileNotFoundError(f"Directory not found: {base_normalised_dir}")
 
     for subdir in base_normalised_dir.iterdir():
         if subdir.is_dir():
-            for txt_file in subdir.glob("*_normalised.txt"):
+            for txt_file in subdir.glob("*_normalised.json"):
                 try:
                     run_text_pipeline(txt_file, use_existing_embeddings=use_existing_embeddings)
                 except Exception as e:

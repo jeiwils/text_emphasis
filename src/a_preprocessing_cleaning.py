@@ -344,7 +344,7 @@ def preprocess_pdf(
 
     cleaned_dir = processed_text_path("cleaned", base_name)
     cleaned_dir.mkdir(parents=True, exist_ok=True)
-    cleaned_path = cleaned_dir / f"{base_name}_cleaned.txt"
+    cleaned_path = cleaned_dir / f"{base_name}_cleaned.json"
 
     cleaned_segmented_dir = processed_text_path("cleaned_segmented", base_name)
     cleaned_segmented_dir.mkdir(parents=True, exist_ok=True)
@@ -352,7 +352,7 @@ def preprocess_pdf(
 
     normalised_dir = processed_text_path("normalised", base_name)
     normalised_dir.mkdir(parents=True, exist_ok=True)
-    normalised_path = normalised_dir / f"{base_name}_normalised.txt"
+    normalised_path = normalised_dir / f"{base_name}_normalised.json"
 
     normalised_segmented_dir = processed_text_path("normalised_segmented", base_name)
     normalised_segmented_dir.mkdir(parents=True, exist_ok=True)
@@ -375,7 +375,7 @@ def preprocess_pdf(
     # Normalize whitespace only
     cleaned_text = preproc.clean_text(cleaned_text)
 
-    cleaned_path.write_text(cleaned_text, encoding="utf-8")
+    cleaned_path.write_text(json.dumps({"text": cleaned_text}, ensure_ascii=False, indent=2), encoding="utf-8")
 
     cleaned_sentences = preproc.segment_sentences(cleaned_text)
     cleaned_segmented_entries: List[Dict[str, object]] = []
@@ -386,7 +386,10 @@ def preprocess_pdf(
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
     normalised_text = preproc.normalize_text(cleaned_text)
-    normalised_path.write_text(normalised_text, encoding="utf-8")
+    normalised_path.write_text(
+        json.dumps({"text": normalised_text}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
     normalised_sentences = [
         preproc.normalize_text(sentence) for sentence in cleaned_sentences

@@ -4,7 +4,10 @@ from typing import List, Tuple
 from spacy.tokens import Doc
 
 from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
-from .c0_log_prob_metrics import WholeTextMetrics
+from .a_preprocessing_cleaning import preprocess_all_pdfs
+from .b1_concept_embeddings import generate_embeddings
+from .b2_log_prob_metrics import WholeTextMetrics
+from .b3_topic_modeling import run_topic_modelling
 from .c1_syntactics import SyntaxAnalyzer
 from .c2_lexico_semantics import LexicoSemanticsAnalyzer
 from .c3_discourse import DiscourseAnalyzer
@@ -14,20 +17,45 @@ from .z_utils import processed_text_path
 
 """
 
-I NEED TO INCORPORATE TOPICS IN HERE
 
-Orchestrator for running all c-layer metrics and saving outputs.
+Orchestrator for running all b- and c-layer metrics and saving outputs.
 
 Flow:
-1) `run_corpus_metrics` reads cleaned texts from `data/texts/cleaned_texts/<category>/*.txt`
+1) `run_preprocessing` converts raw PDFs to cleaned/normalised text and segmented JSONL under data/texts/.
+2) `run_concept_embeddings` reads normalised texts from `data/texts/normalised_texts/<category>/*_normalised.json`
+   and writes phrases + embeddings to `data/embeddings/concept_embeddings/<name>/`.
+3) `run_topic_modelling` reads normalised-segmented texts from
+   `data/texts/normalised_segmented_texts/<category>/*.jsonl`
+   and writes topics JSON to `data/topic_modelling/<category>/<name>_topics.json`.
+4) `run_corpus_metrics` reads cleaned texts from `data/texts/cleaned_texts/<category>/*.json`
    and writes corpus metrics JSON to `data/texts/corpus_analytics/<category>/<name>_metrics.json`.
    Each file matches the c0 meta/sentences/windows schema (log-probs, surprisal, etc.).
-2) `run_windowed_metrics` reads those corpus JSONs, recomputes sentence-level spaCy docs
+5) `run_windowed_metrics` reads those corpus JSONs, recomputes sentence-level spaCy docs
    from cleaned-segmented texts,
    and writes combined window metrics to `data/texts/window_metrics/<category>/<name>_metrics.json`
    with nested blocks: meta, syntax (meta/sentences/windows + heavy), lexico_semantics (same shape),
    discourse (same shape), information_content_metrics (c0 windows)
 """
+
+
+def run_concept_embeddings(top_n=100, use_existing=True):
+    """
+    Extract noun-phrase concepts and embeddings for all normalised texts.
+    """
+    normalised_root = processed_text_path("normalised")
+    if not normalised_root.exists():
+        print(f"No normalised texts found at {normalised_root}")
+        return
+
+    for subdir in normalised_root.iterdir():
+        if not subdir.is_dir():
+            continue
+        print(f"Processing concept embeddings: {subdir.name}")
+
+        for file in subdir.glob("*_normalised.json"):
+            generate_embeddings(file, top_n=top_n, use_existing=use_existing)
+
+    print("Concept embeddings complete.")
 
 
 def run_corpus_metrics(window_size=DEFAULT_WINDOW_SIZE, use_existing=True):
@@ -49,13 +77,16 @@ def run_corpus_metrics(window_size=DEFAULT_WINDOW_SIZE, use_existing=True):
         out_subdir = output_root / subdir.name
         out_subdir.mkdir(parents=True, exist_ok=True)
 
-        for file in subdir.glob("*.txt"):
+        for file in subdir.glob("*.json"):
             output_file = out_subdir / f"{file.stem}_metrics.json"
             if use_existing and output_file.exists():
                 print(f"Skipping {file.name} (exists)")
                 continue
 
-            text = file.read_text(encoding="utf-8")
+            try:
+                text = json.load(file.open("r", encoding="utf-8")).get("text", "")
+            except json.JSONDecodeError:
+                text = ""
             result = metrics.build_metrics_for_text(text, file.name, nlp=nlp, window_size=window_size)
             output_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
             print(f"Saved corpus metrics for {file.name}")
@@ -89,9 +120,13 @@ def _load_text_for_windowing(category: Path, metrics_file: Path) -> Tuple[str, L
         sentences = _load_segmented_jsonl(candidate)
         return "\n".join(sentences), sentences
     cleaned_root = processed_text_path("cleaned")
-    fallback = cleaned_root / category.name / f"{metrics_file.stem.replace('_metrics', '')}.txt"
+    fallback = cleaned_root / category.name / f"{metrics_file.stem.replace('_metrics', '')}.json"
     if fallback.exists():
-        text = fallback.read_text(encoding="utf-8")
+        try:
+            data = json.load(fallback.open("r", encoding="utf-8"))
+            text = data.get("text", "")
+        except json.JSONDecodeError:
+            text = ""
         return text, []
     return "", []
 
@@ -180,10 +215,23 @@ def run_windowed_metrics(window_size=DEFAULT_WINDOW_SIZE, mattr_window_size=50, 
     print("All done.")
 
 
-def run_all_metrics(window_size=DEFAULT_WINDOW_SIZE, mattr_window_size=50, use_existing=True):
+def run_preprocessing(process_unknown=True):
     """
-    Full orchestrator: corpus metrics first, then windowed metrics.
+    Run PDF preprocessing to produce cleaned/normalised corpora.
     """
+    preprocess_all_pdfs(process_unknown=process_unknown)
+
+
+def run_all_metrics(window_size=DEFAULT_WINDOW_SIZE, mattr_window_size=50, use_existing=True, process_unknown=True):
+    """
+    Full orchestrator: preprocessing, concept embeddings, topics, corpus metrics, then windowed metrics.
+    """
+    run_preprocessing(process_unknown=process_unknown)
+    run_concept_embeddings(use_existing=use_existing)
+    run_topic_modelling(
+        use_existing=use_existing,
+        base_window_size=window_size,
+    )
     run_corpus_metrics(window_size=window_size, use_existing=use_existing)
     run_windowed_metrics(window_size=window_size, mattr_window_size=mattr_window_size, use_existing=use_existing)
 
