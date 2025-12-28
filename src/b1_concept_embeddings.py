@@ -10,14 +10,14 @@ import nltk
 import re
 import json
 
-from x_configs import load_spacy_model
+from x_configs import MODEL_CONFIGS, load_spacy_model
 from .z_utils import embeddings_path
 
 
 class ConceptExtractor:
     def __init__(
         self,
-        model_name: str = "all-MiniLM-L6-v2",
+        model_name: str = MODEL_CONFIGS["sentence_embedding"],
         language: str = "en_core_web_sm",
     ):
         """Initialize with specified models."""

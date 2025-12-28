@@ -25,7 +25,7 @@ from sklearn.cluster import HDBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from .z_utils import processed_text_path, topic_modelling_path, sliding_windows
-from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
+from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
 
 
 @dataclass
@@ -53,7 +53,7 @@ class NeuralTopicModeler:
 
     def __init__(
         self,
-        model_name: str = "all-MiniLM-L6-v2",
+        model_name: str = MODEL_CONFIGS["sentence_embedding"],
         language: str = "en_core_web_sm",
         stop_words: str = "english",
     ):

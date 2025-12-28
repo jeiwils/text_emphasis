@@ -3,7 +3,7 @@ from collections import Counter
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model, model
+from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
 from .z_utils import aggregate_windows
 
 """
@@ -66,7 +66,7 @@ class WholeTextMetrics:
     Produces per-sentence scores and windowed aggregates in the shared meta/sentences/windows schema; no file IO.
     """
 
-    def __init__(self, lm_model=model, device=None):
+    def __init__(self, lm_model=MODEL_CONFIGS["causal_lm"], device=None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(lm_model)
         self.model = AutoModelForCausalLM.from_pretrained(lm_model).to(self.device)
@@ -112,11 +112,15 @@ class WholeTextMetrics:
                 target_tokens = inputs[:, 1:]
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
                 chunk_log_probs = (
-                    log_probs.gather(2, target_tokens.unsqueeze(-1)).squeeze(-1)[0].tolist()
+                    log_probs.gather(2, target_tokens.unsqueeze(-1))
+                    .squeeze(-1)[0]
+                    .tolist()
                 )
 
             scored_start = stride if stride > 0 and i > 0 else 0
-            for offset_idx, lp in enumerate(chunk_log_probs[scored_start:], start=scored_start):
+            for offset_idx, lp in enumerate(
+                chunk_log_probs[scored_start:], start=scored_start
+            ):
                 token_index = i + 1 + offset_idx
                 if token_index < len(token_log_probs) and token_log_probs[token_index] is None:
                     token_log_probs[token_index] = float(lp)
@@ -269,7 +273,7 @@ class WholeTextMetrics:
                 "filename": filename,
                 "window_size": window_size,
                 "num_sentences": num_sentences,
-                "model": model,
+                "model": MODEL_CONFIGS["causal_lm"],
                 "avg_log_prob": avg_log_prob,
             },
             "sentences": sentences,

@@ -19,7 +19,7 @@ import json
 import pdfplumber
 from transformers import pipeline
 
-from x_configs import load_spacy_model
+from x_configs import MODEL_CONFIGS, load_spacy_model
 from .z_utils import processed_text_path, raw_text_path
 
 
@@ -80,7 +80,7 @@ class TextPreprocessor:
     def transcribe_audio(
         self,
         audio_path: str,
-        model_name: str = "openai/whisper-small",
+        model_name: str = MODEL_CONFIGS["asr"],
         chunk_length_s: int = 30,
         device: Optional[int] = None,
     ) -> str:
