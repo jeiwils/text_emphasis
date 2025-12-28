@@ -53,10 +53,29 @@ class TextPreprocessor:
 
     
 
-    def segment_sentences(self, text: str) -> List[str]:
-        """Segment text into sentence strings."""
+    def segment_sentences_with_offsets(self, text: str) -> List[Dict[str, object]]:
+        """
+        Segment text into sentences with character offsets to avoid re-segmentation downstream.
+        Returns a list of dicts: text, start_char, end_char.
+        """
         doc = self.nlp(text)
-        return [sent.text.strip() for sent in doc.sents if sent.text.strip()]
+        sentences = []
+        for sent in doc.sents:
+            sent_text = sent.text.strip()
+            if not sent_text:
+                continue
+            sentences.append(
+                {
+                    "text": sent_text,
+                    "start_char": sent.start_char,
+                    "end_char": sent.end_char,
+                }
+            )
+        return sentences
+
+    def segment_sentences(self, text: str) -> List[str]:
+        """Segment text into sentence strings (compat wrapper)."""
+        return [item["text"] for item in self.segment_sentences_with_offsets(text)]
 
     def normalize_text(self, text: str) -> str:
         """Normalize text for embedding/topic workflows (lowercase lemmas, no punctuation)."""
@@ -349,7 +368,7 @@ def preprocess_pdf(
 
     cleaned_segmented_dir = processed_text_path("cleaned_segmented", category)
     cleaned_segmented_dir.mkdir(parents=True, exist_ok=True)
-    cleaned_segmented_path = cleaned_segmented_dir / f"{base_name}_cleaned.jsonl"
+    cleaned_segmented_path = cleaned_segmented_dir / f"{base_name}_cleaned_segmented.jsonl"
 
     normalised_dir = processed_text_path("normalised", category)
     normalised_dir.mkdir(parents=True, exist_ok=True)
@@ -357,7 +376,7 @@ def preprocess_pdf(
 
     normalised_segmented_dir = processed_text_path("normalised_segmented", category)
     normalised_segmented_dir.mkdir(parents=True, exist_ok=True)
-    normalised_segmented_path = normalised_segmented_dir / f"{base_name}_normalised.jsonl"
+    normalised_segmented_path = normalised_segmented_dir / f"{base_name}_normalised_segmented.jsonl"
 
     # Extract selected pages
     pages = active_config.get("pages")
@@ -378,10 +397,17 @@ def preprocess_pdf(
 
     cleaned_path.write_text(json.dumps({"text": cleaned_text}, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    cleaned_sentences = preproc.segment_sentences(cleaned_text)
+    cleaned_sentences = preproc.segment_sentences_with_offsets(cleaned_text)
     cleaned_segmented_entries: List[Dict[str, object]] = []
     for idx, sentence in enumerate(cleaned_sentences):
-        cleaned_segmented_entries.append({"sentence_id": idx, "text": sentence})
+        cleaned_segmented_entries.append(
+            {
+                "sentence_id": idx,
+                "text": sentence["text"],
+                "start_char": sentence["start_char"],
+                "end_char": sentence["end_char"],
+            }
+        )
     with open(cleaned_segmented_path, "w", encoding="utf-8") as f:
         for entry in cleaned_segmented_entries:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -393,13 +419,26 @@ def preprocess_pdf(
     )
 
     normalised_sentences = [
-        preproc.normalize_text(sentence) for sentence in cleaned_sentences
+        {
+            "sentence_id": idx,
+            "text": preproc.normalize_text(sentence["text"]),
+            "start_char": sentence["start_char"],
+            "end_char": sentence["end_char"],
+        }
+        for idx, sentence in enumerate(cleaned_sentences)
     ]
     normalised_segmented_entries: List[Dict[str, object]] = []
-    for idx, sentence in enumerate(normalised_sentences):
-        if not sentence:
+    for sentence in normalised_sentences:
+        if not sentence["text"]:
             continue
-        normalised_segmented_entries.append({"sentence_id": idx, "text": sentence})
+        normalised_segmented_entries.append(
+            {
+                "sentence_id": sentence["sentence_id"],
+                "text": sentence["text"],
+                "start_char": sentence["start_char"],
+                "end_char": sentence["end_char"],
+            }
+        )
     with open(normalised_segmented_path, "w", encoding="utf-8") as f:
         for entry in normalised_segmented_entries:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -452,7 +491,7 @@ def preprocess_all_pdfs(process_unknown: bool = True):
     base_raw_dir = raw_text_path()
 
     subdirs = ["novels", "novellas", "short_stories", "speech"]
-    
+
     for subdir in subdirs:
         subdir_path = base_raw_dir / subdir
         if not subdir_path.exists():

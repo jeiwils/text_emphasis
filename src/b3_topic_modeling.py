@@ -3,22 +3,13 @@
 Neural topic modeling for long-form text.
 
 Input:
-- a raw text string (document, chapter, article, etc.)
+- pre-segmented sentences with char offsets (normalised_segmented JSONL)
 
 Output:
 - list of TopicResult objects:
   - topic_id (int)
   - keywords (top TF-IDF terms for the cluster)
   - mentions (sentence spans w/ character offsets for localisation)
-
-  
-
-
-  slide??? interval???
-  3, 6, 9, 12, 15...
-
-
-  
 
 """
 
@@ -29,7 +20,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from sklearn.cluster import HDBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from .z_utils import (
@@ -40,6 +30,7 @@ from .z_utils import (
     hdbscan_cluster_labels,
 )
 from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
+
 
 @dataclass
 class TopicMention:
@@ -58,6 +49,55 @@ class TopicResult:
     mentions: List[TopicMention]
 
 
+def load_segmented_topic_mentions(jsonl_path: Path) -> List[TopicMention]:
+    """
+    Load pre-segmented sentences with offsets from a JSONL file into TopicMention objects.
+    Raises if offsets are absent or invalid; downstream expects offsets to be present.
+    """
+    mentions: List[TopicMention] = []
+    try:
+        lines = jsonl_path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise RuntimeError(f"Unable to read segmented file: {jsonl_path}") from exc
+
+    for idx, line in enumerate(lines):
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        text = entry.get("text")
+        start_char = entry.get("start_char")
+        end_char = entry.get("end_char")
+        sentence_index = entry.get("sentence_id", entry.get("sentence_index", idx))
+        if text is None or start_char is None or end_char is None:
+            raise ValueError(
+                f"Segmented file lacks offsets; regenerate preprocessing outputs for {jsonl_path.name}"
+            )
+        try:
+            sentence_index = int(sentence_index)
+            start_char = int(start_char)
+            end_char = int(end_char)
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid offsets in {jsonl_path.name} (line {idx + 1})")
+        mentions.append(
+            TopicMention(
+                sentence_index=sentence_index,
+                text=str(text),
+                start_char=start_char,
+                end_char=end_char,
+                end_sentence=sentence_index,
+                window_index=sentence_index,
+            )
+        )
+    if not mentions:
+        raise ValueError(f"No segmented sentences found in {jsonl_path}")
+    return mentions
+
+
 class NeuralTopicModeler:
     """
     Clusters sentence embeddings, extracts keywords, and returns
@@ -73,26 +113,6 @@ class NeuralTopicModeler:
         self.encoder = SentenceTransformer(model_name)
         self.nlp = load_spacy_model(language)
         self.stop_words = stop_words
-
-    def segment_sentences(self, text: str) -> List[TopicMention]:
-        """Split text into sentences with char offsets."""
-        doc = self.nlp(text)
-        sentences = []
-        for idx, sent in enumerate(doc.sents):
-            sent_text = sent.text.strip()
-            if not sent_text:
-                continue
-            sentences.append(
-                TopicMention(
-                    sentence_index=idx,
-                    text=sent_text,
-                    start_char=sent.start_char,
-                    end_char=sent.end_char,
-                    end_sentence=idx,
-                    window_index=idx,
-                )
-            )
-        return sentences
 
     def build_windows(
         self, sentences: List[TopicMention], window_size: int
@@ -122,23 +142,6 @@ class NeuralTopicModeler:
             )
         return windows
 
-    def embed_sentences(self, sentences: List[str]) -> np.ndarray:
-        """Encode sentences into embeddings.""" #### REDUNDANT?? JUST USE encode_texts DIRECTLY???
-        return encode_texts(self.encoder, sentences)
-
-    def cluster_embeddings( #### REDUNDANT?? JUST USE hdbscan_cluster_labels DIRECTLY???
-        self,
-        embeddings: np.ndarray,
-        min_cluster_size: int = 5,
-        min_samples: Optional[int] = None,
-    ) -> np.ndarray:
-        """Cluster embeddings with HDBSCAN."""
-        return hdbscan_cluster_labels(
-            embeddings,
-            min_cluster_size=min_cluster_size,
-            min_samples=min_samples,
-        )
-
     def _build_topic_keywords(
         self,
         cluster_docs: List[str],
@@ -167,7 +170,7 @@ class NeuralTopicModeler:
 
     def extract_topics(
         self,
-        text: str,
+        sentences: List[TopicMention],
         min_cluster_size: int = 5,
         min_samples: Optional[int] = None,
         top_n: int = 8,
@@ -176,13 +179,12 @@ class NeuralTopicModeler:
         base_window_size: int = DEFAULT_WINDOW_SIZE,
     ) -> List[TopicResult]:
         """
-        Main entrypoint: returns clustered topics + localized mentions.
+        Main entrypoint: consumes pre-segmented sentences with offsets and returns clustered topics.
 
         Sentences are grouped into sliding windows of size
         `base_window_size * window_multiple` with stride 1 to align with
         other windowed metrics (default base window size is 3).
         """
-        sentences = self.segment_sentences(text)
         if not sentences:
             return []
 
@@ -193,8 +195,8 @@ class NeuralTopicModeler:
         if len(window_texts) < min_cluster_size:
             labels = np.zeros(len(window_texts), dtype=int)
         else:
-            embeddings = self.embed_sentences(window_texts)
-            labels = self.cluster_embeddings(
+            embeddings = encode_texts(self.encoder, window_texts)
+            labels = hdbscan_cluster_labels(
                 embeddings,
                 min_cluster_size=min_cluster_size,
                 min_samples=min_samples,
@@ -425,26 +427,6 @@ def select_metric_groups(
     return selected
 
 
-def compute_topic_metric_report_from_window_result(
-    window_result: Dict[str, object],
-    topics_data: Optional[object] = None,
-    metric_group_names: Optional[List[str]] = None,
-    min_topic_mentions: int = 1,
-    min_windows: int = 2,
-):
-    """Compute a topic/metric report from a window result and topic model output."""
-    topic_mentions = collect_topic_mentions(topics_data)
-    window_entries = window_result.get("syntax", {}).get("windows", [])
-    topic_metrics = build_topic_window_metrics(topic_mentions, window_entries)
-    window_metrics_by_name = select_metric_groups(window_result, metric_group_names)
-    return compute_topic_metric_report(
-        topic_metrics=topic_metrics,
-        window_metrics_by_name=window_metrics_by_name,
-        min_topic_mentions=min_topic_mentions,
-        min_windows=min_windows,
-    )
-
-
 def compute_topic_metric_report(
     topic_metrics: List[Dict[str, object]],
     window_metrics_by_name: Dict[str, List[Dict[str, object]]],
@@ -517,6 +499,26 @@ def compute_topic_metric_report(
     return report
 
 
+def compute_topic_metric_report_from_window_result(
+    window_result: Dict[str, object],
+    topics_data: Optional[object] = None,
+    metric_group_names: Optional[List[str]] = None,
+    min_topic_mentions: int = 1,
+    min_windows: int = 2,
+):
+    """Compute a topic/metric report from a window result and topic model output."""
+    topic_mentions = collect_topic_mentions(topics_data)
+    window_entries = window_result.get("syntax", {}).get("windows", [])
+    topic_metrics = build_topic_window_metrics(topic_mentions, window_entries)
+    window_metrics_by_name = select_metric_groups(window_result, metric_group_names)
+    return compute_topic_metric_report(
+        topic_metrics=topic_metrics,
+        window_metrics_by_name=window_metrics_by_name,
+        min_topic_mentions=min_topic_mentions,
+        min_windows=min_windows,
+    )
+
+
 def run_topic_modelling(
     use_existing: bool = True,
     window_multiple: int = 2, ############ REMOVE THIS AT SOME POINT??? 
@@ -542,33 +544,22 @@ def run_topic_modelling(
                 print(f"Skipping {file.name} (exists)")
                 continue
 
-            lines = file.read_text(encoding="utf-8").splitlines()
-            sentences = []
-            for line in lines:
-                if not line.strip():
-                    continue
-                try:
-                    entry = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                text = entry.get("text") if isinstance(entry, dict) else None
-                if text:
-                    sentences.append(str(text))
-            text = "\n".join(sentences)
-            print(f"Extracting topics for {file.name}...")
+            segmented_mentions = load_segmented_topic_mentions(file)
 
+            print(f"Extracting topics for {file.name}...")
             topic_results = modeler.extract_topics(
-                text,
+                segmented_mentions,
                 window_multiple=window_multiple,
                 base_window_size=base_window_size,
             )
+            num_sentences = len(segmented_mentions)
             result = {
                 "meta": {
                     "filename": file.name,
                     "base_window_size": base_window_size,
                     "window_multiple": window_multiple,
                     "model_window_size": base_window_size * max(1, window_multiple),
-                    "num_sentences": len(modeler.segment_sentences(text)),
+                    "num_sentences": num_sentences,
                 },
                 "topics": serialize_topic_results(topic_results),
                 "mentions_per_sentence": count_mentions_per_sentence(topic_results),

@@ -2,9 +2,7 @@ from typing import List, Dict, Tuple
 from collections import Counter
 from pathlib import Path
 import pickle
-import numpy as np
 from sentence_transformers import SentenceTransformer
-from sklearn.cluster import HDBSCAN
 from nltk.corpus import stopwords
 import nltk
 import re
@@ -82,19 +80,6 @@ class ConceptExtractor:
 
         return unique_phrases
 
-    def embed_phrases(self, phrases: List[str]) -> np.ndarray: # REDUNDANT???? JUST CALL ENCODE_TEXTS???
-        """Encode phrases into embeddings."""
-        return encode_texts(self.encoder, phrases)
-
-    def cluster_embeddings( #### REDUNDANT??? JUST CALL HDBSCAN_CLUSTER_LABELS???
-        self,
-        embeddings: np.ndarray,
-        min_cluster_size: int = 5,
-    ) -> Dict[int, List[int]]:
-        """Cluster embeddings using HDBSCAN and remove noise (-1)."""
-        labels = hdbscan_cluster_labels(embeddings, min_cluster_size=min_cluster_size)
-        return labels_to_clusters(labels)
-
     def extract_clusters(
         self,
         text: str,
@@ -103,10 +88,9 @@ class ConceptExtractor:
     ) -> Dict[int, List[str]]:
         """End-to-end helper: text -> noun phrases -> embeddings -> clustered phrase lists."""
         phrases = self.extract_noun_phrases(text, lemmatize=lemmatize)
-        embeddings = self.embed_phrases(phrases)
-        index_clusters = self.cluster_embeddings(
-            embeddings, min_cluster_size=min_cluster_size
-        )
+        embeddings = encode_texts(self.encoder, phrases)
+        labels = hdbscan_cluster_labels(embeddings, min_cluster_size=min_cluster_size)
+        index_clusters = labels_to_clusters(labels)
 
         phrase_clusters: Dict[int, List[str]] = {}
         for label, indices in index_clusters.items():
@@ -146,7 +130,7 @@ def generate_embeddings(normalised_text_path: Path, top_n: int = 100, use_existi
         with open(embeddings_file, "rb") as f:
             embeddings = pickle.load(f)
     else:
-        embeddings = extractor.embed_phrases(phrases)
+        embeddings = encode_texts(extractor.encoder, phrases)
         with open(embeddings_file, "wb") as f:
             pickle.dump(embeddings, f)
 
