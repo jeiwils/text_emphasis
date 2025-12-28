@@ -10,14 +10,14 @@ import nltk
 import re
 import json
 
-from x_configs import load_spacy_model
-from .z_utils import embeddings_path
+from x_configs import MODEL_CONFIGS, load_spacy_model
+from .z_utils import embeddings_path, encode_texts, hdbscan_cluster_labels, labels_to_clusters
 
 
 class ConceptExtractor:
     def __init__(
         self,
-        model_name: str = "all-MiniLM-L6-v2",
+        model_name: str = MODEL_CONFIGS["sentence_embedding"],
         language: str = "en_core_web_sm",
     ):
         """Initialize with specified models."""
@@ -82,37 +82,18 @@ class ConceptExtractor:
 
         return unique_phrases
 
-    def embed_phrases(self, phrases: List[str]) -> np.ndarray:
+    def embed_phrases(self, phrases: List[str]) -> np.ndarray: # REDUNDANT???? JUST CALL ENCODE_TEXTS???
         """Encode phrases into embeddings."""
-        if not phrases:
-            dim = self.encoder.get_sentence_embedding_dimension()
-            return np.empty((0, dim))
-        return self.encoder.encode(phrases)
+        return encode_texts(self.encoder, phrases)
 
-    def cluster_embeddings(
+    def cluster_embeddings( #### REDUNDANT??? JUST CALL HDBSCAN_CLUSTER_LABELS???
         self,
         embeddings: np.ndarray,
         min_cluster_size: int = 5,
     ) -> Dict[int, List[int]]:
         """Cluster embeddings using HDBSCAN and remove noise (-1)."""
-        if embeddings is None or len(embeddings) == 0:
-            return {}
-        if len(embeddings) < min_cluster_size:
-            return {}
-
-        clusterer = HDBSCAN(min_cluster_size=min_cluster_size)
-        cluster_labels = clusterer.fit_predict(embeddings)
-
-        # Organize results
-        clusters: Dict[int, List[int]] = {}
-        for idx, label in enumerate(cluster_labels):
-            if label == -1:
-                continue  # skip noise
-            if label not in clusters:
-                clusters[label] = []
-            clusters[label].append(idx)
-
-        return clusters
+        labels = hdbscan_cluster_labels(embeddings, min_cluster_size=min_cluster_size)
+        return labels_to_clusters(labels)
 
     def extract_clusters(
         self,

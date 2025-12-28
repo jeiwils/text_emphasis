@@ -47,6 +47,55 @@ flowchart TD
   windowed -.-> note
 ```
 
+## Why these metrics are included (focus on emphasis)
+
+The study’s core aim is to localize and compare *textual emphasis* across a document by checking whether **central topics** align with variation in semantic, lexical, discourse, and log-probability signals. The B and C modules were chosen because they capture complementary signals that can be aligned to shared sentence windows, so we can test whether (for example) surprisal or syntactic complexity rises when key topics are discussed. Concretely, each window aggregates per-sentence metrics and can be compared against a topic window (e.g., a 3-sentence window where the topic model flags a dominant theme) to ask: *do semantic/lexical/discourse/log-probability measures shift when a central topic is active?*
+
+### Group B: conceptual and probabilistic emphasis signals
+
+- **b1_concept_embeddings (noun-phrase embeddings + clustering)**  
+  **Metrics taken:** extracted noun phrases (top-N by frequency), sentence-transformer embeddings, HDBSCAN cluster labels.  
+  **Why:** repeated or clustered concepts are a direct indicator of emphasis.  
+  **Used for:** building a *concept inventory* and locating concept clusters across the text.  
+  **Relation to study:** concept clusters define *what* is emphasized; window-level metrics can be compared against the presence of these clustered concepts.
+
+- **b2_log_prob_metrics (log-probability, surprisal, perplexity)**  
+  **Metrics taken:** per-sentence log-prob sums/means, per-sentence perplexity, mean surprisal, surprisal variance, plus windowed aggregates.  
+  **Why:** emphasis can coincide with less predictable language or stylistic foregrounding.  
+  **Used for:** identifying “unexpectedness” peaks across sentence windows.  
+  **Relation to study:** tests whether windows with central topics show higher surprisal or shifts in predictability compared to surrounding windows.
+
+- **b3_topic_modeling (windowed topic clusters + keywords)**  
+  **Metrics taken:** sentence/window embeddings, HDBSCAN topic labels, TF‑IDF keywords, localized topic mentions (sentence indices and character spans).  
+  **Why:** topic clusters capture thematic concentration.  
+  **Used for:** generating a topic timeline and locating where topics are discussed.  
+  **Relation to study:** provides the anchor for alignment—topic‑active windows are compared with lexical, discourse, syntactic, and log‑probability variation.
+
+### Group C: linguistic structure and discourse emphasis signals
+
+- **c1_syntactics (clause counts, depth, dependency complexity)**  
+  **Metrics taken:** main/subordinate/coordinate clause counts and ratios, max/mean/median depth, depth skew, dependents-per-head, mean dependency distance, plus windowed aggregates.  
+  **Why:** syntactic complexity often increases with emphasis or rhetorical focus.  
+  **Used for:** tracking structural intensity across the text.  
+  **Relation to study:** checks whether topic‑active windows show higher complexity (e.g., more subordination or deeper parses).
+
+- **c2_lexico_semantics (lexical density, information content, roles)**  
+  **Metrics taken:** lexical density (content vs. total tokens), information content from corpus frequencies, MATTR (lexical diversity), average word frequency/normalized frequency, semantic role counts, agent/patient counts, plus windowed aggregates.  
+  **Why:** emphasized segments tend to be lexically dense, information‑rich, and semantically loaded.  
+  **Used for:** quantifying semantic weight and lexical intensity.  
+  **Relation to study:** tests whether topic‑active windows coincide with higher density, higher information content, or richer role structure.
+
+- **c3_discourse (connectives, overlap, pronouns, tense shifts)**  
+  **Metrics taken:** explicit connective counts by relation type, entity/content overlap ratios, pronoun ratio, tense shifts, dominant relation, plus windowed aggregates.  
+  **Why:** discourse shifts and cohesion patterns often signal emphasis or topic transitions.  
+  **Used for:** detecting rhetorical transitions and cohesion changes.  
+  **Relation to study:** evaluates whether topic transitions align with discourse‑level shifts (e.g., new connectives or reduced overlap).
+
+Together, these metrics support a multi-layer alignment analysis: *what* is emphasized (concepts/topics), *how* it stands out (surprisal, density, structure), and *where* it occurs (windowed alignment across signals).  
+**Example:** if a 3‑sentence window is labeled with a dominant topic and shows a spike in mean surprisal plus higher lexical density, that suggests the topic is being emphasized through both semantic concentration and probabilistic “unexpectedness.”
+
+
+
 ## Data layout
 
 - `data/texts/cleaned_texts/<category>/*.json`: inputs for corpus/window metrics (full text under `text` key).

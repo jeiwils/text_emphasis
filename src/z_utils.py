@@ -1,11 +1,12 @@
 
 
-from typing import Optional
+from typing import Dict, List, Optional, Sequence
 from pathlib import Path
 import json
 import numpy as np
 from statistics import mean
-
+from sentence_transformers import SentenceTransformer
+from sklearn.cluster import HDBSCAN
 
 def sliding_windows(seq, n):
     """
@@ -100,8 +101,8 @@ def processed_text_path(
     """
 
     """
-    base_dir = "data/texts"
-
+    base_dir = "data/processed"
+    
     folder_map = {
         "raw": "raw_texts",
         "cleaned": "cleaned_texts",
@@ -189,3 +190,40 @@ def graph_path(
     if filename:
         path = path / filename
     return path
+
+
+
+
+def encode_texts(
+    encoder: SentenceTransformer,
+    texts: Sequence[str],
+) -> np.ndarray:
+    """Encode texts into embeddings using a shared encoder."""
+    if not texts:
+        dim = encoder.get_sentence_embedding_dimension()
+        return np.empty((0, dim))
+    return encoder.encode(list(texts))
+
+
+def hdbscan_cluster_labels(
+    embeddings: np.ndarray,
+    min_cluster_size: int = 5,
+    min_samples: Optional[int] = None,
+) -> np.ndarray:
+    """Cluster embeddings with HDBSCAN and return labels."""
+    if embeddings is None or len(embeddings) == 0:
+        return np.array([], dtype=int)
+    if len(embeddings) < min_cluster_size:
+        return np.full(len(embeddings), -1, dtype=int)
+    clusterer = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=min_samples)
+    return clusterer.fit_predict(embeddings)
+
+
+def labels_to_clusters(labels: Sequence[int]) -> Dict[int, List[int]]:
+    """Convert cluster labels to index lists, skipping noise (-1)."""
+    clusters: Dict[int, List[int]] = {}
+    for idx, label in enumerate(labels):
+        if label == -1:
+            continue
+        clusters.setdefault(label, []).append(idx)
+    return clusters

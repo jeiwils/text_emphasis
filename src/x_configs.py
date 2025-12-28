@@ -3,7 +3,11 @@ from typing import Optional, Sequence
 
 import spacy
 
-model = 'PUT MODEL NAME HERE'
+MODEL_CONFIGS = {
+    "causal_lm": "gpt2",
+    "sentence_embedding": "all-MiniLM-L6-v2",
+    "asr": "openai/whisper-small",
+}
 
 # Default spaCy pipeline configuration
 DEFAULT_SPACY_MODEL = "en_core_web_sm"

@@ -19,7 +19,7 @@ import json
 import pdfplumber
 from transformers import pipeline
 
-from x_configs import load_spacy_model
+from x_configs import MODEL_CONFIGS, load_spacy_model
 from .z_utils import processed_text_path, raw_text_path
 
 
@@ -80,7 +80,7 @@ class TextPreprocessor:
     def transcribe_audio(
         self,
         audio_path: str,
-        model_name: str = "openai/whisper-small",
+        model_name: str = MODEL_CONFIGS["asr"],
         chunk_length_s: int = 30,
         device: Optional[int] = None,
     ) -> str:
@@ -324,6 +324,7 @@ def preprocess_pdf(
     """Extract, clean, and save a single PDF with optional page and boilerplate filtering."""
     base_name = pdf_path.stem
     book_label = book_name or base_name
+    category = pdf_path.parent.name
     if config is None:
         active_config = DEFAULT_BOOK_CONFIG if allow_default_config else None
     else:
@@ -338,23 +339,23 @@ def preprocess_pdf(
             f"[WARN] No config found for '{book_label}'. Using default processing (all pages, no boilerplate removal). "
             "Add an entry to BOOK_CONFIGS in src/a_preprocessing_cleaning.py to customize page ranges or patterns."
         )
-    raw_dir = processed_text_path("raw", base_name)
+    raw_dir = processed_text_path("raw", category)
     raw_dir.mkdir(parents=True, exist_ok=True)
     raw_path = raw_dir / f"{base_name}_raw.txt"
 
-    cleaned_dir = processed_text_path("cleaned", base_name)
+    cleaned_dir = processed_text_path("cleaned", category)
     cleaned_dir.mkdir(parents=True, exist_ok=True)
     cleaned_path = cleaned_dir / f"{base_name}_cleaned.json"
 
-    cleaned_segmented_dir = processed_text_path("cleaned_segmented", base_name)
+    cleaned_segmented_dir = processed_text_path("cleaned_segmented", category)
     cleaned_segmented_dir.mkdir(parents=True, exist_ok=True)
     cleaned_segmented_path = cleaned_segmented_dir / f"{base_name}_cleaned.jsonl"
 
-    normalised_dir = processed_text_path("normalised", base_name)
+    normalised_dir = processed_text_path("normalised", category)
     normalised_dir.mkdir(parents=True, exist_ok=True)
     normalised_path = normalised_dir / f"{base_name}_normalised.json"
 
-    normalised_segmented_dir = processed_text_path("normalised_segmented", base_name)
+    normalised_segmented_dir = processed_text_path("normalised_segmented", category)
     normalised_segmented_dir.mkdir(parents=True, exist_ok=True)
     normalised_segmented_path = normalised_segmented_dir / f"{base_name}_normalised.jsonl"
 
@@ -411,13 +412,15 @@ def preprocess_pdf(
     return cleaned_path
 
 
+
 def preprocess_audio_file(
     audio_path: Path,
     preproc: "TextPreprocessor",
-    model_name: str = "openai/whisper-small",
+    model_name: str = "openai/whisper-small", ### CONFIGS SHOULD BE INTEGRATED HERE
     chunk_length_s: int = 30,
     device: Optional[int] = None,
     save: bool = True,
+    category: Optional[str] = None,
 ):
     """
     Transcribe and clean an audio file; optionally save the transcript.
@@ -434,7 +437,8 @@ def preprocess_audio_file(
     if not save:
         return transcript
 
-    save_dir = processed_text_path("audio", audio_path.stem)
+    category_name = category or audio_path.parent.name
+    save_dir = processed_text_path("audio", category_name)
     save_dir.mkdir(parents=True, exist_ok=True)
     transcript_path = save_dir / f"{audio_path.stem}_transcript.txt"
     transcript_path.write_text(transcript, encoding="utf-8")
@@ -447,8 +451,8 @@ def preprocess_all_pdfs(process_unknown: bool = True):
     preproc = TextPreprocessor()
     base_raw_dir = raw_text_path()
 
-    subdirs = ["novels", "novellas", "short_stories"]
-
+    subdirs = ["novels", "novellas", "short_stories", "speech"]
+    
     for subdir in subdirs:
         subdir_path = base_raw_dir / subdir
         if not subdir_path.exists():

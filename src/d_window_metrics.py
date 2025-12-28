@@ -21,18 +21,18 @@ from .z_utils import processed_text_path
 Orchestrator for running all b- and c-layer metrics and saving outputs.
 
 Flow:
-1) `run_preprocessing` converts raw PDFs to cleaned/normalised text and segmented JSONL under data/texts/.
-2) `run_concept_embeddings` reads normalised texts from `data/texts/normalised_texts/<category>/*_normalised.json`
+1) `run_preprocessing` converts raw PDFs to cleaned/normalised text and segmented JSONL under data/processed/.
+2) `run_concept_embeddings` reads normalised texts from `data/processed/normalised_texts/<category>/*_normalised.json`
    and writes phrases + embeddings to `data/embeddings/concept_embeddings/<name>/`.
 3) `run_topic_modelling` reads normalised-segmented texts from
-   `data/texts/normalised_segmented_texts/<category>/*.jsonl`
+   `data/processed/normalised_segmented_texts/<category>/*.jsonl`
    and writes topics JSON to `data/topic_modelling/<category>/<name>_topics.json`.
-4) `run_corpus_metrics` reads cleaned texts from `data/texts/cleaned_texts/<category>/*.json`
-   and writes corpus metrics JSON to `data/texts/corpus_analytics/<category>/<name>_metrics.json`.
+4) `run_corpus_metrics` reads cleaned texts from `data/processed/cleaned_texts/<category>/*.json`
+   and writes corpus metrics JSON to `data/processed/corpus_analytics/<category>/<name>_metrics.json`.
    Each file matches the c0 meta/sentences/windows schema (log-probs, surprisal, etc.).
 5) `run_windowed_metrics` reads those corpus JSONs, recomputes sentence-level spaCy docs
    from cleaned-segmented texts,
-   and writes combined window metrics to `data/texts/window_metrics/<category>/<name>_metrics.json`
+   and writes combined window metrics to `data/processed/window_metrics/<category>/<name>_metrics.json`
    with nested blocks: meta, syntax (meta/sentences/windows + heavy), lexico_semantics (same shape),
    discourse (same shape), information_content_metrics (c0 windows)
 """

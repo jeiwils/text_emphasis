@@ -11,6 +11,14 @@ Output:
   - keywords (top TF-IDF terms for the cluster)
   - mentions (sentence spans w/ character offsets for localisation)
 
+  
+
+
+  slide??? interval???
+  3, 6, 9, 12, 15...
+
+
+  
 
 """
 
@@ -24,9 +32,14 @@ from sentence_transformers import SentenceTransformer
 from sklearn.cluster import HDBSCAN
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from .z_utils import processed_text_path, topic_modelling_path, sliding_windows
-from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
-
+from .z_utils import (
+    processed_text_path,
+    topic_modelling_path,
+    sliding_windows,
+    encode_texts,
+    hdbscan_cluster_labels,
+)
+from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
 
 @dataclass
 class TopicMention:
@@ -53,7 +66,7 @@ class NeuralTopicModeler:
 
     def __init__(
         self,
-        model_name: str = "all-MiniLM-L6-v2",
+        model_name: str = MODEL_CONFIGS["sentence_embedding"],
         language: str = "en_core_web_sm",
         stop_words: str = "english",
     ):
@@ -110,18 +123,21 @@ class NeuralTopicModeler:
         return windows
 
     def embed_sentences(self, sentences: List[str]) -> np.ndarray:
-        """Encode sentences into embeddings."""
-        return self.encoder.encode(sentences)
+        """Encode sentences into embeddings.""" #### REDUNDANT?? JUST USE encode_texts DIRECTLY???
+        return encode_texts(self.encoder, sentences)
 
-    def cluster_embeddings(
+    def cluster_embeddings( #### REDUNDANT?? JUST USE hdbscan_cluster_labels DIRECTLY???
         self,
         embeddings: np.ndarray,
         min_cluster_size: int = 5,
         min_samples: Optional[int] = None,
     ) -> np.ndarray:
         """Cluster embeddings with HDBSCAN."""
-        clusterer = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=min_samples)
-        return clusterer.fit_predict(embeddings)
+        return hdbscan_cluster_labels(
+            embeddings,
+            min_cluster_size=min_cluster_size,
+            min_samples=min_samples,
+        )
 
     def _build_topic_keywords(
         self,
