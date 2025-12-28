@@ -12,8 +12,9 @@ TO DO:
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 import re
+import json
 
 import pdfplumber
 from transformers import pipeline
@@ -52,7 +53,23 @@ class TextPreprocessor:
 
     
 
+    def segment_sentences(self, text: str) -> List[str]:
+        """Segment text into sentence strings."""
+        doc = self.nlp(text)
+        return [sent.text.strip() for sent in doc.sents if sent.text.strip()]
 
+    def normalize_text(self, text: str) -> str:
+        """Normalize text for embedding/topic workflows (lowercase lemmas, no punctuation)."""
+        doc = self.nlp(text)
+        tokens = []
+        for token in doc:
+            if token.is_space or token.is_punct:
+                continue
+            lemma = (token.lemma_ or token.text).lower().strip()
+            if not any(ch.isalnum() for ch in lemma):
+                continue
+            tokens.append(lemma)
+        return " ".join(tokens)
 
     def lemmatize_tokens(self, tokens: List[str]) -> List[str]:
         """Lemmatize tokens to their base form."""
@@ -321,13 +338,31 @@ def preprocess_pdf(
             f"[WARN] No config found for '{book_label}'. Using default processing (all pages, no boilerplate removal). "
             "Add an entry to BOOK_CONFIGS in src/a_preprocessing_cleaning.py to customize page ranges or patterns."
         )
-    save_dir = processed_text_path("cleaned", base_name)
-    save_dir.mkdir(parents=True, exist_ok=True)
-    cleaned_path = save_dir / f"{base_name}_cleaned.txt"
+    raw_dir = processed_text_path("raw", base_name)
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    raw_path = raw_dir / f"{base_name}_raw.txt"
+
+    cleaned_dir = processed_text_path("cleaned", base_name)
+    cleaned_dir.mkdir(parents=True, exist_ok=True)
+    cleaned_path = cleaned_dir / f"{base_name}_cleaned.txt"
+
+    cleaned_segmented_dir = processed_text_path("cleaned_segmented", base_name)
+    cleaned_segmented_dir.mkdir(parents=True, exist_ok=True)
+    cleaned_segmented_path = cleaned_segmented_dir / f"{base_name}_cleaned.jsonl"
+
+    normalised_dir = processed_text_path("normalised", base_name)
+    normalised_dir.mkdir(parents=True, exist_ok=True)
+    normalised_path = normalised_dir / f"{base_name}_normalised.txt"
+
+    normalised_segmented_dir = processed_text_path("normalised_segmented", base_name)
+    normalised_segmented_dir.mkdir(parents=True, exist_ok=True)
+    normalised_segmented_path = normalised_segmented_dir / f"{base_name}_normalised.jsonl"
 
     # Extract selected pages
     pages = active_config.get("pages")
     raw_text = extract_pdf_pages(pdf_path, pages)
+
+    raw_path.write_text(raw_text, encoding="utf-8")
 
     # Remove boilerplate, trim start/end markers, apply regex patterns
     cleaned_text = remove_boilerplate(
@@ -340,11 +375,36 @@ def preprocess_pdf(
     # Normalize whitespace only
     cleaned_text = preproc.clean_text(cleaned_text)
 
-    # Save
-    with open(cleaned_path, "w", encoding="utf-8") as f:
-        f.write(cleaned_text)
+    cleaned_path.write_text(cleaned_text, encoding="utf-8")
 
+    cleaned_sentences = preproc.segment_sentences(cleaned_text)
+    cleaned_segmented_entries: List[Dict[str, object]] = []
+    for idx, sentence in enumerate(cleaned_sentences):
+        cleaned_segmented_entries.append({"sentence_id": idx, "text": sentence})
+    with open(cleaned_segmented_path, "w", encoding="utf-8") as f:
+        for entry in cleaned_segmented_entries:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    normalised_text = preproc.normalize_text(cleaned_text)
+    normalised_path.write_text(normalised_text, encoding="utf-8")
+
+    normalised_sentences = [
+        preproc.normalize_text(sentence) for sentence in cleaned_sentences
+    ]
+    normalised_segmented_entries: List[Dict[str, object]] = []
+    for idx, sentence in enumerate(normalised_sentences):
+        if not sentence:
+            continue
+        normalised_segmented_entries.append({"sentence_id": idx, "text": sentence})
+    with open(normalised_segmented_path, "w", encoding="utf-8") as f:
+        for entry in normalised_segmented_entries:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    print(f"[INFO] Raw text saved to {raw_path}")
     print(f"[INFO] Cleaned text saved to {cleaned_path}")
+    print(f"[INFO] Cleaned segmented text saved to {cleaned_segmented_path}")
+    print(f"[INFO] Normalised text saved to {normalised_path}")
+    print(f"[INFO] Normalised segmented text saved to {normalised_segmented_path}")
     return cleaned_path
 
 

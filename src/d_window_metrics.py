@@ -1,5 +1,7 @@
 import json
 from pathlib import Path
+from typing import List, Tuple
+from spacy.tokens import Doc
 
 from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
 from .c0_log_prob_metrics import WholeTextMetrics
@@ -20,7 +22,8 @@ Flow:
 1) `run_corpus_metrics` reads cleaned texts from `data/texts/cleaned_texts/<category>/*.txt`
    and writes corpus metrics JSON to `data/texts/corpus_analytics/<category>/<name>_metrics.json`.
    Each file matches the c0 meta/sentences/windows schema (log-probs, surprisal, etc.).
-2) `run_windowed_metrics` reads those corpus JSONs, recomputes sentence-level spaCy docs,
+2) `run_windowed_metrics` reads those corpus JSONs, recomputes sentence-level spaCy docs
+   from cleaned-segmented texts,
    and writes combined window metrics to `data/texts/window_metrics/<category>/<name>_metrics.json`
    with nested blocks: meta, syntax (meta/sentences/windows + heavy), lexico_semantics (same shape),
    discourse (same shape), information_content_metrics (c0 windows)
@@ -58,16 +61,39 @@ def run_corpus_metrics(window_size=DEFAULT_WINDOW_SIZE, use_existing=True):
             print(f"Saved corpus metrics for {file.name}")
 
 
-def _load_text_from_cleaned(category: Path, metrics_file: Path) -> str:
+def _load_segmented_jsonl(path: Path) -> List[str]:
+    sentences: List[str] = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            text = entry.get("text") if isinstance(entry, dict) else None
+            if text:
+                sentences.append(str(text).strip())
+    return [s for s in sentences if s]
+
+
+def _load_text_for_windowing(category: Path, metrics_file: Path) -> Tuple[str, List[str]]:
     """
-    Derive the cleaned text path from a metrics filename (assumes *_metrics.json convention).
+    Derive the cleaned-segmented text path from a metrics filename
+    (assumes *_metrics.json convention).
     """
-    cleaned_root = processed_text_path("cleaned")
+    segmented_root = processed_text_path("cleaned_segmented")
     base_name = metrics_file.stem.replace("_metrics", "")
-    candidate = cleaned_root / category.name / f"{base_name}.txt"
+    candidate = segmented_root / category.name / f"{base_name}.jsonl"
     if candidate.exists():
-        return candidate.read_text(encoding="utf-8")
-    return ""
+        sentences = _load_segmented_jsonl(candidate)
+        return "\n".join(sentences), sentences
+    cleaned_root = processed_text_path("cleaned")
+    fallback = cleaned_root / category.name / f"{metrics_file.stem.replace('_metrics', '')}.txt"
+    if fallback.exists():
+        text = fallback.read_text(encoding="utf-8")
+        return text, []
+    return "", []
 
 
 def run_windowed_metrics(window_size=DEFAULT_WINDOW_SIZE, mattr_window_size=50, use_existing=True):
@@ -98,19 +124,39 @@ def run_windowed_metrics(window_size=DEFAULT_WINDOW_SIZE, mattr_window_size=50, 
 
             data = json.load(file.open("r", encoding="utf-8"))
             meta_block = data.get("meta", {}) if isinstance(data, dict) else {}
-            text_content = data.get("text") or _load_text_from_cleaned(subdir, file)
+            text_content, segmented_sentences = _load_text_for_windowing(subdir, file)
+            if data.get("text"):
+                text_content = data.get("text")
+                segmented_sentences = []
 
             lex_analyzer = LexicoSemanticsAnalyzer(nlp)
-            doc = nlp(text_content or "")
-            num_sentences = len(list(doc.sents))
-            doc = nlp(text_content or "")  # reset iterator after counting
+            if segmented_sentences:
+                docs = list(nlp.pipe(segmented_sentences))
+                doc = Doc.from_docs(docs)
+                num_sentences = len(segmented_sentences)
+            else:
+                doc = nlp(text_content or "")
+                num_sentences = len(list(doc.sents))
+                doc = nlp(text_content or "")  # reset iterator after counting
             syntax_metrics = syntax_analyzer.analyze_document(doc, window_size=window_size)
             lex_metrics = lex_analyzer.analyze_document(
                 doc,
                 window_size=window_size,
                 mattr_window_size=mattr_window_size,
             )
-            discourse_metrics = discourse_analyzer.analyze_text(text_content or "", window_size=window_size)
+            if segmented_sentences:
+                discourse_sent, discourse_windows = discourse_analyzer.compute_sentence_metrics(
+                    doc, window_size=window_size
+                )
+                discourse_metrics = {
+                    "meta": {"window_size": window_size, "num_sentences": num_sentences},
+                    "sentences": discourse_sent,
+                    "windows": discourse_windows,
+                }
+            else:
+                discourse_metrics = discourse_analyzer.analyze_text(
+                    text_content or "", window_size=window_size
+                )
 
             info_content_metrics = data.get("windows", [])
 

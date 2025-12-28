@@ -141,15 +141,15 @@ def filter_top_n_phrases(phrases: List[str], n: int = 100) -> Tuple[List[str], L
     return filtered_phrases, filtered_indices
 
 
-def generate_embeddings(cleaned_text_path: Path, top_n: int = 100, use_existing: bool = True):
+def generate_embeddings(normalised_text_path: Path, top_n: int = 100, use_existing: bool = True):
     """Extract top-N noun phrases and generate or load embeddings."""
     extractor = ConceptExtractor()
-    base_name = cleaned_text_path.stem.replace("_cleaned", "")
+    base_name = normalised_text_path.stem.replace("_normalised", "")
 
-    with open(cleaned_text_path, "r", encoding="utf-8") as f:
-        cleaned_text = f.read()
+    with open(normalised_text_path, "r", encoding="utf-8") as f:
+        normalised_text = f.read()
 
-    all_phrases = extractor.extract_noun_phrases(cleaned_text, lemmatize=True)
+    all_phrases = extractor.extract_noun_phrases(normalised_text, lemmatize=True)
     phrases, _ = filter_top_n_phrases(all_phrases, n=top_n)
 
     concept_dir = embeddings_path("concept") / base_name
@@ -167,4 +167,4 @@ def generate_embeddings(cleaned_text_path: Path, top_n: int = 100, use_existing:
         with open(embeddings_file, "wb") as f:
             pickle.dump(embeddings, f)
 
-    return cleaned_text, phrases, embeddings
+    return normalised_text, phrases, embeddings

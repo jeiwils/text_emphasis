@@ -248,20 +248,20 @@ def plot_network(G, centrality_df, node_to_community, communities, base_name: st
         pickle.dump(communities, f)
 
 
-def run_text_pipeline(cleaned_text_path: Path, use_existing_embeddings: bool = True):
-    """End-to-end pipeline for one cleaned text file."""
-    base_name = cleaned_text_path.stem.replace("_cleaned", "")
+def run_text_pipeline(normalised_text_path: Path, use_existing_embeddings: bool = True):
+    """End-to-end pipeline for one normalised text file."""
+    base_name = normalised_text_path.stem.replace("_normalised", "")
     print(f"[INFO] Processing {base_name}")
 
-    cleaned_text, phrases, embeddings = generate_embeddings(
-        cleaned_text_path,
+    normalised_text, phrases, embeddings = generate_embeddings(
+        normalised_text_path,
         use_existing=use_existing_embeddings,
     )
     G, centrality_df, communities, node_to_community = build_network_graph(phrases, embeddings)
     plot_network(G, centrality_df, node_to_community, communities, base_name)
 
     return {
-        "cleaned_text": cleaned_text,
+        "normalised_text": normalised_text,
         "phrases": phrases,
         "embeddings": embeddings,
         "network": G,
@@ -271,14 +271,14 @@ def run_text_pipeline(cleaned_text_path: Path, use_existing_embeddings: bool = T
 
 
 def run_pipeline_all_texts(use_existing_embeddings: bool = True):
-    """Iterate over all *_cleaned.txt files and build their concept networks."""
-    base_cleaned_dir = processed_text_path("cleaned")
-    if not base_cleaned_dir.exists():
-        raise FileNotFoundError(f"Directory not found: {base_cleaned_dir}")
+    """Iterate over all *_normalised.txt files and build their concept networks."""
+    base_normalised_dir = processed_text_path("normalised")
+    if not base_normalised_dir.exists():
+        raise FileNotFoundError(f"Directory not found: {base_normalised_dir}")
 
-    for subdir in base_cleaned_dir.iterdir():
+    for subdir in base_normalised_dir.iterdir():
         if subdir.is_dir():
-            for txt_file in subdir.glob("*_cleaned.txt"):
+            for txt_file in subdir.glob("*_normalised.txt"):
                 try:
                     run_text_pipeline(txt_file, use_existing_embeddings=use_existing_embeddings)
                 except Exception as e:

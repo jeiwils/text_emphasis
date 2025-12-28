@@ -103,7 +103,12 @@ def processed_text_path(
     base_dir = "data/texts"
 
     folder_map = {
+        "raw": "raw_texts",
         "cleaned": "cleaned_texts",
+        "cleaned_segmented": "cleaned_segmented_texts",
+        "normalised": "normalised_texts",
+        "normalised_segmented": "normalised_segmented_texts",
+        "audio": "audio_transcripts",
         "corpus": "corpus_analytics",
         "window": "window_metrics",
     }

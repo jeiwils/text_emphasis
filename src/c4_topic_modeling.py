@@ -506,13 +506,13 @@ def run_topic_modelling(
     window_multiple: int = 2, ############ REMOVE THIS AT SOME POINT??? 
     base_window_size: int = DEFAULT_WINDOW_SIZE,
 ):
-    """Batch topic modelling across all cleaned text files."""
+    """Batch topic modelling across all normalised, segmented text files."""
     modeler = NeuralTopicModeler()
-    cleaned_root = processed_text_path("cleaned")
+    normalised_root = processed_text_path("normalised_segmented")
     output_root = topic_modelling_path()
     output_root.mkdir(parents=True, exist_ok=True)
 
-    for subdir in cleaned_root.iterdir():
+    for subdir in normalised_root.iterdir():
         if not subdir.is_dir():
             continue
         print(f"Processing category: {subdir.name}")
@@ -520,13 +520,25 @@ def run_topic_modelling(
         out_subdir = output_root / subdir.name
         out_subdir.mkdir(parents=True, exist_ok=True)
 
-        for file in subdir.glob("*.txt"):
+        for file in subdir.glob("*.jsonl"):
             output_file = out_subdir / f"{file.stem}_topics.json"
             if use_existing and output_file.exists():
                 print(f"Skipping {file.name} (exists)")
                 continue
 
-            text = file.read_text(encoding="utf-8")
+            lines = file.read_text(encoding="utf-8").splitlines()
+            sentences = []
+            for line in lines:
+                if not line.strip():
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                text = entry.get("text") if isinstance(entry, dict) else None
+                if text:
+                    sentences.append(str(text))
+            text = "\n".join(sentences)
             print(f"Extracting topics for {file.name}...")
 
             topic_results = modeler.extract_topics(
