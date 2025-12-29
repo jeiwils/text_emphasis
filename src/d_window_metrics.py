@@ -6,8 +6,8 @@ from spacy.tokens import Doc
 from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
 from .a_preprocessing_cleaning import preprocess_all_pdfs
 from .b1_concept_embeddings import generate_embeddings
-from .b2_log_prob_metrics import WholeTextMetrics
-from .b3_topic_modeling import run_topic_modelling
+from .c0_log_prob_metrics import WholeTextMetrics
+from .b2_topic_modeling import run_topic_modelling
 from .c1_syntactics import SyntaxAnalyzer
 from .c2_lexico_semantics import LexicoSemanticsAnalyzer
 from .c3_discourse import DiscourseAnalyzer

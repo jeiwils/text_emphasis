@@ -11,6 +11,14 @@ Output:
   - keywords (top TF-IDF terms for the cluster)
   - mentions (sentence spans w/ character offsets for localisation)
 
+
+15 window
+3 stride? won't that make sentences that don't overlap weaker signal? 
+
+multiple themes can be present in a single window, not necessarily one dominant topic
+
+topic-window similarity matrix - join topics 
+
 """
 
 import json
@@ -21,6 +29,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import normalize
 
 from .z_utils import (
     processed_text_path,
@@ -39,6 +49,7 @@ class TopicMention:
     end_char: int
     end_sentence: Optional[int] = None
     window_index: Optional[int] = None
+    topic_scores: Optional[Dict[int, float]] = None
 
 
 @dataclass
@@ -119,7 +130,7 @@ class NeuralTopicModeler:
         if window_size <= 0:
             raise ValueError("window_size must be positive")
         windows: List[TopicMention] = []
-        for window_sents in sliding_windows(sentences, window_size):
+        for idx, window_sents in enumerate(sliding_windows(sentences, window_size)):
             if not window_sents:
                 continue
             start = window_sents[0]
@@ -129,7 +140,7 @@ class NeuralTopicModeler:
                 TopicMention(
                     sentence_index=start.sentence_index,
                     end_sentence=end.sentence_index,
-                    window_index=start.sentence_index,
+                    window_index=idx,
                     text=window_text,
                     start_char=start.start_char,
                     end_char=end.end_char,
@@ -163,6 +174,53 @@ class NeuralTopicModeler:
             keywords[label] = feature_names[top_indices].tolist()
         return keywords
 
+    def _build_topic_scores(
+        self,
+        embeddings: np.ndarray,
+        labels: np.ndarray,
+        cluster_labels: List[int],
+        top_k_topics: Optional[int] = None,
+        score_threshold: Optional[float] = None,
+    ) -> List[Dict[int, float]]:
+        """
+        Compute cosine similarity between each window embedding and topic centroids.
+        Returns per-window dicts of topic_id -> similarity, optionally filtered.
+        """
+        if embeddings.size == 0 or not cluster_labels:
+            return [{} for _ in range(len(embeddings))]
+
+        centroid_vectors = []
+        for label in cluster_labels:
+            idxs = np.where(labels == label)[0]
+            if len(idxs) == 0:
+                centroid_vectors.append(np.zeros(embeddings.shape[1], dtype=float))
+                continue
+            if len(idxs) > 50:
+                step = max(1, len(idxs) // 50)
+                idxs = idxs[::step]
+            centroid_vectors.append(embeddings[idxs].mean(axis=0))
+
+        centroid_matrix = normalize(np.vstack(centroid_vectors))
+        norm_embeddings = normalize(embeddings)
+        sim_matrix = cosine_similarity(norm_embeddings, centroid_matrix)
+
+        topic_scores: List[Dict[int, float]] = []
+        for idx, row in enumerate(sim_matrix):
+            if labels[idx] == -1:
+                topic_scores.append({})
+                continue
+            scores = {label: float(score) for label, score in zip(cluster_labels, row)}
+            if score_threshold is not None:
+                scores = {k: v for k, v in scores.items() if v >= score_threshold}
+            if top_k_topics is not None and top_k_topics > 0:
+                scores = dict(
+                    sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[
+                        :top_k_topics
+                    ]
+                )
+            topic_scores.append(scores)
+        return topic_scores
+
     def extract_topics(
         self,
         sentences: List[TopicMention],
@@ -172,7 +230,9 @@ class NeuralTopicModeler:
         ngram_range: Tuple[int, int] = (1, 2),
         window_multiple: int = 2,
         base_window_size: int = DEFAULT_WINDOW_SIZE,
-    ) -> List[TopicResult]:
+        top_k_topics: Optional[int] = None,
+        score_threshold: Optional[float] = None,
+    ) -> Tuple[List[TopicResult], List[Dict[str, object]]]:
         """
         Main entrypoint: consumes pre-segmented sentences with offsets and returns clustered topics.
 
@@ -181,16 +241,16 @@ class NeuralTopicModeler:
         other windowed metrics (default base window size is 3).
         """
         if not sentences:
-            return []
+            return [], []
 
         model_window_size = max(1, base_window_size * max(1, window_multiple))
         windows = self.build_windows(sentences, model_window_size)
         window_texts = [w.text for w in windows]
 
+        embeddings = encode_texts(self.encoder, window_texts)
         if len(window_texts) < min_cluster_size:
             labels = np.zeros(len(window_texts), dtype=int)
         else:
-            embeddings = encode_texts(self.encoder, window_texts)
             labels = hdbscan_cluster_labels(
                 embeddings,
                 min_cluster_size=min_cluster_size,
@@ -205,17 +265,40 @@ class NeuralTopicModeler:
             topic_docs.setdefault(label, []).append(window.text)
             topic_mentions.setdefault(label, []).append(window)
 
-        if not topic_docs:
-            return []
-
         cluster_labels = sorted(topic_docs.keys())
         cluster_docs = [" ".join(topic_docs[label]) for label in cluster_labels]
-        keywords = self._build_topic_keywords(
-            cluster_docs,
-            cluster_labels,
-            top_n=top_n,
-            ngram_range=ngram_range,
+        keywords = (
+            self._build_topic_keywords(
+                cluster_docs,
+                cluster_labels,
+                top_n=top_n,
+                ngram_range=ngram_range,
+            )
+            if cluster_labels
+            else {}
         )
+        topic_scores = self._build_topic_scores(
+            embeddings=embeddings,
+            labels=labels,
+            cluster_labels=cluster_labels,
+            top_k_topics=top_k_topics,
+            score_threshold=score_threshold,
+        )
+        window_topics = []
+        for idx, window in enumerate(windows):
+            scores = topic_scores[idx] if topic_scores else {}
+            window.topic_scores = scores
+            window_topics.append(
+                {
+                    "window_index": window.window_index
+                    if window.window_index is not None
+                    else idx,
+                    "start_sentence": window.sentence_index,
+                    "end_sentence": window.end_sentence,
+                    "topic_scores": scores,
+                    "is_noise": labels[idx] == -1,
+                }
+            )
 
         results = []
         for label in cluster_labels:
@@ -226,7 +309,7 @@ class NeuralTopicModeler:
                     mentions=topic_mentions.get(label, []),
                 )
             )
-        return results
+        return results, window_topics
 
 
 def serialize_topic_results(topic_results: List[TopicResult]) -> List[Dict[str, Any]]:
@@ -309,6 +392,55 @@ def collect_topic_mentions(topics_data):
     return mentions
 
 
+def collect_soft_topic_mentions(
+    topics_data: Optional[object],
+    score_threshold: Optional[float] = 0.6,
+    top_k: Optional[int] = None,
+):
+    """
+    Build per-sentence topic mentions from window-level soft scores.
+    Filters by optional top_k and/or score_threshold; skips noise windows.
+    """
+    if not topics_data or not isinstance(topics_data, dict):
+        return []
+
+    windows = topics_data.get("windows") or []
+    mentions = []
+    for window in windows:
+        if window.get("is_noise"):
+            continue
+        scores = window.get("topic_scores") or {}
+        items = []
+        for k, v in scores.items():
+            try:
+                topic_id = int(k)
+                score = float(v)
+            except (TypeError, ValueError):
+                continue
+            items.append((topic_id, score))
+        items.sort(key=lambda kv: kv[1], reverse=True)
+        if top_k is not None and top_k > 0:
+            items = items[:top_k]
+        if score_threshold is not None:
+            items = [(tid, s) for tid, s in items if s >= score_threshold]
+        try:
+            start_sentence = int(window.get("start_sentence", 0))
+            end_sentence = int(window.get("end_sentence", start_sentence))
+        except (TypeError, ValueError):
+            start_sentence = 0
+            end_sentence = start_sentence
+        for topic_id, score in items:
+            mentions.append(
+                {
+                    "topic_id": topic_id,
+                    "start_sentence": start_sentence,
+                    "end_sentence": end_sentence,
+                    "score": score,
+                }
+            )
+    return mentions
+
+
 def build_topic_window_metrics(topic_mentions, window_entries):
     """Aggregate topic mention counts for each sentence window."""
     metrics = []
@@ -318,7 +450,12 @@ def build_topic_window_metrics(topic_mentions, window_entries):
         window_mentions = [
             mention
             for mention in topic_mentions
-            if start_sentence <= mention["sentence_index"] <= end_sentence
+            if (
+                mention.get("start_sentence", mention.get("sentence_index", 0))
+                <= end_sentence
+                and mention.get("end_sentence", mention.get("sentence_index", 0))
+                >= start_sentence
+            )
         ]
         topic_counts = {}
         for mention in window_mentions:
@@ -486,9 +623,20 @@ def compute_topic_metric_report_from_window_result(
     metric_group_names: Optional[List[str]] = None,
     min_topic_mentions: int = 1,
     min_windows: int = 2,
+    use_soft_topic_scores: bool = False,
+    soft_score_threshold: Optional[float] = 0.6,
+    soft_top_k: Optional[int] = None,
 ):
     """Compute a topic/metric report from a window result and topic model output."""
-    topic_mentions = collect_topic_mentions(topics_data)
+    topic_mentions = (
+        collect_soft_topic_mentions(
+            topics_data,
+            score_threshold=soft_score_threshold,
+            top_k=soft_top_k,
+        )
+        if use_soft_topic_scores
+        else collect_topic_mentions(topics_data)
+    )
     window_entries = window_result.get("syntax", {}).get("windows", [])
     topic_metrics = build_topic_window_metrics(topic_mentions, window_entries)
     window_metrics_by_name = select_metric_groups(window_result, metric_group_names)
@@ -504,6 +652,8 @@ def run_topic_modelling(
     use_existing: bool = True,
     window_multiple: int = 2, ############ REMOVE THIS AT SOME POINT??? 
     base_window_size: int = DEFAULT_WINDOW_SIZE,
+    soft_score_threshold: Optional[float] = None,
+    soft_top_k_topics: Optional[int] = None,
 ):
     """Batch topic modelling across all normalised, segmented text files."""
     modeler = NeuralTopicModeler()
@@ -528,10 +678,12 @@ def run_topic_modelling(
             segmented_mentions = load_segmented_topic_mentions(file)
 
             print(f"Extracting topics for {file.name}...")
-            topic_results = modeler.extract_topics(
+            topic_results, window_topics = modeler.extract_topics(
                 segmented_mentions,
                 window_multiple=window_multiple,
                 base_window_size=base_window_size,
+                top_k_topics=soft_top_k_topics,
+                score_threshold=soft_score_threshold,
             )
             num_sentences = len(segmented_mentions)
             result = {
@@ -541,8 +693,11 @@ def run_topic_modelling(
                     "window_multiple": window_multiple,
                     "model_window_size": base_window_size * max(1, window_multiple),
                     "num_sentences": num_sentences,
+                    "soft_score_threshold": soft_score_threshold,
+                    "soft_top_k_topics": soft_top_k_topics,
                 },
                 "topics": serialize_topic_results(topic_results),
+                "windows": window_topics,
                 "mentions_per_sentence": count_mentions_per_sentence(topic_results),
             }
 
