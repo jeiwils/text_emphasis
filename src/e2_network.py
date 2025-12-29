@@ -12,12 +12,12 @@ import pickle
 from matplotlib.lines import Line2D
 from sklearn.metrics.pairwise import cosine_similarity
 
-from b1_concept_embeddings import generate_embeddings
+from b_concept_embeddings import generate_embeddings
 from x_configs import DEFAULT_WINDOW_SIZE
 from z_utils import (
-    processed_text_path,
+    text_path,
     graph_path,
-    topic_modelling_path,
+    analytics_path,
     load_json,
 )
 
@@ -272,7 +272,7 @@ def run_text_pipeline(normalised_text_path: Path, use_existing_embeddings: bool 
 
 def run_pipeline_all_texts(use_existing_embeddings: bool = True):
     """Iterate over all *_normalised.json files and build their concept networks."""
-    base_normalised_dir = processed_text_path("normalised")
+    base_normalised_dir = text_path("processed", "normalised_texts")
     if not base_normalised_dir.exists():
         raise FileNotFoundError(f"Directory not found: {base_normalised_dir}")
 
@@ -379,11 +379,11 @@ def run_topic_cooccurrence_networks(
     min_node_mentions: int = 1,
 ):
     """
-    Build topic co-occurrence graphs from *_topics.json files under data/topic_modelling/<category>/.
+    Build topic co-occurrence graphs from *_topics.json files under data/analytics/topic_modelling/<category>/.
 
     Node size = mention count; edge weight = co-occurrence count.
     """
-    topic_root = topic_modelling_path()
+    topic_root = analytics_path("topic")
     if not topic_root.exists():
         raise FileNotFoundError(f"Directory not found: {topic_root}")
 

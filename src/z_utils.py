@@ -8,6 +8,130 @@ from statistics import mean
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import HDBSCAN
 
+
+
+
+
+
+def text_path(
+    kind: str,
+    subfolder: Optional[str] = None,
+    category: Optional[str] = None,
+    filename: Optional[str] = None,
+) -> Path:
+    """
+    Unified helper for text storage under data/texts.
+    kind: "raw" or "processed".
+    """
+    base = Path("data") / "texts"
+    if kind == "raw":
+        path = base / "raw"
+    elif kind == "processed":
+        path = base / "processed"
+        if subfolder:
+            path = path / subfolder
+    else:
+        raise ValueError('kind must be "raw" or "processed"')
+
+    if category:
+        path = path / category
+    if filename:
+        path = path / filename
+    return path
+
+
+
+def analytics_path(kind: str, category: Optional[str] = None, filename: Optional[str] = None) -> Path:
+    """
+    Unified helper for analytics outputs under data/analytics.
+    kind: "corpus", "window", or "topic".
+    """
+    base = Path("data") / "analytics"
+    folder_map = {
+        "corpus": base / "corpus_analytics",
+        "window": base / "window_metrics",
+        "topic": base / "topic_modelling",
+    }
+    if kind not in folder_map:
+        raise ValueError(f"kind must be one of {list(folder_map.keys())}")
+    path = folder_map[kind]
+    if category:
+        path = path / category
+    if filename:
+        path = path / filename
+    return path
+
+
+
+def embeddings_path(
+    embedding_type: str,
+    filename: Optional[str] = None,
+) -> Path:
+    """
+
+    
+    """
+    base_dir = "data/embeddings"
+
+    folder_map = {
+        "concept": "concept_embeddings",
+        "passage": "passage_embeddings",
+    }
+
+    if embedding_type not in folder_map:
+        raise ValueError(f"embedding_type must be one of {list(folder_map.keys())}")
+
+    path = Path(base_dir) / folder_map[embedding_type]
+
+    if filename:
+        path = path / filename
+
+    return path
+
+
+
+def graph_path(
+    graph_type: str,
+    subfolder: Optional[str] = None,
+    filename: Optional[str] = None,
+) -> Path:
+    """
+
+    """
+    base_dir = "data/graphs"
+
+    folder_map = {
+        "network": "network_analysis",
+        "syntactic": "syntactic_graphs",
+    }
+
+    if graph_type not in folder_map:
+        raise ValueError(f"graph_type must be one of {list(folder_map.keys())}")
+
+    path = Path(base_dir) / folder_map[graph_type]
+    if subfolder:
+        path = path / subfolder
+    if filename:
+        path = path / filename
+    return path
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def sliding_windows(seq, n, step: int = 1):
     """
     Sliding windows of width `n` with stride `step` (default 1).
@@ -80,120 +204,6 @@ def load_json(path):
 
 
 
-def raw_text_path(
-    category: Optional[str] = None,
-    base_dir: str = "data/raw"
-) -> Path:
-    """
-
-    """
-    path = Path(base_dir)
-
-    if category:
-        path = path / category
-
-    return path
-
-
-def processed_text_path(
-    folder_type: str,
-    subfolder: Optional[str] = None,
-    filename: Optional[str] = None,
-) -> Path:
-    """
-
-    """
-    base_dir = "data/processed"
-    
-    folder_map = {
-        "raw": "raw",
-        "cleaned": "cleaned_texts",
-        "cleaned_segmented": "cleaned_segmented_texts",
-        "normalised": "normalised_texts",
-        "normalised_segmented": "normalised_segmented_texts",
-        "audio": "audio_transcripts",
-        "corpus": "corpus_analytics",
-        "window": "window_metrics",
-    }
-
-    if folder_type not in folder_map:
-        raise ValueError(f"folder_type must be one of {list(folder_map.keys())}")
-
-    path = Path(base_dir) / folder_map[folder_type]
-    if subfolder:
-        path = path / subfolder
-    if filename:
-        path = path / filename
-    return path
-
-def topic_modelling_path(
-    category: Optional[str] = None,
-    filename: Optional[str] = None,
-) -> Path:
-    """
-    Path helper for topic modelling outputs (British English spelling).
-    """
-    base_dir = "data/topic_modelling"
-    path = Path(base_dir)
-    if category:
-        path = path / category
-    if filename:
-        path = path / filename
-    return path
-
-def embeddings_path(
-    embedding_type: str,
-    filename: Optional[str] = None,
-) -> Path:
-    """
-
-    
-    """
-    base_dir = "data/embeddings"
-
-    folder_map = {
-        "concept": "concept_embeddings",
-        "passage": "passage_embeddings",
-    }
-
-    if embedding_type not in folder_map:
-        raise ValueError(f"embedding_type must be one of {list(folder_map.keys())}")
-
-    path = Path(base_dir) / folder_map[embedding_type]
-
-    if filename:
-        path = path / filename
-
-    return path
-
-
-
-def graph_path(
-    graph_type: str,
-    subfolder: Optional[str] = None,
-    filename: Optional[str] = None,
-) -> Path:
-    """
-
-    """
-    base_dir = "data/graphs"
-
-    folder_map = {
-        "network": "network_analysis",
-        "syntactic": "syntactic_graphs",
-    }
-
-    if graph_type not in folder_map:
-        raise ValueError(f"graph_type must be one of {list(folder_map.keys())}")
-
-    path = Path(base_dir) / folder_map[graph_type]
-    if subfolder:
-        path = path / subfolder
-    if filename:
-        path = path / filename
-    return path
-
-
 
 
 def encode_texts(
@@ -217,7 +227,11 @@ def hdbscan_cluster_labels(
         return np.array([], dtype=int)
     if len(embeddings) < min_cluster_size:
         return np.full(len(embeddings), -1, dtype=int)
-    clusterer = HDBSCAN(min_cluster_size=min_cluster_size, min_samples=min_samples)
+    clusterer = HDBSCAN(
+        min_cluster_size=min_cluster_size,
+        min_samples=min_samples,
+        copy=False,  # keep embeddings in-place to silence sklearn future warning
+    )
     return clusterer.fit_predict(embeddings)
 
 

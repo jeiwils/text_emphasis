@@ -7,6 +7,11 @@ from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
 from z_utils import aggregate_windows
 
 """
+
+
+TO DO:
+- rename to corpus metrics?
+- check issue with tokeniser 'Token indices sequence length is longer than the specified maximum sequence length for this model (79490 > 1024). Running this sequence through the model will result in indexing errors'
 Text-wide log-probability and surprisal metrics (no IO).
 
 {
@@ -69,6 +74,8 @@ class WholeTextMetrics:
     def __init__(self, lm_model=MODEL_CONFIGS["causal_lm"], device=None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(lm_model)
+        # Disable tokenizer max-length enforcement so we can tokenize whole documents; we chunk before the model call.
+        self.tokenizer.model_max_length = int(1e9)
         self.model = AutoModelForCausalLM.from_pretrained(lm_model).to(self.device)
         self.model.eval()
 
@@ -77,9 +84,20 @@ class WholeTextMetrics:
         text,
         nlp=None,
         chunk_size=2048,
-        stride=0,
+        stride=256,
     ):
-        if stride >= chunk_size:
+        # Ensure we respect the model's maximum position embeddings (e.g., GPT-2 = 1024).
+        max_len = (
+            getattr(self.model.config, "n_positions", None)
+            or getattr(self.model.config, "max_position_embeddings", None)
+            or getattr(self.tokenizer, "model_max_length", None)
+        )
+        if max_len is None or max_len <= 0:
+            max_len = 1024
+        effective_chunk = min(chunk_size, max_len)
+        if effective_chunk <= 0:
+            raise ValueError("chunk_size must be positive")
+        if stride >= effective_chunk:
             raise ValueError("stride must be smaller than chunk_size")
 
         nlp = nlp or load_spacy_model()
@@ -92,6 +110,8 @@ class WholeTextMetrics:
             text,
             add_special_tokens=False,
             return_offsets_mapping=True,
+            max_length=None,  # avoid HF max-length errors; we handle chunking ourselves
+            truncation=False,
         )
         tokens = tokenized["input_ids"]
         offsets = tokenized["offset_mapping"]
@@ -100,8 +120,8 @@ class WholeTextMetrics:
             return [[] for _ in sentence_spans]
 
         token_log_probs = [None] * len(tokens)
-        for i in range(0, len(tokens), chunk_size - stride):
-            chunk_tokens = tokens[i : i + chunk_size]
+        for i in range(0, len(tokens), effective_chunk - stride):
+            chunk_tokens = tokens[i : i + effective_chunk]
             if len(chunk_tokens) < 2:
                 continue
 
@@ -204,12 +224,23 @@ class WholeTextMetrics:
         Computes corpus-level word frequencies from a list of texts.
         """
         word_counter = Counter()
+        total_tokens = 0
         for text in texts:
             words = [w.lower() if lowercase else w for w in text.split() if w.isalpha()]
+            total_tokens += len(words)
             word_counter.update(words)
 
         corpus_freqs = {w: freq for w, freq in word_counter.items() if freq >= min_freq}
-        return corpus_freqs
+        return {
+            "meta": {
+                "lowercase": lowercase,
+                "min_freq": min_freq,
+                "num_texts": len(texts),
+                "total_tokens": total_tokens,
+                "vocab_size": len(corpus_freqs),
+            },
+            "word_frequencies": corpus_freqs,
+        }
 
     def build_metrics_for_text(self, text, filename, nlp=None, window_size=DEFAULT_WINDOW_SIZE):
         """

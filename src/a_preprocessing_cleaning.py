@@ -5,7 +5,8 @@
 
 TO DO:
 - get these functinons from other scripts - maybe get a standard preprocessing script that I use, upload to github
-
+- get configs for the_black_cat, the_telltale_heart
+- "chapter" removing from animal farm 
 
 
 
@@ -20,7 +21,7 @@ import pdfplumber
 from transformers import pipeline
 
 from x_configs import MODEL_CONFIGS, load_spacy_model
-from z_utils import processed_text_path, raw_text_path
+from z_utils import text_path
 
 
 
@@ -47,7 +48,82 @@ class TextPreprocessor:
 
     def clean_text(self, text: str) -> str:
         """Clean text while preserving punctuation and capitalization."""
-        # Normalize whitespace
+        def fix_mojibake(value: str) -> str:
+            """
+            Repair common UTF-8/Windows-1252 artefacts that show up after PDF extraction.
+            """
+            # Known bad sequences
+            replacements = {
+                "â€™": "’",
+                "â€˜": "‘",
+                "â€œ": "“",
+                "â€": "”",
+                "â€“": "–",
+                "â€”": "—",
+                "Â": "",
+                "ƒ?T": "’",
+                "ƒ?o": "“",
+                "ƒ??": "”",
+                "ƒ?": "'",
+            }
+            fixed = value
+            # Try latin-1 -> utf-8 roundtrip when any mojibake markers appear
+            if any(marker in value for marker in replacements.keys()):
+                try:
+                    fixed = value.encode("latin-1").decode("utf-8")
+                except UnicodeError:
+                    fixed = value
+            for bad, good in replacements.items():
+                fixed = fixed.replace(bad, good)
+            return fixed
+
+        def despace_dropcaps(value: str) -> str:
+            """
+            Collapse drop-cap artefacts such as 'C ORALINE' or 'T HE' that break
+            tokens apart after PDF extraction.
+            """
+            pattern = re.compile(r'(?:(?<=^)|(?<=[\n\r\.!\?]\s))([A-Z])\s+([A-Z][A-Za-z]+)')
+
+            def _replace(match: re.Match) -> str:
+                first, rest = match.group(1), match.group(2)
+                merged = (first + rest.lower())
+                return merged.capitalize()
+
+            return pattern.sub(_replace, value)
+
+        def fix_letter_spacing_headers(value: str) -> str:
+            """
+            Collapse spaced-out headings like 'C 1 HAPTER' or 'C HAPTER' and
+            abbreviations like 'M r.' -> 'Mr.' that leak into tokens.
+            """
+            # Remove interspersed numerals (often OCR'd chapter numbers) and glue the word.
+            value = re.sub(
+                r'\b([A-Z])\s+(?:[0-9IVXLC]+\s+)?([A-Z][A-Za-z]+)\b',
+                lambda m: f"{m.group(1)}{m.group(2).lower()}".capitalize(),
+                value,
+            )
+            # Fix split abbreviations such as 'M r.' / 'D r.'.
+            value = re.sub(r'\b([A-Z])\s+([a-z]\.)', r'\1\2', value)
+            return value
+
+        def normalize_shouting(value: str) -> str:
+            """
+            Downcase runs of all-caps words that likely came from small-caps PDF styling.
+            Example: 'Coraline DISCOVERED THE DOOR' -> 'Coraline discovered the door'.
+            """
+            def replacer(match: re.Match) -> str:
+                lead = match.group(1)
+                caps_run = match.group(2)
+                lowered = caps_run.lower()
+                return f"{lead}{lowered}"
+
+            pattern = re.compile(r'([A-Z][a-z]+)((?:\s+[A-Z]{2,}\b)+)')
+            return pattern.sub(replacer, value)
+
+        text = fix_mojibake(text)
+        text = despace_dropcaps(text)
+        text = fix_letter_spacing_headers(text)
+        text = normalize_shouting(text)
         text = re.sub(r'\s+', ' ', text).strip()
         return text  # No lowercasing, no punctuation removal
 
@@ -173,7 +249,7 @@ BOOK_CONFIGS = {
         ],
     },
 
-    "metamorphosis": {
+    "the_metamorphosis": {
         "pages": list(range(2, 71)),
         "start_marker": "One morning, when Gregor Samsa woke",
         "end_marker": "stretch out her young body.",
@@ -207,7 +283,7 @@ BOOK_CONFIGS = {
     },
 
     "coraline": {
-        "pages": list(range(11, 200)),
+        "pages": list(range(11, 119)),
         "start_marker": None,
         "end_marker": None,
         "patterns": [
@@ -339,6 +415,7 @@ def preprocess_pdf(
     config: Optional[dict] = None,
     book_name: Optional[str] = None,
     allow_default_config: bool = True,
+    use_existing: bool = True,
 ):
     """Extract, clean, and save a single PDF with optional page and boilerplate filtering."""
     base_name = pdf_path.stem
@@ -359,21 +436,31 @@ def preprocess_pdf(
             "Add an entry to BOOK_CONFIGS in src/a_preprocessing_cleaning.py to customize page ranges or patterns."
         )
 
-    cleaned_dir = processed_text_path("cleaned", category)
+    cleaned_dir = text_path("processed", "cleaned_texts", category)
     cleaned_dir.mkdir(parents=True, exist_ok=True)
     cleaned_path = cleaned_dir / f"{base_name}_cleaned.json"
 
-    cleaned_segmented_dir = processed_text_path("cleaned_segmented", category)
+    cleaned_segmented_dir = text_path("processed", "cleaned_segmented_texts", category)
     cleaned_segmented_dir.mkdir(parents=True, exist_ok=True)
     cleaned_segmented_path = cleaned_segmented_dir / f"{base_name}_cleaned_segmented.jsonl"
 
-    normalised_dir = processed_text_path("normalised", category)
+    normalised_dir = text_path("processed", "normalised_texts", category)
     normalised_dir.mkdir(parents=True, exist_ok=True)
     normalised_path = normalised_dir / f"{base_name}_normalised.json"
 
-    normalised_segmented_dir = processed_text_path("normalised_segmented", category)
+    normalised_segmented_dir = text_path("processed", "normalised_segmented_texts", category)
     normalised_segmented_dir.mkdir(parents=True, exist_ok=True)
     normalised_segmented_path = normalised_segmented_dir / f"{base_name}_normalised_segmented.jsonl"
+
+    if (
+        use_existing
+        and cleaned_path.exists()
+        and cleaned_segmented_path.exists()
+        and normalised_path.exists()
+        and normalised_segmented_path.exists()
+    ):
+        print(f"[INFO] Skipping {base_name} (outputs exist)")
+        return cleaned_path
 
     # Extract selected pages
     pages = active_config.get("pages")
@@ -471,7 +558,7 @@ def preprocess_audio_file(
         return transcript
 
     category_name = category or audio_path.parent.name
-    save_dir = processed_text_path("audio", category_name)
+    save_dir = text_path("processed", "audio_transcripts", category_name)
     save_dir.mkdir(parents=True, exist_ok=True)
     transcript_path = save_dir / f"{audio_path.stem}_transcript.txt"
     transcript_path.write_text(transcript, encoding="utf-8")
@@ -480,9 +567,9 @@ def preprocess_audio_file(
 
 
 
-def preprocess_all_pdfs(process_unknown: bool = True):
+def preprocess_all_pdfs(process_unknown: bool = True, use_existing: bool = True):
     preproc = TextPreprocessor()
-    base_raw_dir = raw_text_path()
+    base_raw_dir = text_path("raw")
 
     subdirs = ["novels", "novellas", "short_stories", "speech"]
 
@@ -508,6 +595,7 @@ def preprocess_all_pdfs(process_unknown: bool = True):
                 config=config,
                 book_name=normalized_name,
                 allow_default_config=process_unknown,
+                use_existing=use_existing,
             )
 
 
