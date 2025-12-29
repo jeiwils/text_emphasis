@@ -6,17 +6,17 @@ A pipeline for analyzing textual emphasis with linguistic metrics, topic modelin
 
 ## Module groups
 
-- **Group A - preprocessing/cleaning** (`src/a_preprocessing_cleaning.py`): spaCy tokenization/lemmatization, whitespace cleaning, PDF extraction with per-book configs, optional Whisper ASR; writes cleaned/normalised text variants to `data/processed/{cleaned,cleaned_segmented,normalised,normalised_segmented}_texts/` (JSON/JSONL).
+- **Group A - preprocessing/cleaning** (`src/a_preprocessing_cleaning.py`): spaCy tokenization/lemmatization, whitespace cleaning, PDF extraction with per-book configs, optional Whisper ASR; writes cleaned/normalised text variants to `data/texts/processed/{cleaned,cleaned_segmented,normalised,normalised_segmented}_texts/` (JSON/JSONL).
 - **Group B - whole-text embeddings and topics**
   - `src/b1_concept_embeddings.py`: noun-phrase extraction, sentence-transformer embeddings, HDBSCAN clustering; saves to `data/embeddings/concept_embeddings/`.
-  - `src/b2_topic_modeling.py`: sentence-level embeddings, windowed clustering, TF-IDF keywords, topic mentions; saves to `data/topic_modelling/`.
+- `src/b2_topic_modeling.py`: sentence-level embeddings, windowed clustering, TF-IDF keywords, topic mentions; saves to `data/analytics/topic_modelling/`.
 - **Group C - corpus + sentence/window analytics**
   - `src/c0_log_prob_metrics.py`: Hugging Face causal LM log-probability/surprisal/perplexity per sentence and window (no direct I/O; orchestrator writes to corpus JSON via `x_configs.model`).
   - `src/c1_syntactics.py`: dependency depth, clause counts, complexity, syntactic graphs (`data/graphs/syntactic_graphs/`).
   - `src/c2_lexico_semantics.py`: lexical density/frequency/cohesion; supports corpus frequency merging.
   - `src/c3_discourse.py`: discourse markers, entity overlap, pronoun/tense shifts; aggregates per window.
 - **Group D - orchestration**
-  - `src/d_window_metrics.py`: full pipeline runner. Steps: (1) preprocess PDFs to cleaned/normalised text; (2) concept embeddings from normalised text; (3) topic modelling from normalised-segmented JSONL; (4) corpus log-prob metrics from cleaned text; (5) combined window metrics (syntax + lexico-semantic + discourse + info content) to `data/processed/window_metrics/<category>/`.
+  - `src/d_window_metrics.py`: full pipeline runner. Steps: (1) preprocess PDFs to cleaned/normalised text; (2) concept embeddings from normalised text; (3) topic modelling from normalised-segmented JSONL; (4) corpus log-prob metrics from cleaned text; (5) combined window metrics (syntax + lexico-semantic + discourse + info content) to `data/analytics/window_metrics/<category>/<name>/`.
 - **Group E - visualization**
   - `src/e1_heatmap.py`: heatmaps over windowed metrics.
   - `src/e2_network.py`: network views across topic/syntax/lexico-semantic outputs.
@@ -27,14 +27,14 @@ A pipeline for analyzing textual emphasis with linguistic metrics, topic modelin
 ```mermaid
 flowchart TD
   raw[Raw PDFs / ASR] --> preprocess["Group A: preprocess & clean (a_preprocessing_cleaning)"]
-  preprocess --> cleaned["Cleaned texts JSON + cleaned segmented JSONL\n data/processed/cleaned(_segmented)_texts/"]
-  preprocess --> normalised["Normalised texts JSON + normalised segmented JSONL\n data/processed/normalised(_segmented)_texts/"]
+  preprocess --> cleaned["Cleaned texts JSON + cleaned segmented JSONL\n data/texts/processed/cleaned(_segmented)_texts/"]
+  preprocess --> normalised["Normalised texts JSON + normalised segmented JSONL\n data/texts/processed/normalised(_segmented)_texts/"]
 
   normalised --> embeddings["Concept embeddings\nb1_concept_embeddings -> data/embeddings/concept_embeddings/"]
-  normalised --> topics["Topic modelling\nb2_topic_modeling -> data/topic_modelling/"]
-  cleaned --> logprob["Log-prob & surprisal (no direct IO)\nc0_log_prob_metrics -> data/processed/corpus_analytics/ via d_window_metrics"]
+  normalised --> topics["Topic modelling\nb2_topic_modeling -> data/analytics/topic_modelling/"]
+  cleaned --> logprob["Log-prob & surprisal (no direct IO)\nc0_log_prob_metrics -> data/analytics/corpus_analytics/<category>/<name>/ via d_window_metrics"]
 
-  cleaned --> windowed["Window metrics (syntax / lexico-semantics / discourse / log-prob)\nc1/c2/c3 + c0 aggregation -> data/processed/window_metrics/"]
+  cleaned --> windowed["Window metrics (syntax / lexico-semantics / discourse / log-prob)\nc1/c2/c3 + c0 aggregation -> data/analytics/window_metrics/<category>/<name>/"]
   normalised --> windowed
   logprob --> windowed
 
@@ -68,7 +68,7 @@ The study's core aim is to localize and compare *textual emphasis* across a docu
 ### Group C: linguistic, probabilistic, and discourse emphasis signals
 
 - **c0_log_prob_metrics (log-probability, surprisal, perplexity)**  
-  **Metrics taken:** per-sentence log-prob sums/means, per-sentence perplexity, mean surprisal, surprisal variance, plus windowed aggregates; orchestrator writes the corpus JSONs to `data/processed/corpus_analytics/`.  
+  **Metrics taken:** per-sentence log-prob sums/means, per-sentence perplexity, mean surprisal, surprisal variance, plus windowed aggregates; orchestrator writes the corpus JSONs to `data/analytics/corpus_analytics/<category>/<name>/`.  
   **Why:** emphasis can coincide with less predictable language or stylistic foregrounding.  
   **Used for:** identifying unexpectedness peaks across sentence windows.  
   **Relation to study:** tests whether windows with central topics show higher surprisal or shifts in predictability compared to surrounding windows.
@@ -98,13 +98,13 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ## Data layout
 
-- `data/processed/cleaned_texts/<category>/*_cleaned.json`: inputs for corpus/window metrics (full text under `text` key).
-- `data/processed/normalised_texts/<category>/*_normalised.json`: inputs for concept embeddings/networking (full text under `text` key).
-- `data/processed/cleaned_segmented_texts/<category>/*_cleaned_segmented.jsonl` and `data/processed/normalised_segmented_texts/<category>/*_normalised_segmented.jsonl`: sentence-level JSON Lines.
-- `data/processed/corpus_analytics/<category>/*_metrics.json`: corpus log-prob/surprisal outputs from c0 (written via the orchestrator).
-- `data/processed/window_metrics/<category>/*_metrics.json`: combined outputs from the orchestrator (syntax, lexico-semantic, discourse, log-prob windows).
-- `data/topic_modelling/`, `data/embeddings/concept_embeddings/`, `data/graphs/{network_analysis,syntactic_graphs}/`: downstream artifacts from group B/C/E modules.
-- Raw PDFs expected under `data/raw/` (organized by `novels/novellas/short_stories/speech`); other intermediate folders can be added as preprocessing requires.
+- `data/texts/processed/cleaned_texts/<category>/*_cleaned.json`: inputs for corpus/window metrics (full text under `text` key).
+- `data/texts/processed/normalised_texts/<category>/*_normalised.json`: inputs for concept embeddings/networking (full text under `text` key).
+- `data/texts/processed/cleaned_segmented_texts/<category>/*_cleaned_segmented.jsonl` and `data/texts/processed/normalised_segmented_texts/<category>/*_normalised_segmented.jsonl`: sentence-level JSON Lines.
+- `data/analytics/corpus_analytics/<category>/<name>/*_metrics.json`: corpus log-prob/surprisal outputs from c0 (written via the orchestrator).
+- `data/analytics/window_metrics/<category>/<name>/*_metrics.json`: combined outputs from the orchestrator (syntax, lexico-semantic, discourse, log-prob windows).
+- `data/analytics/topic_modelling/`, `data/embeddings/concept_embeddings/`, `data/graphs/{network_analysis,syntactic_graphs}/`: downstream artifacts from group B/C/E modules.
+- Raw PDFs expected under `data/texts/raw/` (organized by `novels/novellas/short_stories/speech`); other intermediate folders can be added as preprocessing requires.
 
 ## Notes
 
