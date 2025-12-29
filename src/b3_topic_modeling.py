@@ -29,8 +29,7 @@ from .z_utils import (
     encode_texts,
     hdbscan_cluster_labels,
 )
-from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
-
+from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS
 
 @dataclass
 class TopicMention:
@@ -89,8 +88,6 @@ def load_segmented_topic_mentions(jsonl_path: Path) -> List[TopicMention]:
                 text=str(text),
                 start_char=start_char,
                 end_char=end_char,
-                end_sentence=sentence_index,
-                window_index=sentence_index,
             )
         )
     if not mentions:
@@ -107,11 +104,9 @@ class NeuralTopicModeler:
     def __init__(
         self,
         model_name: str = MODEL_CONFIGS["sentence_embedding"],
-        language: str = "en_core_web_sm",
         stop_words: str = "english",
     ):
         self.encoder = SentenceTransformer(model_name)
-        self.nlp = load_spacy_model(language)
         self.stop_words = stop_words
 
     def build_windows(
@@ -255,6 +250,11 @@ def serialize_topic_results(topic_results: List[TopicResult]) -> List[Dict[str, 
         for result in topic_results
     ]
 
+def _iter_sentence_span(mention: TopicMention):
+    start = mention.sentence_index
+    end = mention.end_sentence if mention.end_sentence is not None else mention.sentence_index
+    return range(start, end + 1)
+
 
 def count_mentions_per_sentence(topic_results: List[TopicResult]) -> Dict[int, int]:
     """
@@ -264,31 +264,12 @@ def count_mentions_per_sentence(topic_results: List[TopicResult]) -> Dict[int, i
     counts: Dict[int, int] = {}
     for result in topic_results:
         for mention in result.mentions:
-            start = mention.sentence_index
-            end = mention.end_sentence if mention.end_sentence is not None else mention.sentence_index
-            for idx in range(start, end + 1):
+            for idx in _iter_sentence_span(mention):
                 counts[idx] = counts.get(idx, 0) + 1
     return counts
 
 
-def load_topics_json(topic_file: Path):
-    """Locate a topics JSON file and load it."""
-    candidate_paths = [
-        topic_file.with_name(f"{topic_file.stem}_topics.json"),
-        topic_file.with_name(f"{topic_file.stem}.topics.json"),
-        topic_file.with_name(f"{topic_file.stem}-topics.json"),
-    ]
-    candidate_paths.extend(sorted(topic_file.parent.glob(f"{topic_file.stem}*topic*.json")))
 
-    seen = set()
-    for path in candidate_paths:
-        if path in seen:
-            continue
-        seen.add(path)
-        if path.exists():
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-    return None
 
 
 def collect_topic_mentions(topics_data):
