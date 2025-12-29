@@ -20,7 +20,7 @@ import pdfplumber
 from transformers import pipeline
 
 from x_configs import MODEL_CONFIGS, load_spacy_model
-from .z_utils import processed_text_path, raw_text_path
+from z_utils import processed_text_path, raw_text_path
 
 
 
@@ -358,9 +358,6 @@ def preprocess_pdf(
             f"[WARN] No config found for '{book_label}'. Using default processing (all pages, no boilerplate removal). "
             "Add an entry to BOOK_CONFIGS in src/a_preprocessing_cleaning.py to customize page ranges or patterns."
         )
-    raw_dir = processed_text_path("raw", category)
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    raw_path = raw_dir / f"{base_name}_raw.txt"
 
     cleaned_dir = processed_text_path("cleaned", category)
     cleaned_dir.mkdir(parents=True, exist_ok=True)
@@ -381,8 +378,6 @@ def preprocess_pdf(
     # Extract selected pages
     pages = active_config.get("pages")
     raw_text = extract_pdf_pages(pdf_path, pages)
-
-    raw_path.write_text(raw_text, encoding="utf-8")
 
     # Remove boilerplate, trim start/end markers, apply regex patterns
     cleaned_text = remove_boilerplate(
@@ -443,7 +438,6 @@ def preprocess_pdf(
         for entry in normalised_segmented_entries:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-    print(f"[INFO] Raw text saved to {raw_path}")
     print(f"[INFO] Cleaned text saved to {cleaned_path}")
     print(f"[INFO] Cleaned segmented text saved to {cleaned_segmented_path}")
     print(f"[INFO] Normalised text saved to {normalised_path}")

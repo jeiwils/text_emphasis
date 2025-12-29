@@ -12,9 +12,9 @@ import pickle
 from matplotlib.lines import Line2D
 from sklearn.metrics.pairwise import cosine_similarity
 
-from .b1_concept_embeddings import generate_embeddings
+from b1_concept_embeddings import generate_embeddings
 from x_configs import DEFAULT_WINDOW_SIZE
-from .z_utils import (
+from z_utils import (
     processed_text_path,
     graph_path,
     topic_modelling_path,

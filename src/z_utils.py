@@ -8,18 +8,20 @@ from statistics import mean
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import HDBSCAN
 
-def sliding_windows(seq, n):
+def sliding_windows(seq, n, step: int = 1):
     """
-    there may be issues with this - what happens with truncation? 
+    Sliding windows of width `n` with stride `step` (default 1).
     """
     seq = list(seq)
     if n <= 0:
         raise ValueError("window size must be positive")
+    if step <= 0:
+        raise ValueError("step must be a positive integer")
     if len(seq) < n:
         yield seq
         return
-    for i in range(len(seq) - n + 1):
-        yield seq[i:i+n]
+    for i in range(0, len(seq) - n + 1, step):
+        yield seq[i : i + n]
 
 
 def aggregate_windows(sent_metrics, window_size):
@@ -80,7 +82,7 @@ def load_json(path):
 
 def raw_text_path(
     category: Optional[str] = None,
-    base_dir: str = "data/raw_texts"
+    base_dir: str = "data/raw"
 ) -> Path:
     """
 
@@ -104,7 +106,7 @@ def processed_text_path(
     base_dir = "data/processed"
     
     folder_map = {
-        "raw": "raw_texts",
+        "raw": "raw",
         "cleaned": "cleaned_texts",
         "cleaned_segmented": "cleaned_segmented_texts",
         "normalised": "normalised_texts",

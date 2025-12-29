@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
-from .z_utils import aggregate_windows
+from z_utils import aggregate_windows
 
 """
 Text-wide log-probability and surprisal metrics (no IO).

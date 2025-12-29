@@ -32,7 +32,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
 
-from .z_utils import (
+from z_utils import (
     processed_text_path,
     topic_modelling_path,
     sliding_windows,
@@ -121,7 +121,7 @@ class NeuralTopicModeler:
         self.stop_words = stop_words
 
     def build_windows(
-        self, sentences: List[TopicMention], window_size: int
+        self, sentences: List[TopicMention], window_size: int, stride: int = 1
     ) -> List[TopicMention]:
         """
         Build sliding windows (stride 1) of sentences.
@@ -129,8 +129,10 @@ class NeuralTopicModeler:
         """
         if window_size <= 0:
             raise ValueError("window_size must be positive")
+        if stride <= 0:
+            raise ValueError("stride must be positive")
         windows: List[TopicMention] = []
-        for idx, window_sents in enumerate(sliding_windows(sentences, window_size)):
+        for idx, window_sents in enumerate(sliding_windows(sentences, window_size, step=stride)):
             if not window_sents:
                 continue
             start = window_sents[0]
@@ -228,8 +230,10 @@ class NeuralTopicModeler:
         min_samples: Optional[int] = None,
         top_n: int = 8,
         ngram_range: Tuple[int, int] = (1, 2),
-        window_multiple: int = 2,
+        window_multiple: int = 5,
         base_window_size: int = DEFAULT_WINDOW_SIZE,
+        window_size: Optional[int] = None,
+        window_stride: Optional[int] = None,
         top_k_topics: Optional[int] = None,
         score_threshold: Optional[float] = None,
     ) -> Tuple[List[TopicResult], List[Dict[str, object]]]:
@@ -237,14 +241,16 @@ class NeuralTopicModeler:
         Main entrypoint: consumes pre-segmented sentences with offsets and returns clustered topics.
 
         Sentences are grouped into sliding windows of size
-        `base_window_size * window_multiple` with stride 1 to align with
-        other windowed metrics (default base window size is 3).
+        `base_window_size * window_multiple` (default 3 * 5 = 15)
+        with stride `base_window_size` (default 3) so that topic windows
+        align to the sentence-scale metrics built on window size 3.
         """
         if not sentences:
             return [], []
 
-        model_window_size = max(1, base_window_size * max(1, window_multiple))
-        windows = self.build_windows(sentences, model_window_size)
+        model_window_size = window_size or max(1, base_window_size * max(1, window_multiple))
+        stride = window_stride or max(1, base_window_size)
+        windows = self.build_windows(sentences, model_window_size, stride=stride)
         window_texts = [w.text for w in windows]
 
         embeddings = encode_texts(self.encoder, window_texts)
@@ -650,16 +656,25 @@ def compute_topic_metric_report_from_window_result(
 
 def run_topic_modelling(
     use_existing: bool = True,
-    window_multiple: int = 2, ############ REMOVE THIS AT SOME POINT??? 
+    window_multiple: int = 5,
     base_window_size: int = DEFAULT_WINDOW_SIZE,
+    window_stride: Optional[int] = None,
     soft_score_threshold: Optional[float] = None,
     soft_top_k_topics: Optional[int] = None,
 ):
-    """Batch topic modelling across all normalised, segmented text files."""
+    """
+    Batch topic modelling across all normalised, segmented text files.
+
+    Defaults: window size 15 (DEFAULT_WINDOW_SIZE * 5) with stride 3 (DEFAULT_WINDOW_SIZE)
+    so topic windows align to the sentence-level metrics that use window size 3.
+    Output shape: data/topic_modelling/<category>/<name>/<name>_topics.json
+    """
     modeler = NeuralTopicModeler()
     normalised_root = processed_text_path("normalised_segmented")
     output_root = topic_modelling_path()
     output_root.mkdir(parents=True, exist_ok=True)
+    effective_window_size = max(1, base_window_size * max(1, window_multiple))
+    stride = window_stride or max(1, base_window_size)
 
     for subdir in normalised_root.iterdir():
         if not subdir.is_dir():
@@ -670,7 +685,10 @@ def run_topic_modelling(
         out_subdir.mkdir(parents=True, exist_ok=True)
 
         for file in subdir.glob("*.jsonl"):
-            output_file = out_subdir / f"{file.stem}_topics.json"
+            base_name = file.stem.replace("_normalised_segmented", "")
+            text_dir = out_subdir / base_name
+            text_dir.mkdir(parents=True, exist_ok=True)
+            output_file = text_dir / f"{base_name}_topics.json"
             if use_existing and output_file.exists():
                 print(f"Skipping {file.name} (exists)")
                 continue
@@ -682,6 +700,8 @@ def run_topic_modelling(
                 segmented_mentions,
                 window_multiple=window_multiple,
                 base_window_size=base_window_size,
+                window_size=effective_window_size,
+                window_stride=stride,
                 top_k_topics=soft_top_k_topics,
                 score_threshold=soft_score_threshold,
             )
@@ -691,7 +711,8 @@ def run_topic_modelling(
                     "filename": file.name,
                     "base_window_size": base_window_size,
                     "window_multiple": window_multiple,
-                    "model_window_size": base_window_size * max(1, window_multiple),
+                    "model_window_size": effective_window_size,
+                    "window_stride": stride,
                     "num_sentences": num_sentences,
                     "soft_score_threshold": soft_score_threshold,
                     "soft_top_k_topics": soft_top_k_topics,

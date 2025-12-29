@@ -9,7 +9,7 @@ import re
 import json
 
 from x_configs import MODEL_CONFIGS, load_spacy_model
-from .z_utils import embeddings_path, encode_texts, hdbscan_cluster_labels, labels_to_clusters
+from z_utils import embeddings_path, encode_texts, hdbscan_cluster_labels, labels_to_clusters
 
 
 class ConceptExtractor:
@@ -111,6 +111,7 @@ def generate_embeddings(normalised_text_path: Path, top_n: int = 100, use_existi
     """Extract top-N noun phrases and generate or load embeddings."""
     extractor = ConceptExtractor()
     base_name = normalised_text_path.stem.replace("_normalised", "")
+    category = normalised_text_path.parent.name
 
     with open(normalised_text_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -119,7 +120,7 @@ def generate_embeddings(normalised_text_path: Path, top_n: int = 100, use_existi
     all_phrases = extractor.extract_noun_phrases(normalised_text, lemmatize=True)
     phrases, _ = filter_top_n_phrases(all_phrases, n=top_n)
 
-    concept_dir = embeddings_path("concept") / base_name
+    concept_dir = embeddings_path("concept") / category / base_name
     concept_dir.mkdir(parents=True, exist_ok=True)
     phrases_path = concept_dir / f"{base_name}_phrases.pkl"
     with open(phrases_path, "wb") as f:

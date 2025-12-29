@@ -5,7 +5,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 
 from x_configs import DEFAULT_WINDOW_SIZE
-from .z_utils import aggregate_windows, graph_path, load_json
+from z_utils import aggregate_windows, graph_path, load_json
 
 """
 Sentence-level grammar metrics (clauses, syntactic depth, dependency complexity).

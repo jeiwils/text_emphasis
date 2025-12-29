@@ -4,7 +4,7 @@ import statistics
 import numpy as np
 
 from x_configs import DEFAULT_WINDOW_SIZE
-from .z_utils import sliding_windows, aggregate_windows
+from z_utils import sliding_windows, aggregate_windows
 
 """
 Lexical and semantic content metrics (computation only).

@@ -3,7 +3,7 @@ from collections import Counter
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
-from .z_utils import aggregate_windows
+from z_utils import aggregate_windows
 
 """
 Discourse-level metrics and cohesion across sentences (heuristic, no training).
