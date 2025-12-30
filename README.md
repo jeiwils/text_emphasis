@@ -111,3 +111,13 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 - Set `x_configs.model` to the desired causal LM before running log-prob metrics.
 - Several modules still have TODOs and may assume corpus frequency data exists.
 - Tests are not present yet; `pytest` is included in `requirements.txt` for future coverage.
+
+## Preliminary findings (The Black Cat)
+
+- Latest plot: `data/analytics/dashboard/short_stories/the_black_cat/the_black_cat_topic_ic_logprob_r04.png` (stacked soft topic scores per window; right axis = z-scored metrics: lexical rarity and mean log-probability; topics filtered to |r| ≥ 0.4 with either metric).
+- Topics visible (keywords):
+  - Topic 3 — tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible
+  - Topic 2 — run; run fail; fail; fail anger; anger; anger run; near; new feeling
+  - Topic 21 — man; love; love animal; animal; learn; man quite; young marry; somet love
+  - Topic 22 — animal; man; listen; learn; love animal; love; destroy child; hear destroy
+- Observation: Topic 3 shows strong negative correlation with contextual predictability (mean log-probability), while Topics 2/21/22 align with higher lexical rarity (information content), suggesting emphasis spikes when these motifs surface.
