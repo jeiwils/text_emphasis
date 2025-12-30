@@ -149,12 +149,6 @@ Top correlations (|r| >= 0.3, non-positional)
 
 *(Bar/line plots omitted here; trends are less observable in longer texts.)*
 
-#### A Clockwork Orange
-
-Top correlations (|r| >= 0.3, non-positional)
-- Topic 48 - r?-0.36 on lexical windows (avg_word_freq_window, lexical_density_window, information_content_window); keywords: old; dim; old baboochkas; round; sud; baboochkas. Interpretation: lexical pattern shifts with this motif, but effects are modest.
-- Other topics are below |r| 0.3 for language-use metrics.
-
 #### The Metamorphosis
 
 Top correlations (|r| >= 0.3, non-positional)
@@ -163,3 +157,12 @@ Top correlations (|r| >= 0.3, non-positional)
 - Topic 30 - content/entity overlap r?0.33?0.34; keywords: sister; gregor; maid; food; help; mother. Interpretation: shared content/entities rise with this motif.
 - Topic 3 - lexical frequency/rarity (avg_word_freq, normalized_freq, MATTR span) r?-0.33 to -0.35; keywords: quite alright; night; alright; know; quite; illness. Interpretation: rarer words/longer spans with this motif.
 - Topic 6/37 - weaker (~0.30?0.31) signals in discourse/lexical features (e.g., pronoun_ratio, explicit_connectives).
+
+#### The Dead
+
+Top correlations (|r| >= 0.3, non-positional)
+- Topic 11 - mean_surprisal down / mean_log_prob up (|r|?0.34); keywords: good night; night; good; annoy; night gretta; night miss. Interpretation: this motif shows mild predictability shifts, but effects are modest.
+
+#### A Clockwork Orange
+
+*(No non-positional correlations >= 0.3 for the chosen language/grammar metrics; omitting details.)*
