@@ -44,13 +44,14 @@ def text_path(
 def analytics_path(kind: str, category: Optional[str] = None, filename: Optional[str] = None) -> Path:
     """
     Unified helper for analytics outputs under data/analytics.
-    kind: "corpus", "window", or "topic".
+    kind: "corpus", "window", "topic", or "dashboard".
     """
     base = Path("data") / "analytics"
     folder_map = {
         "corpus": base / "corpus_analytics",
         "window": base / "window_metrics",
         "topic": base / "topic_modelling",
+        "dashboard": base / "dashboard",
     }
     if kind not in folder_map:
         raise ValueError(f"kind must be one of {list(folder_map.keys())}")

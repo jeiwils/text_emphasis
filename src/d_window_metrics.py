@@ -11,6 +11,7 @@ from c4_topic_modeling import run_topic_modelling
 from c1_syntactics import SyntaxAnalyzer
 from c2_lexico_semantics import LexicoSemanticsAnalyzer
 from c3_discourse import DiscourseAnalyzer
+from w_dashboard import run_dashboard
 from z_utils import text_path, analytics_path
 
 
@@ -293,7 +294,7 @@ def run_all_metrics(mattr_window_size=50, use_existing=True, process_unknown=Tru
     )
     run_corpus_metrics(use_existing=use_existing)
     run_windowed_metrics(mattr_window_size=mattr_window_size, use_existing=use_existing)
-
+    run_dashboard(use_existing=use_existing)
 
 if __name__ == "__main__":
     run_all_metrics()
