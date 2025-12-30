@@ -112,9 +112,11 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 - Several modules still have TODOs and may assume corpus frequency data exists.
 - Tests are not present yet; `pytest` is included in `requirements.txt` for future coverage.
 
-## Preliminary findings (The Black Cat)
+## Preliminary findings
 
-### Bar/line chart
+### The Black Cat
+
+#### Bar/line chart
 
 ![The Black Cat - topics vs IC/log-prob (|r| >= 0.4)](data/analytics/dashboard/short_stories/the_black_cat/the_black_cat_topic_ic_logprob_r04.png)
 
@@ -126,9 +128,26 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
   - Topic 22 - animal; man; listen; learn; love animal; love; destroy child; hear destroy
 - Observation: Topic 3 shows strong negative correlation with contextual predictability (mean log-probability), while Topics 2/21/22 align with higher lexical rarity (information content), suggesting emphasis spikes when these motifs surface.
 
-### Top correlations (|r| >= 0.5)
+#### Top correlations (|r| >= 0.5)
 
 - Topic 3 - perplexity up (r=+0.78), mean_surprisal up (r=+0.66), mean_log_prob down (r=-0.66); keywords: tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible. Interpretation: "fatal tomorrow" motif coincides with less predictable, more surprising language.
 - Topic 0 - contingency connectives up (r=+0.65); keywords: hang; know; love; outside reach; place soul; deadly place; reason hurt; eye hang. Interpretation: "hanging/doom" motif framed with more causal/contingency linking.
 - Topic 21 - positional/lexical windows shift (r=-0.50 across info_content/avg_word_freq/lexical_density windows and sentence_index); keywords: man; love; love animal; animal; learn; man quite; young marry; somet love. Interpretation: "affection/animal bond" motif clusters earlier and brings distinct lexical rarity/density.
 - Topic 1 - contingency connectives up (r=+0.50); keywords: law; time; time push; human; time wrong; human time; push drive; evil thing. Interpretation: "law/time/pressure" motif accompanied by more causal connectives.
+
+### A Clockwork Orange
+
+#### Bar/line chart (binned ~100 bins)
+
+![A Clockwork Orange - topics vs IC/log-prob](data/analytics/dashboard/novellas/a_clockwork_orange/a_clockwork_orange_topic_ic_logprob.png)
+
+- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (lexical rarity, mean log-probability); topics plotted: 48, 50.
+- Topics visible (keywords):
+  - Topic 48 - old; dim; old baboochkas; round; sud; baboochkas; lad; buy
+  - Topic 50 - say georgie; lad; say; georgie; georgieboy; dim; buy; right right (low correlation with target metrics)
+- Observation: correlations to IC/log-prob are modest; main trend is positional/lexical shifts for Topics 48/50.
+
+#### Top correlations (|r| >= 0.3)
+
+- Topic 48 - r=-0.36 across sentence_index and lexical windows (avg_word_freq_window, information_content_window, lexical_density_window); keywords: old; dim; old baboochkas; round; sud; baboochkas; lad; buy. Interpretation: this motif appears in earlier windows with distinct lexical rarity/frequency patterns.
+- Topic 50 - r=-0.31 across sentence_index and lexical windows; keywords: say georgie; lad; say; georgie; georgieboy; dim; buy; right right. Interpretation: another positional/lexical shift, modest effect size.
