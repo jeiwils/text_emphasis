@@ -141,7 +141,7 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ![A Clockwork Orange - topics vs IC/log-prob](data/analytics/dashboard/novellas/a_clockwork_orange/a_clockwork_orange_topic_ic_logprob.png)
 
-- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sentence index, avg word freq window); topics plotted: top 2 by |r| for these metrics.
+- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sentence index, avg word freq window); topics plotted: top by |r| for these metrics.
 - Topics visible (keywords):
   - Topic 48 - old; dim; old baboochkas; round; sud; baboochkas; lad; buy
   - Topic 50 - say georgie; lad; say; georgie; georgieboy; dim; buy; right right
@@ -158,7 +158,7 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ![The Tell-Tale Heart - topics vs IC/log-prob](data/analytics/dashboard/short_stories/the_telltale_heart/the_telltale_heart_topic_ic_logprob.png)
 
-- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sum log-probability, lexical density window token count); topics filtered to |r| >= 0.3 and top 5 by |r|.
+- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sum log-probability, lexical density window token count); topics filtered to |r| >= 0.3 and top by |r|.
 - Topics visible: multiple active topics (e.g., Topic 36) that meet the filter.
 
 #### Top correlations (|r| >= 0.3)
@@ -168,4 +168,20 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ### The Metamorphosis
 
-*Topic correlations file not found; plot unavailable.*
+#### Bar/line chart (binned ~100 bins)
+
+![The Metamorphosis - topics vs sentence index/avg word freq](data/analytics/dashboard/novellas/the_metamorphosis/the_metamorphosis_topic_ic_logprob.png)
+
+- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sentence index, avg word freq window); topics filtered to |r| >= 0.3 and top by |r|.
+- Topics visible (keywords):
+  - Topic 5 - samsa; mr samsa; mr; landing; samsa woman; man
+  - Topic 18 - stone; single; quite impossible; single stone; impossible; place pleased
+  - Topic 4 - yes; board; yes kill; kill; yes yes; kill pull
+  - Topic 14 - 34; like 34; cat pluto; pluto pet; pet like; like
+  - Topic 15 - search; house tell; tell search; search search; search lead; bed room
+
+#### Top correlations (|r| >= 0.3)
+
+- Topic 5 - positional/lexical windows (e.g., sentence_id and lexical window positions) r≈+0.44; keywords: samsa; mr samsa; mr; landing; samsa woman; man. Interpretation: “Samsa/household” motif clusters in specific positions with consistent lexical window signatures.
+- Topic 18 - depth/positional shifts (r≈+0.43 on entity overlap ratio and window positions); keywords: stone; single; quite impossible; single stone; impossible; place pleased. Interpretation: “stone/impossible” motif marks sections with higher cohesion/overlap and distinct placement.
+- Topic 12/15/21 (various lexical window measures around 0.42–0.46) indicate local lexical/structural shifts tied to their motifs.
