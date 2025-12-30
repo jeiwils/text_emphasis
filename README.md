@@ -120,8 +120,8 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ![The Black Cat - topics vs IC/log-prob (|r| >= 0.4)](data/analytics/dashboard/short_stories/the_black_cat/the_black_cat_topic_ic_logprob_r04.png)
 
-- Stacked soft topic scores per window; right axis: z-scored metrics (lexical rarity, mean log-probability); topics filtered to |r| >= 0.4 with either metric.
-- Topics visible:
+- Stacked soft topic scores per window (top 5 topics by |r| for the selected metrics); right axis: z-scored metrics (lexical rarity, mean log-probability); topics filtered to |r| >= 0.4 with either metric.
+- Topics visible (keywords):
   - Topic 2 - run; run fail; fail; fail anger; anger; anger run; near; new feeling
   - Topic 3 - tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible
   - Topic 21 - man; love; love animal; animal; learn; man quite; young marry; somet love
@@ -141,16 +141,16 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ![A Clockwork Orange - topics vs IC/log-prob](data/analytics/dashboard/novellas/a_clockwork_orange/a_clockwork_orange_topic_ic_logprob.png)
 
-- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (lexical rarity, mean log-probability); topics plotted: 48, 50.
+- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (average word frequency, contingency connectives); topics plotted: top 2 by |r| for these metrics.
 - Topics visible (keywords):
   - Topic 48 - old; dim; old baboochkas; round; sud; baboochkas; lad; buy
-  - Topic 50 - say georgie; lad; say; georgie; georgieboy; dim; buy; right right (low correlation with target metrics)
-- Observation: correlations to IC/log-prob are modest; main trend is positional/lexical shifts for Topics 48/50.
+  - Topic 50 - say georgie; lad; say; georgie; georgieboy; dim; buy; right right
+- Observation: correlations to the chosen metrics are modest; main trend is positional/lexical shifts for Topics 48/50.
 
 #### Top correlations (|r| >= 0.3)
 
-- Topic 48 - r=-0.36 across sentence_index and lexical windows (avg_word_freq_window, information_content_window, lexical_density_window); keywords: old; dim; old baboochkas; round; sud; baboochkas; lad; buy. Interpretation: this motif appears in earlier windows with distinct lexical rarity/frequency patterns.
-- Topic 50 - r=-0.31 across sentence_index and lexical windows; keywords: say georgie; lad; say; georgie; georgieboy; dim; buy; right right. Interpretation: another positional/lexical shift, modest effect size.
+- Topic 48 - r=-0.36 across sentence_index and lexical/IC windows (avg_word_freq_window, information_content_window, lexical_density_window); keywords: old; dim; old baboochkas; round; sud; baboochkas; lad; buy. Interpretation: motif appears earlier with distinct lexical rarity/frequency patterns.
+- Topic 50 - r=-0.31 across sentence_index and lexical/IC windows; keywords: say georgie; lad; say; georgie; georgieboy; dim; buy; right right. Interpretation: positional/lexical shift, modest effect size.
 
 ### The Tell-Tale Heart
 
@@ -158,10 +158,10 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ![The Tell-Tale Heart - topics vs IC/log-prob](data/analytics/dashboard/short_stories/the_telltale_heart/the_telltale_heart_topic_ic_logprob.png)
 
-- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (lexical rarity, mean log-probability); topics filtered to |r| >= 0.3 with either metric.
-- Topics visible: multiple active topics; plot highlights those meeting the metric filter (e.g., Topic 36).
+- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (lexical density, mean log-probability); topics filtered to |r| >= 0.3 with either metric and top 5 by |r|.
+- Topics visible: multiple active topics (e.g., Topic 36) that meet the filter.
 
 #### Top correlations (|r| >= 0.3)
 
-- Topic 36 - sum_log_prob down (r=-0.52) across info_content/log_prob blocks; num_tokens up (r≈+0.50); keywords: eye; eye evil; kill eye; man feel; evil; feel kill; evil eye; sleep. Interpretation: “evil eye” motif co-occurs with longer, less probable spans, boosting token counts and lowering log-probability.
+- Topic 36 - sum_log_prob down (r=-0.52) across info_content/log_prob blocks; token counts up (r≈+0.50); keywords: eye; eye evil; kill eye; man feel; evil; feel kill. Interpretation: “evil eye” motif co-occurs with longer, less probable spans, boosting token counts and lowering log-probability.
 - Topic 23 - explicit_connectives up (r=+0.47); keywords: plan; madman plan; madman; mad madman; think mad; think; mad; plan week. Interpretation: “madman plan” motif uses more explicit discourse connectives.
