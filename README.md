@@ -118,8 +118,8 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ![The Black Cat - topics vs IC/log-prob (|r| >= 0.4)](data/analytics/dashboard/short_stories/the_black_cat/the_black_cat_topic_ic_logprob_r04.png)
 
-- Stacked soft topic scores per window; right axis = z-scored metrics (lexical rarity and mean log-probability); topics filtered to |r| >= 0.4 with either metric.
-- Topics visible (keywords):
+- Stacked soft topic scores per window; right axis: z-scored metrics (lexical rarity, mean log-probability); topics filtered to |r| >= 0.4 with either metric.
+- Topics visible:
   - Topic 2 - run; run fail; fail; fail anger; anger; anger run; near; new feeling
   - Topic 3 - tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible
   - Topic 21 - man; love; love animal; animal; learn; man quite; young marry; somet love
@@ -128,7 +128,7 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ### Top correlations (|r| >= 0.5)
 
-- Topic 3 ? perplexity up (r?+0.78), mean_surprisal up (r?+0.66), mean_log_prob down (r?-0.66); keywords: tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible. Interpretation: ?fatal tomorrow? motif coincides with less predictable, more surprising language.
-- Topic 0 ? contingency connectives up (r?+0.65); keywords: hang; know; love; outside reach; place soul; deadly place; reason hurt; eye hang. Interpretation: ?hanging/doom? motif framed with more causal/contingency linking.
-- Topic 21 ? positional/lexical windows shift (r?-0.50 across info_content/avg_word_freq/lexical_density windows and sentence_index); keywords: man; love; love animal; animal; learn; man quite; young marry; somet love. Interpretation: ?affection/animal bond? motif clusters earlier and brings distinct lexical rarity/density.
-- Topic 1 ? contingency connectives up (r?+0.50); keywords: law; time; time push; human; time wrong; human time; push drive; evil thing. Interpretation: ?law/time/pressure? motif accompanied by more causal connectives.
+- Topic 3 - perplexity up (r=+0.78), mean_surprisal up (r=+0.66), mean_log_prob down (r=-0.66); keywords: tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible. Interpretation: "fatal tomorrow" motif coincides with less predictable, more surprising language.
+- Topic 0 - contingency connectives up (r=+0.65); keywords: hang; know; love; outside reach; place soul; deadly place; reason hurt; eye hang. Interpretation: "hanging/doom" motif framed with more causal/contingency linking.
+- Topic 21 - positional/lexical windows shift (r=-0.50 across info_content/avg_word_freq/lexical_density windows and sentence_index); keywords: man; love; love animal; animal; learn; man quite; young marry; somet love. Interpretation: "affection/animal bond" motif clusters earlier and brings distinct lexical rarity/density.
+- Topic 1 - contingency connectives up (r=+0.50); keywords: law; time; time push; human; time wrong; human time; push drive; evil thing. Interpretation: "law/time/pressure" motif accompanied by more causal connectives.
