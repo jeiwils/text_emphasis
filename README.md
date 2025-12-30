@@ -151,3 +151,17 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 - Topic 48 - r=-0.36 across sentence_index and lexical windows (avg_word_freq_window, information_content_window, lexical_density_window); keywords: old; dim; old baboochkas; round; sud; baboochkas; lad; buy. Interpretation: this motif appears in earlier windows with distinct lexical rarity/frequency patterns.
 - Topic 50 - r=-0.31 across sentence_index and lexical windows; keywords: say georgie; lad; say; georgie; georgieboy; dim; buy; right right. Interpretation: another positional/lexical shift, modest effect size.
+
+### The Tell-Tale Heart
+
+#### Bar/line chart (binned ~100 bins)
+
+![The Tell-Tale Heart - topics vs IC/log-prob](data/analytics/dashboard/short_stories/the_telltale_heart/the_telltale_heart_topic_ic_logprob.png)
+
+- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (lexical rarity, mean log-probability); topics filtered to |r| >= 0.3 with either metric.
+- Topics visible: multiple active topics; plot highlights those meeting the metric filter (e.g., Topic 36).
+
+#### Top correlations (|r| >= 0.3)
+
+- Topic 36 - sum_log_prob down (r=-0.52) across info_content/log_prob blocks; num_tokens up (r≈+0.50); keywords: eye; eye evil; kill eye; man feel; evil; feel kill; evil eye; sleep. Interpretation: “evil eye” motif co-occurs with longer, less probable spans, boosting token counts and lowering log-probability.
+- Topic 23 - explicit_connectives up (r=+0.47); keywords: plan; madman plan; madman; mad madman; think mad; think; mad; plan week. Interpretation: “madman plan” motif uses more explicit discourse connectives.
