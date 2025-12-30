@@ -162,7 +162,3 @@ Top correlations (|r| >= 0.3, non-positional)
 
 Top correlations (|r| >= 0.3, non-positional)
 - Topic 11 - mean_surprisal down / mean_log_prob up (|r|?0.34); keywords: good night; night; good; annoy; night gretta; night miss. Interpretation: this motif shows mild predictability shifts, but effects are modest.
-
-#### A Clockwork Orange
-
-*(No non-positional correlations >= 0.3 for the chosen language/grammar metrics; omitting details.)*
