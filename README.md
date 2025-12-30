@@ -114,74 +114,52 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 
 ## Preliminary findings
 
-### The Black Cat
+### Short stories
 
-#### Bar/line chart
+#### The Black Cat
 
 ![The Black Cat - topics vs IC/log-prob (|r| >= 0.4)](data/analytics/dashboard/short_stories/the_black_cat/the_black_cat_topic_ic_logprob_r04.png)
 
 - Stacked soft topic scores per window (top 5 topics by |r| for the selected metrics); right axis: z-scored metrics (lexical rarity, mean log-probability); topics filtered to |r| >= 0.3 with either metric.
-- Topics visible (keywords):
-  - Topic 2 - run; run fail; fail; fail anger; anger; anger run; near; new feeling
-  - Topic 3 - tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible
-  - Topic 21 - man; love; love animal; animal; learn; man quite; young marry; somet love
-  - Topic 22 - animal; man; listen; learn; love animal; love; destroy child; hear destroy
+- Topics visible (keywords): Topic 2 - run; run fail; fail; fail anger; anger; anger run; near; new feeling | Topic 3 - tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible | Topic 21 - man; love; love animal; animal; learn; man quite; young marry; somet love | Topic 22 - animal; man; listen; learn; love animal; love; destroy child; hear destroy
 - Observation: Topic 3 shows strong negative correlation with contextual predictability (mean log-probability), while Topics 2/21/22 align with higher lexical rarity (information content), suggesting emphasis spikes when these motifs surface.
 
-#### Top correlations (|r| >= 0.5)
+Top correlations (|r| >= 0.3, non-positional)
+- Topic 3 - perplexity up (r=+0.78), mean_surprisal up (r=+0.66), mean_log_prob down (r=-0.66); keywords: tomorrow die; tomorrow; die; today want; today; happen. Interpretation: "fatal tomorrow" motif coincides with less predictable, more surprising language.
+- Topic 0 - contingency connectives up (r=+0.65); keywords: hang; know; love; outside reach; place soul; deadly place. Interpretation: "hanging/doom" motif framed with more causal/contingency linking.
+- Topic 1 - contingency connectives up (r=+0.50); keywords: law; time; time push; human; time wrong; human time. Interpretation: "law/time/pressure" motif accompanied by more causal connectives.
+- Topic 18 - depth skew flatter (r?-0.49); keywords: stone; single; quite impossible; single stone; impossible; place pleased. Interpretation: "stone/impossible" motif links to more balanced dependency depth.
+- Topic 2 - comparison connectives up (r?+0.44); keywords: run; run fail; fail; fail anger; anger; anger run. Interpretation: comparison linking rises with this motif.
 
-- Topic 3 - perplexity up (r=+0.78), mean_surprisal up (r=+0.66), mean_log_prob down (r=-0.66); keywords: tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible. Interpretation: "fatal tomorrow" motif coincides with less predictable, more surprising language.
-- Topic 0 - contingency connectives up (r=+0.65); keywords: hang; know; love; outside reach; place soul; deadly place; reason hurt; eye hang. Interpretation: "hanging/doom" motif framed with more causal/contingency linking.
-- Topic 21 - positional/lexical windows shift (r=-0.50 across info_content/avg_word_freq/lexical_density windows and sentence_index); keywords: man; love; love animal; animal; learn; man quite; young marry; somet love. Interpretation: "affection/animal bond" motif clusters earlier and brings distinct lexical rarity/density.
-- Topic 1 - contingency connectives up (r=+0.50); keywords: law; time; time push; human; time wrong; human time; push drive; evil thing. Interpretation: "law/time/pressure" motif accompanied by more causal connectives.
-
-### A Clockwork Orange
-
-#### Bar/line chart (binned ~100 bins)
-
-![A Clockwork Orange - topics vs IC/log-prob](data/analytics/dashboard/novellas/a_clockwork_orange/a_clockwork_orange_topic_ic_logprob.png)
-
-- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sentence index, avg word freq window); topics plotted: top by |r| for these metrics.
-- Topics visible (keywords):
-  - Topic 48 - old; dim; old baboochkas; round; sud; baboochkas; lad; buy
-  - Topic 50 - say georgie; lad; say; georgie; georgieboy; dim; buy; right right
-- Observation: correlations to the chosen metrics are modest; main trend is positional/lexical shifts for Topics 48/50.
-
-#### Top correlations (|r| >= 0.3)
-
-- Topic 48 - r=-0.36 across sentence_index and lexical/IC windows (avg_word_freq_window, information_content_window, lexical_density_window); keywords: old; dim; old baboochkas; round; sud; baboochkas; lad; buy. Interpretation: motif appears earlier with distinct lexical rarity/frequency patterns.
-- Topic 50 - r=-0.31 across sentence_index and lexical/IC windows; keywords: say georgie; lad; say; georgie; georgieboy; dim; buy; right right. Interpretation: positional/lexical shift, modest effect size.
-
-### The Tell-Tale Heart
-
-#### Bar/line chart (binned ~100 bins)
+#### The Tell-Tale Heart
 
 ![The Tell-Tale Heart - topics vs IC/log-prob](data/analytics/dashboard/short_stories/the_telltale_heart/the_telltale_heart_topic_ic_logprob.png)
 
-- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sum log-probability, lexical density window token count); topics filtered to |r| >= 0.3 and top by |r|.
+- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sum log-probability, lexical density window token count); topics filtered to |r| >= 0.3 (non-positional) and top by |r|.
 - Topics visible: multiple active topics (e.g., Topic 36) that meet the filter.
 
-#### Top correlations (|r| >= 0.3)
+Top correlations (|r| >= 0.3, non-positional)
+- Topic 36 - sum_log_prob down (r=-0.52); token counts up (r?+0.50); keywords: eye; eye evil; kill eye; man feel; evil; feel kill. Interpretation: ?evil eye? motif co-occurs with longer, less probable spans.
+- Topic 23 - explicit_connectives up (r=+0.47); keywords: plan; madman plan; madman; mad madman; think mad; think; mad; plan week. Interpretation: ?madman plan? motif uses more explicit discourse connectives.
+- Topic 18 - surprisal variance up (r?+0.44); keywords: eye; like; blue; blue eye; like ice; body like. Interpretation: ?blue eye? motif shows higher surprisal variability.
+- Topic 14 - content overlap ratio up (r?+0.46); keywords: 34; like 34; cat pluto; pluto pet; pet like; like. Interpretation: higher content overlap when this motif appears.
+- Topic 6 - lexical metrics up (r?+0.47 across lexical windows); keywords: end; search; know; quietly expect; win battle; end end. Interpretation: lexical load rises with this motif.
 
-- Topic 36 - sum_log_prob down (r=-0.52) across info_content/log_prob blocks; token counts up (r≈+0.50); keywords: eye; eye evil; kill eye; man feel; evil; feel kill. Interpretation: “evil eye” motif co-occurs with longer, less probable spans, boosting token counts and lowering log-probability.
-- Topic 23 - explicit_connectives up (r=+0.47); keywords: plan; madman plan; madman; mad madman; think mad; think; mad; plan week. Interpretation: “madman plan” motif uses more explicit discourse connectives.
+### Novellas
 
-### The Metamorphosis
+*(Bar/line plots omitted here; trends are less observable in longer texts.)*
 
-#### Bar/line chart (binned ~100 bins)
+#### A Clockwork Orange
 
-![The Metamorphosis - topics vs sentence index/avg word freq](data/analytics/dashboard/novellas/the_metamorphosis/the_metamorphosis_topic_ic_logprob.png)
+Top correlations (|r| >= 0.3, non-positional)
+- Topic 48 - r?-0.36 on lexical windows (avg_word_freq_window, lexical_density_window, information_content_window); keywords: old; dim; old baboochkas; round; sud; baboochkas. Interpretation: lexical pattern shifts with this motif, but effects are modest.
+- Other topics are below |r| 0.3 for language-use metrics.
 
-- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sentence index, avg word freq window); topics filtered to |r| >= 0.3 and top by |r|.
-- Topics visible (keywords):
-  - Topic 5 - samsa; mr samsa; mr; landing; samsa woman; man
-  - Topic 18 - stone; single; quite impossible; single stone; impossible; place pleased
-  - Topic 4 - yes; board; yes kill; kill; yes yes; kill pull
-  - Topic 14 - 34; like 34; cat pluto; pluto pet; pet like; like
-  - Topic 15 - search; house tell; tell search; search search; search lead; bed room
+#### The Metamorphosis
 
-#### Top correlations (|r| >= 0.3)
-
-- Topic 5 - positional/lexical windows (e.g., sentence_id and lexical window positions) r≈+0.44; keywords: samsa; mr samsa; mr; landing; samsa woman; man. Interpretation: “Samsa/household” motif clusters in specific positions with consistent lexical window signatures.
-- Topic 18 - depth/positional shifts (r≈+0.43 on entity overlap ratio and window positions); keywords: stone; single; quite impossible; single stone; impossible; place pleased. Interpretation: “stone/impossible” motif marks sections with higher cohesion/overlap and distinct placement.
-- Topic 12/15/21 (various lexical window measures around 0.42–0.46) indicate local lexical/structural shifts tied to their motifs.
+Top correlations (|r| >= 0.3, non-positional)
+- Topic 5 - lexical window metrics (mattr/lexical_density/information_content windows) r?+0.44; keywords: samsa; mr samsa; mr; landing; samsa woman; man. Interpretation: ?Samsa/household? motif carries consistent lexical window signatures.
+- Topic 41 - entity_overlap r?+0.35; keywords: gregor; sister; window; sheet; couch; come room. Interpretation: higher entity cohesion with this motif.
+- Topic 30 - content/entity overlap r?0.33?0.34; keywords: sister; gregor; maid; food; help; mother. Interpretation: shared content/entities rise with this motif.
+- Topic 3 - lexical frequency/rarity (avg_word_freq, normalized_freq, MATTR span) r?-0.33 to -0.35; keywords: quite alright; night; alright; know; quite; illness. Interpretation: rarer words/longer spans with this motif.
+- Topic 6/37 - weaker (~0.30?0.31) signals in discourse/lexical features (e.g., pronoun_ratio, explicit_connectives).
