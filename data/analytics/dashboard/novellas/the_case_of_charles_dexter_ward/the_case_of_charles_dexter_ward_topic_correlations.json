@@ -17,7 +17,6 @@
       "discourse.explicit_connectives",
       "discourse.num_tokens",
       "discourse.pronoun_ratio",
-      "discourse.sentence_index",
       "discourse.tense_shift",
       "information_content_metrics.sentence_log_prob_metrics.mean_log_prob",
       "information_content_metrics.sentence_log_prob_metrics.num_tokens",
@@ -29,23 +28,15 @@
       "lexico_semantics.avg_word_freq",
       "lexico_semantics.avg_word_freq_window.avg_word_freq",
       "lexico_semantics.avg_word_freq_window.content_function_ratio",
-      "lexico_semantics.avg_word_freq_window.end_sentence",
       "lexico_semantics.avg_word_freq_window.normalized_freq",
-      "lexico_semantics.avg_word_freq_window.start_sentence",
       "lexico_semantics.content_function_ratio",
       "lexico_semantics.information_content",
-      "lexico_semantics.information_content_window.end_sentence",
       "lexico_semantics.information_content_window.information_content",
-      "lexico_semantics.information_content_window.start_sentence",
       "lexico_semantics.lexical_density",
       "lexico_semantics.lexical_density_window.content_count",
-      "lexico_semantics.lexical_density_window.end_sentence",
       "lexico_semantics.lexical_density_window.lexical_density",
-      "lexico_semantics.lexical_density_window.start_sentence",
       "lexico_semantics.lexical_density_window.token_count",
-      "lexico_semantics.mattr_window.end_sentence",
       "lexico_semantics.mattr_window.mattr_score",
-      "lexico_semantics.mattr_window.start_sentence",
       "lexico_semantics.mattr_window.token_count",
       "lexico_semantics.mattr_window.window_token_span",
       "lexico_semantics.normalized_freq",
@@ -53,9 +44,7 @@
       "lexico_semantics.num_clauses",
       "lexico_semantics.num_patients",
       "lexico_semantics.role_count",
-      "lexico_semantics.semantic_roles_window.end_sentence",
       "lexico_semantics.semantic_roles_window.role_count",
-      "lexico_semantics.semantic_roles_window.start_sentence",
       "lexico_semantics.semantic_structures_window.total_agents",
       "lexico_semantics.semantic_structures_window.total_clauses",
       "lexico_semantics.semantic_structures_window.total_patients",
@@ -94,441 +83,255 @@
     "topics": {
       "0": {
         "keywords": [
-          "weeden",
-          "smith",
-          "capt",
-          "town",
-          "curwen",
-          "prisoner",
-          "mathewson",
-          "man"
+          "charles escape",
+          "tell mother",
+          "safe",
+          "tomorrow",
+          "real charles",
+          "certain person write",
+          "fiend truly madman",
+          "account end boy"
         ],
-        "windows_with_topic": 270,
-        "windows_without_topic": 1479,
+        "windows_with_topic": 38,
+        "windows_without_topic": 1711,
         "correlations": {
-          "discourse.sentence_index": {
-            "pearson_r": -0.41012095636846746,
+          "discourse.pronoun_ratio": {
+            "pearson_r": 0.30280650129056086,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 390.3666666666667,
-            "mean_without_topic": 963.4726166328601
-          },
-          "lexico_semantics.avg_word_freq_window.end_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 391.3666666666667,
-            "mean_without_topic": 964.4726166328601
-          },
-          "lexico_semantics.avg_word_freq_window.start_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 389.3666666666667,
-            "mean_without_topic": 962.4726166328601
-          },
-          "lexico_semantics.information_content_window.end_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 391.3666666666667,
-            "mean_without_topic": 964.4726166328601
-          },
-          "lexico_semantics.information_content_window.start_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 389.3666666666667,
-            "mean_without_topic": 962.4726166328601
-          },
-          "lexico_semantics.lexical_density_window.end_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 391.3666666666667,
-            "mean_without_topic": 964.4726166328601
-          },
-          "lexico_semantics.lexical_density_window.start_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 389.3666666666667,
-            "mean_without_topic": 962.4726166328601
-          },
-          "lexico_semantics.mattr_window.end_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 391.3666666666667,
-            "mean_without_topic": 964.4726166328601
-          },
-          "lexico_semantics.mattr_window.start_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 389.3666666666667,
-            "mean_without_topic": 962.4726166328601
-          },
-          "lexico_semantics.semantic_roles_window.end_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 391.3666666666667,
-            "mean_without_topic": 964.4726166328601
-          },
-          "lexico_semantics.semantic_roles_window.start_sentence": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 389.3666666666667,
-            "mean_without_topic": 962.4726166328601
-          },
-          "syntax.sentence_id": {
-            "pearson_r": -0.41012095636846746,
-            "n": 1749,
-            "mean_with_topic": 390.3666666666667,
-            "mean_without_topic": 963.4726166328601
+            "mean_with_topic": 0.17736842105263162,
+            "mean_without_topic": 0.08113968439509074
           }
         }
       },
-      "16": {
+      "3": {
         "keywords": [
-          "willett",
-          "mr ward",
-          "mr",
-          "doctor",
-          "faint acrid",
-          "car",
-          "plank",
-          "smooth concrete"
+          "pieces",
+          "50",
+          "ye",
+          "100 pieces",
+          "cyttles",
+          "hath",
+          "100",
+          "dutch"
         ],
-        "windows_with_topic": 247,
-        "windows_without_topic": 1502,
+        "windows_with_topic": 67,
+        "windows_without_topic": 1682,
         "correlations": {
-          "discourse.sentence_index": {
-            "pearson_r": 0.4128034371691588,
+          "information_content_metrics.sentence_log_prob_metrics.mean_log_prob": {
+            "pearson_r": -0.3300898849282985,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 1388.9595141700404,
-            "mean_without_topic": 790.4806924101198
+            "mean_with_topic": -4.747910447761195,
+            "mean_without_topic": -3.901236623067774
           },
-          "lexico_semantics.avg_word_freq_window.end_sentence": {
-            "pearson_r": 0.4128034371691588,
+          "information_content_metrics.sentence_surprisal_metrics.mean_surprisal": {
+            "pearson_r": 0.3300898849282985,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 1389.9595141700404,
-            "mean_without_topic": 791.4806924101198
+            "mean_with_topic": 4.747910447761195,
+            "mean_without_topic": 3.901236623067774
           },
-          "lexico_semantics.avg_word_freq_window.start_sentence": {
-            "pearson_r": 0.4128034371691588,
+          "lexico_semantics.avg_word_freq_window.content_function_ratio": {
+            "pearson_r": -0.332521751916186,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 1387.9595141700404,
-            "mean_without_topic": 789.4806924101198
+            "mean_with_topic": 0.3128358208955223,
+            "mean_without_topic": 0.44851961950059493
           },
-          "lexico_semantics.information_content_window.end_sentence": {
-            "pearson_r": 0.4128034371691588,
+          "lexico_semantics.content_function_ratio": {
+            "pearson_r": -0.332521751916186,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 1389.9595141700404,
-            "mean_without_topic": 791.4806924101198
+            "mean_with_topic": 0.3128358208955223,
+            "mean_without_topic": 0.44851961950059493
           },
-          "lexico_semantics.information_content_window.start_sentence": {
-            "pearson_r": 0.4128034371691588,
+          "lexico_semantics.lexical_density": {
+            "pearson_r": -0.35128370970014494,
+            "p_value": 0.0004997501249375312,
+            "n": 1747,
+            "mean_with_topic": 0.2932835820895523,
+            "mean_without_topic": 0.44043452380952486
+          },
+          "lexico_semantics.lexical_density_window.lexical_density": {
+            "pearson_r": -0.35128370970014494,
+            "p_value": 0.0004997501249375312,
+            "n": 1747,
+            "mean_with_topic": 0.2932835820895523,
+            "mean_without_topic": 0.44043452380952486
+          },
+          "log_prob.sentence_log_prob_metrics.mean_log_prob": {
+            "pearson_r": -0.3300898849282985,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 1387.9595141700404,
-            "mean_without_topic": 789.4806924101198
+            "mean_with_topic": -4.747910447761195,
+            "mean_without_topic": -3.901236623067774
           },
-          "lexico_semantics.lexical_density_window.end_sentence": {
-            "pearson_r": 0.4128034371691588,
+          "log_prob.sentence_surprisal_metrics.mean_surprisal": {
+            "pearson_r": 0.3300898849282985,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 1389.9595141700404,
-            "mean_without_topic": 791.4806924101198
-          },
-          "lexico_semantics.lexical_density_window.start_sentence": {
-            "pearson_r": 0.4128034371691588,
-            "n": 1749,
-            "mean_with_topic": 1387.9595141700404,
-            "mean_without_topic": 789.4806924101198
-          },
-          "lexico_semantics.mattr_window.end_sentence": {
-            "pearson_r": 0.4128034371691588,
-            "n": 1749,
-            "mean_with_topic": 1389.9595141700404,
-            "mean_without_topic": 791.4806924101198
-          },
-          "lexico_semantics.mattr_window.start_sentence": {
-            "pearson_r": 0.4128034371691588,
-            "n": 1749,
-            "mean_with_topic": 1387.9595141700404,
-            "mean_without_topic": 789.4806924101198
-          },
-          "lexico_semantics.semantic_roles_window.end_sentence": {
-            "pearson_r": 0.4128034371691588,
-            "n": 1749,
-            "mean_with_topic": 1389.9595141700404,
-            "mean_without_topic": 791.4806924101198
-          },
-          "lexico_semantics.semantic_roles_window.start_sentence": {
-            "pearson_r": 0.4128034371691588,
-            "n": 1749,
-            "mean_with_topic": 1387.9595141700404,
-            "mean_without_topic": 789.4806924101198
-          },
+            "mean_with_topic": 4.747910447761195,
+            "mean_without_topic": 3.901236623067774
+          }
+        }
+      },
+      "4": {
+        "keywords": [
+          "governor",
+          "mathewson",
+          "stephen hopkins",
+          "capt mathewson",
+          "baying",
+          "capt",
+          "stephen",
+          "hopkins"
+        ],
+        "windows_with_topic": 211,
+        "windows_without_topic": 1538,
+        "correlations": {
           "syntax.sentence_id": {
-            "pearson_r": 0.4128034371691588,
+            "pearson_r": -0.31867436384382664,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 1388.9595141700404,
-            "mean_without_topic": 790.4806924101198
+            "mean_with_topic": 440.60663507109007,
+            "mean_without_topic": 934.5949284785436
           }
         }
       },
       "19": {
         "keywords": [
-          "kylix",
-          "shelf",
-          "whip",
-          "torture",
-          "robe",
-          "jug",
-          "willett",
-          "shallow"
-        ],
-        "windows_with_topic": 186,
-        "windows_without_topic": 1563,
-        "correlations": {
-          "discourse.sentence_index": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1326.3172043010752,
-            "mean_without_topic": 821.2923864363404
-          },
-          "lexico_semantics.avg_word_freq_window.end_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1327.3172043010752,
-            "mean_without_topic": 822.2923864363404
-          },
-          "lexico_semantics.avg_word_freq_window.start_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1325.3172043010752,
-            "mean_without_topic": 820.2923864363404
-          },
-          "lexico_semantics.information_content_window.end_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1327.3172043010752,
-            "mean_without_topic": 822.2923864363404
-          },
-          "lexico_semantics.information_content_window.start_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1325.3172043010752,
-            "mean_without_topic": 820.2923864363404
-          },
-          "lexico_semantics.lexical_density_window.end_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1327.3172043010752,
-            "mean_without_topic": 822.2923864363404
-          },
-          "lexico_semantics.lexical_density_window.start_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1325.3172043010752,
-            "mean_without_topic": 820.2923864363404
-          },
-          "lexico_semantics.mattr_window.end_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1327.3172043010752,
-            "mean_without_topic": 822.2923864363404
-          },
-          "lexico_semantics.mattr_window.start_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1325.3172043010752,
-            "mean_without_topic": 820.2923864363404
-          },
-          "lexico_semantics.semantic_roles_window.end_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1327.3172043010752,
-            "mean_without_topic": 822.2923864363404
-          },
-          "lexico_semantics.semantic_roles_window.start_sentence": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1325.3172043010752,
-            "mean_without_topic": 820.2923864363404
-          },
-          "syntax.sentence_id": {
-            "pearson_r": 0.3083612211455502,
-            "n": 1749,
-            "mean_with_topic": 1326.3172043010752,
-            "mean_without_topic": 821.2923864363404
-          }
-        }
-      },
-      "23": {
-        "keywords": [
-          "curwen",
-          "salem",
           "vague rumor",
-          "1919",
+          "england",
           "curwen datum",
-          "hear",
           "diarist",
-          "checkley"
+          "dr checkley",
+          "hear curwen",
+          "checkley",
+          "writer regard"
         ],
-        "windows_with_topic": 252,
-        "windows_without_topic": 1497,
+        "windows_with_topic": 271,
+        "windows_without_topic": 1478,
         "correlations": {
-          "discourse.sentence_index": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 440.70238095238096,
-            "mean_without_topic": 948.1082164328658
-          },
-          "lexico_semantics.avg_word_freq_window.end_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 441.70238095238096,
-            "mean_without_topic": 949.1082164328658
-          },
-          "lexico_semantics.avg_word_freq_window.start_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 439.70238095238096,
-            "mean_without_topic": 947.1082164328658
-          },
-          "lexico_semantics.information_content_window.end_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 441.70238095238096,
-            "mean_without_topic": 949.1082164328658
-          },
-          "lexico_semantics.information_content_window.start_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 439.70238095238096,
-            "mean_without_topic": 947.1082164328658
-          },
-          "lexico_semantics.lexical_density_window.end_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 441.70238095238096,
-            "mean_without_topic": 949.1082164328658
-          },
-          "lexico_semantics.lexical_density_window.start_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 439.70238095238096,
-            "mean_without_topic": 947.1082164328658
-          },
-          "lexico_semantics.mattr_window.end_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 441.70238095238096,
-            "mean_without_topic": 949.1082164328658
-          },
-          "lexico_semantics.mattr_window.start_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 439.70238095238096,
-            "mean_without_topic": 947.1082164328658
-          },
-          "lexico_semantics.semantic_roles_window.end_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 441.70238095238096,
-            "mean_without_topic": 949.1082164328658
-          },
-          "lexico_semantics.semantic_roles_window.start_sentence": {
-            "pearson_r": -0.3529211641973199,
-            "n": 1749,
-            "mean_with_topic": 439.70238095238096,
-            "mean_without_topic": 947.1082164328658
-          },
           "syntax.sentence_id": {
-            "pearson_r": -0.3529211641973199,
+            "pearson_r": -0.3835738882762663,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 440.70238095238096,
-            "mean_without_topic": 948.1082164328658
+            "mean_with_topic": 422.7269372693727,
+            "mean_without_topic": 957.9269282814614
           }
         }
       },
-      "24": {
+      "21": {
         "keywords": [
-          "olney",
-          "curwen",
-          "indicate",
-          "ward",
-          "olney court",
-          "court",
-          "paint",
-          "house"
+          "haue",
+          "ye",
+          "backe",
+          "laste",
+          "goode",
+          "saltes",
+          "harde",
+          "shal"
         ],
-        "windows_with_topic": 247,
-        "windows_without_topic": 1502,
+        "windows_with_topic": 90,
+        "windows_without_topic": 1659,
         "correlations": {
-          "discourse.sentence_index": {
-            "pearson_r": -0.32013175147199163,
+          "lexico_semantics.avg_word_freq_window.content_function_ratio": {
+            "pearson_r": -0.3419669967414789,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 476.42105263157896,
-            "mean_without_topic": 940.5452729693742
+            "mean_with_topic": 0.3283333333333333,
+            "mean_without_topic": 0.4495599758890902
           },
-          "lexico_semantics.avg_word_freq_window.end_sentence": {
-            "pearson_r": -0.32013175147199163,
+          "lexico_semantics.content_function_ratio": {
+            "pearson_r": -0.3419669967414789,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 477.42105263157896,
-            "mean_without_topic": 941.5452729693742
+            "mean_with_topic": 0.3283333333333333,
+            "mean_without_topic": 0.4495599758890902
           },
-          "lexico_semantics.avg_word_freq_window.start_sentence": {
-            "pearson_r": -0.32013175147199163,
-            "n": 1749,
-            "mean_with_topic": 475.42105263157896,
-            "mean_without_topic": 939.5452729693742
+          "lexico_semantics.lexical_density": {
+            "pearson_r": -0.3576631031184009,
+            "p_value": 0.0004997501249375312,
+            "n": 1747,
+            "mean_with_topic": 0.31133333333333335,
+            "mean_without_topic": 0.44149668074834125
           },
-          "lexico_semantics.information_content_window.end_sentence": {
-            "pearson_r": -0.32013175147199163,
-            "n": 1749,
-            "mean_with_topic": 477.42105263157896,
-            "mean_without_topic": 941.5452729693742
-          },
-          "lexico_semantics.information_content_window.start_sentence": {
-            "pearson_r": -0.32013175147199163,
-            "n": 1749,
-            "mean_with_topic": 475.42105263157896,
-            "mean_without_topic": 939.5452729693742
-          },
-          "lexico_semantics.lexical_density_window.end_sentence": {
-            "pearson_r": -0.32013175147199163,
-            "n": 1749,
-            "mean_with_topic": 477.42105263157896,
-            "mean_without_topic": 941.5452729693742
-          },
-          "lexico_semantics.lexical_density_window.start_sentence": {
-            "pearson_r": -0.32013175147199163,
-            "n": 1749,
-            "mean_with_topic": 475.42105263157896,
-            "mean_without_topic": 939.5452729693742
-          },
-          "lexico_semantics.mattr_window.end_sentence": {
-            "pearson_r": -0.32013175147199163,
-            "n": 1749,
-            "mean_with_topic": 477.42105263157896,
-            "mean_without_topic": 941.5452729693742
-          },
-          "lexico_semantics.mattr_window.start_sentence": {
-            "pearson_r": -0.32013175147199163,
-            "n": 1749,
-            "mean_with_topic": 475.42105263157896,
-            "mean_without_topic": 939.5452729693742
-          },
-          "lexico_semantics.semantic_roles_window.end_sentence": {
-            "pearson_r": -0.32013175147199163,
-            "n": 1749,
-            "mean_with_topic": 477.42105263157896,
-            "mean_without_topic": 941.5452729693742
-          },
-          "lexico_semantics.semantic_roles_window.start_sentence": {
-            "pearson_r": -0.32013175147199163,
-            "n": 1749,
-            "mean_with_topic": 475.42105263157896,
-            "mean_without_topic": 939.5452729693742
-          },
+          "lexico_semantics.lexical_density_window.lexical_density": {
+            "pearson_r": -0.3576631031184009,
+            "p_value": 0.0004997501249375312,
+            "n": 1747,
+            "mean_with_topic": 0.31133333333333335,
+            "mean_without_topic": 0.44149668074834125
+          }
+        }
+      },
+      "22": {
+        "keywords": [
+          "farmer",
+          "townsfolk",
+          "graveyard",
+          "resist provision",
+          "habit really ezra",
+          "increase shipping",
+          "captain bind tie",
+          "spend pawtuxet farm"
+        ],
+        "windows_with_topic": 201,
+        "windows_without_topic": 1548,
+        "correlations": {
           "syntax.sentence_id": {
-            "pearson_r": -0.32013175147199163,
+            "pearson_r": -0.3889005612725503,
+            "p_value": 0.0004997501249375312,
             "n": 1749,
-            "mean_with_topic": 476.42105263157896,
-            "mean_without_topic": 940.5452729693742
+            "mean_with_topic": 330.089552238806,
+            "mean_without_topic": 945.7538759689922
+          }
+        }
+      },
+      "26": {
+        "keywords": [
+          "14",
+          "house build",
+          "simplicity",
+          "thirty",
+          "site",
+          "doubly striking",
+          "curwen grow old",
+          "family esteemed occasional"
+        ],
+        "windows_with_topic": 182,
+        "windows_without_topic": 1567,
+        "correlations": {
+          "syntax.sentence_id": {
+            "pearson_r": -0.3889060392895562,
+            "p_value": 0.0004997501249375312,
+            "n": 1749,
+            "mean_with_topic": 298.84065934065933,
+            "mean_without_topic": 941.9183152520741
+          }
+        }
+      },
+      "31": {
+        "keywords": [
+          "bearded",
+          "kill dissolve acid",
+          "refrain",
+          "dissolve acid",
+          "kill dissolve",
+          "allen",
+          "minuscule message",
+          "old salem"
+        ],
+        "windows_with_topic": 319,
+        "windows_without_topic": 1430,
+        "correlations": {
+          "syntax.sentence_id": {
+            "pearson_r": 0.3042963796059242,
+            "p_value": 0.0004997501249375312,
+            "n": 1749,
+            "mean_with_topic": 1200.2884012539184,
+            "mean_without_topic": 802.4356643356643
           }
         }
       }
@@ -538,8 +341,234 @@
       "min_topic_windows": 3,
       "min_windows": 5,
       "use_soft_topic_scores": true,
-      "soft_score_threshold": 0.6,
-      "soft_top_k": 3
+      "soft_score_threshold": 0.5,
+      "soft_top_k": 3,
+      "central_only": false,
+      "central_top_n": 5,
+      "variance_only": false,
+      "block_size": 5,
+      "permutations": 2000
     }
+  },
+  "central_topics": [
+    {
+      "topic_id": 28,
+      "score": 2.592183709303088,
+      "keywords": [
+        "hart",
+        "ancient overmantel",
+        "basket",
+        "slamming",
+        "purgation",
+        "doctor lock",
+        "prowler",
+        "cupboard"
+      ],
+      "stats": {
+        "coherence": 0.5836197418461324,
+        "exclusivity": 0.875,
+        "prevalence": 0.16111111111111112,
+        "persistence": 2.5217391304347827
+      }
+    },
+    {
+      "topic_id": 17,
+      "score": 2.545101418916875,
+      "keywords": [
+        "torch",
+        "ladder",
+        "blackness",
+        "whine",
+        "slippery",
+        "step",
+        "electric torch",
+        "pillar"
+      ],
+      "stats": {
+        "coherence": 0.37306864804659523,
+        "exclusivity": 0.8333333333333334,
+        "prevalence": 0.18611111111111112,
+        "persistence": 3.7222222222222223
+      }
+    },
+    {
+      "topic_id": 25,
+      "score": 2.4740155414488223,
+      "keywords": [
+        "weirdly",
+        "old copy",
+        "proceed",
+        "lamp",
+        "merely small",
+        "lead merely",
+        "lead merely small",
+        "clothing"
+      ],
+      "stats": {
+        "coherence": 0.7771524761281307,
+        "exclusivity": 0.7541666666666667,
+        "prevalence": 0.1361111111111111,
+        "persistence": 2.227272727272727
+      }
+    },
+    {
+      "topic_id": 30,
+      "score": 2.4139129224788918,
+      "keywords": [
+        "boldness",
+        "inquire",
+        "arrange",
+        "morning apparently",
+        "house word upstairs",
+        "hover feel",
+        "listen message",
+        "phrase tired rest"
+      ],
+      "stats": {
+        "coherence": 0.6993947866205114,
+        "exclusivity": 0.7708333333333333,
+        "prevalence": 0.14444444444444443,
+        "persistence": 2.08
+      }
+    },
+    {
+      "topic_id": 5,
+      "score": 2.3632241496401782,
+      "keywords": [
+        "shall",
+        "sake",
+        "quickly depend word",
+        "light monstrous",
+        "hour continuously",
+        "sake life nature",
+        "save cosmos stark",
+        "light monstrous abnormality"
+      ],
+      "stats": {
+        "coherence": 0.3246905342874235,
+        "exclusivity": 0.9375,
+        "prevalence": 0.022222222222222223,
+        "persistence": 8.0
+      }
+    }
+  ],
+  "central_report": {
+    "central_topics_ordered": [
+      {
+        "topic_id": 28,
+        "score": 2.592183709303088,
+        "keywords": [
+          "hart",
+          "ancient overmantel",
+          "basket",
+          "slamming",
+          "purgation",
+          "doctor lock",
+          "prowler",
+          "cupboard"
+        ],
+        "stats": {
+          "coherence": 0.5836197418461324,
+          "exclusivity": 0.875,
+          "prevalence": 0.16111111111111112,
+          "persistence": 2.5217391304347827
+        },
+        "correlations": {},
+        "windows_with_topic": null,
+        "windows_without_topic": null
+      },
+      {
+        "topic_id": 17,
+        "score": 2.545101418916875,
+        "keywords": [
+          "torch",
+          "ladder",
+          "blackness",
+          "whine",
+          "slippery",
+          "step",
+          "electric torch",
+          "pillar"
+        ],
+        "stats": {
+          "coherence": 0.37306864804659523,
+          "exclusivity": 0.8333333333333334,
+          "prevalence": 0.18611111111111112,
+          "persistence": 3.7222222222222223
+        },
+        "correlations": {},
+        "windows_with_topic": null,
+        "windows_without_topic": null
+      },
+      {
+        "topic_id": 25,
+        "score": 2.4740155414488223,
+        "keywords": [
+          "weirdly",
+          "old copy",
+          "proceed",
+          "lamp",
+          "merely small",
+          "lead merely",
+          "lead merely small",
+          "clothing"
+        ],
+        "stats": {
+          "coherence": 0.7771524761281307,
+          "exclusivity": 0.7541666666666667,
+          "prevalence": 0.1361111111111111,
+          "persistence": 2.227272727272727
+        },
+        "correlations": {},
+        "windows_with_topic": null,
+        "windows_without_topic": null
+      },
+      {
+        "topic_id": 30,
+        "score": 2.4139129224788918,
+        "keywords": [
+          "boldness",
+          "inquire",
+          "arrange",
+          "morning apparently",
+          "house word upstairs",
+          "hover feel",
+          "listen message",
+          "phrase tired rest"
+        ],
+        "stats": {
+          "coherence": 0.6993947866205114,
+          "exclusivity": 0.7708333333333333,
+          "prevalence": 0.14444444444444443,
+          "persistence": 2.08
+        },
+        "correlations": {},
+        "windows_with_topic": null,
+        "windows_without_topic": null
+      },
+      {
+        "topic_id": 5,
+        "score": 2.3632241496401782,
+        "keywords": [
+          "shall",
+          "sake",
+          "quickly depend word",
+          "light monstrous",
+          "hour continuously",
+          "sake life nature",
+          "save cosmos stark",
+          "light monstrous abnormality"
+        ],
+        "stats": {
+          "coherence": 0.3246905342874235,
+          "exclusivity": 0.9375,
+          "prevalence": 0.022222222222222223,
+          "persistence": 8.0
+        },
+        "correlations": {},
+        "windows_with_topic": null,
+        "windows_without_topic": null
+      }
+    ]
   }
 }

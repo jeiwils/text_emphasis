@@ -39,19 +39,12 @@ class NetworkAnalyzer:
         nodes: List[str],
         embeddings: np.ndarray,
         min_similarity: float = 0.3,
-        normalize_embeddings: bool = False,
     ) -> nx.Graph:
         """Build an undirected graph from nodes and their embeddings."""
         if len(nodes) != embeddings.shape[0]:
             raise ValueError(
                 f"nodes length ({len(nodes)}) does not match embeddings rows ({embeddings.shape[0]})."
             )
-
-        if normalize_embeddings:
-            norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
-            if np.any(norms == 0):
-                raise ValueError("Embeddings contain zero vectors; cannot L2-normalize.")
-            embeddings = embeddings / norms
 
         G = nx.Graph()
 
@@ -97,7 +90,6 @@ def build_network_graph(
     phrases: List[str],
     embeddings: np.ndarray,
     min_similarity: float = 0.3,
-    normalize_embeddings: bool = False,
 ):
     """Build a NetworkX graph and compute centrality + communities."""
     net_analyzer = NetworkAnalyzer()
@@ -105,7 +97,6 @@ def build_network_graph(
         phrases,
         embeddings,
         min_similarity=min_similarity,
-        normalize_embeddings=normalize_embeddings,
     )
 
     centrality_df = net_analyzer.compute_centrality_metrics(G)

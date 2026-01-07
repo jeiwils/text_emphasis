@@ -9,7 +9,13 @@ import re
 import json
 
 from x_configs import MODEL_CONFIGS, load_spacy_model
-from z_utils import embeddings_path, encode_texts, hdbscan_cluster_labels, labels_to_clusters
+from z_utils import (
+    embeddings_path,
+    encode_texts,
+    hdbscan_cluster_labels,
+    labels_to_clusters,
+    l2_normalize_embeddings,
+)
 
 
 class ConceptExtractor:
@@ -115,9 +121,10 @@ def generate_embeddings(normalised_text_path: Path, top_n: int = 100, use_existi
     concept_dir = embeddings_path("concept") / category / base_name
     concept_dir.mkdir(parents=True, exist_ok=True)
     phrases_path = concept_dir / f"{base_name}_phrases.pkl"
-    embeddings_file = concept_dir / f"{base_name}_embeddings.pkl"
+    embeddings_raw_file = concept_dir / f"{base_name}_embeddings.pkl"
+    embeddings_norm_file = concept_dir / f"{base_name}_embeddings_l2.pkl"
 
-    if use_existing and phrases_path.exists() and embeddings_file.exists():
+    if use_existing and phrases_path.exists() and embeddings_raw_file.exists() and embeddings_norm_file.exists():
         print(f"[INFO] Skipping concept embeddings for {base_name} (exists)")
         return None, None, None
 
@@ -132,12 +139,21 @@ def generate_embeddings(normalised_text_path: Path, top_n: int = 100, use_existi
     with open(phrases_path, "wb") as f:
         pickle.dump(phrases, f)
 
-    if use_existing and embeddings_file.exists():
-        with open(embeddings_file, "rb") as f:
+    if use_existing and embeddings_norm_file.exists():
+        with open(embeddings_norm_file, "rb") as f:
             embeddings = pickle.load(f)
+    elif use_existing and embeddings_raw_file.exists():
+        with open(embeddings_raw_file, "rb") as f:
+            raw_embeddings = pickle.load(f)
+        embeddings = l2_normalize_embeddings(raw_embeddings)
+        with open(embeddings_norm_file, "wb") as f:
+            pickle.dump(embeddings, f)
     else:
-        embeddings = encode_texts(extractor.encoder, phrases)
-        with open(embeddings_file, "wb") as f:
+        raw_embeddings = encode_texts(extractor.encoder, phrases, normalize=False)
+        with open(embeddings_raw_file, "wb") as f:
+            pickle.dump(raw_embeddings, f)
+        embeddings = l2_normalize_embeddings(raw_embeddings)
+        with open(embeddings_norm_file, "wb") as f:
             pickle.dump(embeddings, f)
 
     return normalised_text, phrases, embeddings

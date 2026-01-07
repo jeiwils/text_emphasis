@@ -18,9 +18,9 @@ DEFAULT_SPACY_DISABLE: Sequence[str] = ()
 DEFAULT_WINDOW_SIZE: int = 3
 # Category-specific window multiples for topic modelling
 TOPIC_WINDOW_MULTIPLES = {
-    "short_stories": 1,
-    "novellas": 2,
-    "novels": 5,
+    "short_stories": 3,
+    "novellas": 3,
+    "novels": 3,
 }
 
 # Category-specific clustering settings for topic modelling (HDBSCAN)
@@ -58,16 +58,16 @@ TOPIC_BOOK_OVERRIDES = {
             "min_samples": 2,
         },
         "a_clockwork_orange": {
-            "window_multiple": 3,
-            "window_stride": 3,
-            "min_cluster_size": 6,
-            "min_samples": 2,
-        },
-        "coraline": {
-            "window_multiple": 3,
+            "window_multiple": 4,
             "window_stride": 3,
             "min_cluster_size": 5,
-            "min_samples": 2,
+            "min_samples": 1,
+        },
+        "coraline": {
+            "window_multiple": 2,
+            "window_stride": 2,
+            "min_cluster_size": 3,
+            "min_samples": 1,
         },
         "the_case_of_charles_dexter_ward": {
             "window_multiple": 3,

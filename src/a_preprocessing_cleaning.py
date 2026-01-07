@@ -120,10 +120,19 @@ class TextPreprocessor:
             pattern = re.compile(r'([A-Z][a-z]+)((?:\s+[A-Z]{2,}\b)+)')
             return pattern.sub(replacer, value)
 
+        def fix_split_words(value: str) -> str:
+            """
+            Join common split-word artefacts like 'dis cover' -> 'discover'.
+            Keep this list small to avoid unintended merges.
+            """
+            value = re.sub(r"\bdis\s+cover(ed|ing|s)?\b", r"discover\1", value, flags=re.IGNORECASE)
+            return value
+
         text = fix_mojibake(text)
         text = despace_dropcaps(text)
         text = fix_letter_spacing_headers(text)
         text = normalize_shouting(text)
+        text = fix_split_words(text)
         text = re.sub(r'\s+', ' ', text).strip()
         return text  # No lowercasing, no punctuation removal
 

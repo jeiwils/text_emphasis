@@ -144,6 +144,39 @@ def _pearson_correlation(x: List[float], y: List[float]) -> Optional[float]:
     return corr
 
 
+def _block_permutation_p_value(
+    x: List[float],
+    y: List[float],
+    *,
+    block_size: int,
+    permutations: int,
+    rng: np.random.Generator,
+) -> Optional[float]:
+    if len(x) < 2 or len(y) < 2:
+        return None
+    if block_size <= 0 or permutations <= 0:
+        return None
+    observed = _pearson_correlation(x, y)
+    if observed is None:
+        return None
+    n = len(x)
+    block_size = min(block_size, n)
+    blocks = [x[i : i + block_size] for i in range(0, n, block_size)]
+    if not blocks:
+        return None
+    counts = 0
+    for _ in range(permutations):
+        perm_blocks = rng.permutation(len(blocks))
+        shuffled = [val for idx in perm_blocks for val in blocks[idx]]
+        shuffled = shuffled[:n]
+        corr = _pearson_correlation(shuffled, y)
+        if corr is None:
+            continue
+        if abs(corr) >= abs(observed):
+            counts += 1
+    return (counts + 1) / (permutations + 1)
+
+
 def _topic_keywords(topics_data: Dict[str, object]) -> Dict[int, List[str]]:
     topics = topics_data.get("topics", []) if isinstance(topics_data, dict) else []
     mapping: Dict[int, List[str]] = {}
@@ -157,6 +190,66 @@ def _topic_keywords(topics_data: Dict[str, object]) -> Dict[int, List[str]]:
     return mapping
 
 
+def _central_topics(
+    topics_data: Dict[str, object],
+    top_n: int = 5,
+) -> List[Dict[str, object]]:
+    topics = topics_data.get("topics", []) if isinstance(topics_data, dict) else []
+    metrics = ["coherence", "exclusivity", "prevalence", "persistence"]
+    values: Dict[str, List[float]] = {metric: [] for metric in metrics}
+    entries: List[Tuple[int, List[str], Dict[str, float]]] = []
+    for topic in topics:
+        if not isinstance(topic, dict):
+            continue
+        topic_id = topic.get("topic_id")
+        stats = topic.get("stats") or {}
+        if not isinstance(topic_id, int) or not isinstance(stats, dict):
+            continue
+        keywords = topic.get("keywords", [])
+        stats_clean: Dict[str, float] = {}
+        for metric in metrics:
+            val = stats.get(metric)
+            if _is_number(val):
+                stats_clean[metric] = float(val)
+                values[metric].append(float(val))
+        if stats_clean:
+            entries.append((topic_id, keywords if isinstance(keywords, list) else [], stats_clean))
+
+    if not entries:
+        return []
+
+    mins = {metric: min(values[metric]) for metric in metrics if values[metric]}
+    maxs = {metric: max(values[metric]) for metric in metrics if values[metric]}
+
+    def _norm(metric: str, val: float) -> float:
+        lo = mins.get(metric)
+        hi = maxs.get(metric)
+        if lo is None or hi is None or hi == lo:
+            return 0.0
+        return (val - lo) / (hi - lo)
+
+    ranked = []
+    for topic_id, keywords, stats in entries:
+        score = 0.0
+        used = 0
+        for metric, val in stats.items():
+            score += _norm(metric, val)
+            used += 1
+        if used == 0:
+            continue
+        ranked.append(
+            {
+                "topic_id": topic_id,
+                "score": score,
+                "keywords": keywords,
+                "stats": stats,
+            }
+        )
+
+    ranked.sort(key=lambda row: row["score"], reverse=True)
+    return ranked[:top_n]
+
+
 def _build_topic_correlation_report(
     window_data: Dict[str, object],
     topics_data: Dict[str, object],
@@ -165,8 +258,14 @@ def _build_topic_correlation_report(
     min_topic_windows: int = 3,
     min_windows: int = 5,
     use_soft_topic_scores: bool = True,
-    soft_score_threshold: Optional[float] = 0.6,
+    soft_score_threshold: Optional[float] = 0.5,
     soft_top_k: Optional[int] = 3,
+    central_only: bool = False,
+    central_top_n: int = 5,
+    variance_only: bool = False,
+    topics_key: str = "topics",
+    block_size: int = 5,
+    permutations: int = 2000,
 ) -> Dict[str, object]:
     topic_mentions = (
         collect_soft_topic_mentions(
@@ -187,12 +286,27 @@ def _build_topic_correlation_report(
         return {}
 
     metric_names = sorted(window_table[0].keys()) if window_table else []
+    metric_names = [
+        name
+        for name in metric_names
+        if not any(token in name for token in ("sentence_index", "start_sentence", "end_sentence"))
+    ]
+    if variance_only:
+        metric_names = [name for name in metric_names if "variance" in name]
+        if not metric_names:
+            return {}
     topics = set()
     for entry in topic_metrics:
         topics.update(entry.get("topic_counts", {}).keys())
 
+    central_topics = _central_topics(topics_data, top_n=central_top_n)
+    if central_only and central_topics:
+        topics = {entry["topic_id"] for entry in central_topics}
+
     keyword_map = _topic_keywords(topics_data)
     topic_reports: Dict[int, Dict[str, object]] = {}
+
+    rng = np.random.default_rng(42)
 
     for topic_id in sorted(topics):
         values_by_metric: Dict[str, List[Tuple[float, float]]] = {name: [] for name in metric_names}
@@ -225,8 +339,16 @@ def _build_topic_correlation_report(
             corr = _pearson_correlation(presences, values)
             if corr is None or abs(corr) < correlation_threshold:
                 continue
+            p_value = _block_permutation_p_value(
+                presences,
+                values,
+                block_size=block_size,
+                permutations=permutations,
+                rng=rng,
+            )
             metric_correlations[metric] = {
                 "pearson_r": corr,
+                "p_value": p_value,
                 "n": len(values),
                 "mean_with_topic": _safe_mean(values_with),
                 "mean_without_topic": _safe_mean(values_without),
@@ -246,7 +368,7 @@ def _build_topic_correlation_report(
     return {
         "window_count": len(window_table),
         "metric_names": metric_names,
-        "topics": topic_reports,
+        topics_key: topic_reports,
         "params": {
             "correlation_threshold": correlation_threshold,
             "min_topic_windows": min_topic_windows,
@@ -254,8 +376,66 @@ def _build_topic_correlation_report(
             "use_soft_topic_scores": use_soft_topic_scores,
             "soft_score_threshold": soft_score_threshold,
             "soft_top_k": soft_top_k,
+            "central_only": central_only,
+            "central_top_n": central_top_n,
+            "variance_only": variance_only,
+            "block_size": block_size,
+            "permutations": permutations,
         },
     }
+
+
+def _build_central_report(
+    window_data: Dict[str, object],
+    topics_data: Dict[str, object],
+    *,
+    correlation_threshold: float,
+    min_topic_windows: int,
+    min_windows: int,
+    use_soft_topic_scores: bool,
+    soft_score_threshold: Optional[float],
+    soft_top_k: Optional[int],
+    central_top_n: int,
+    block_size: int,
+    permutations: int,
+) -> Dict[str, object]:
+    report = _build_topic_correlation_report(
+        window_data,
+        topics_data,
+        correlation_threshold=correlation_threshold,
+        min_topic_windows=min_topic_windows,
+        min_windows=min_windows,
+        use_soft_topic_scores=use_soft_topic_scores,
+        soft_score_threshold=soft_score_threshold,
+        soft_top_k=soft_top_k,
+        central_only=True,
+        central_top_n=central_top_n,
+        variance_only=False,
+        topics_key="central_topics",
+        block_size=block_size,
+        permutations=permutations,
+    )
+    central_ranked = _central_topics(topics_data, top_n=central_top_n)
+    ordered_topics = []
+    for row in central_ranked:
+        topic_id = row.get("topic_id")
+        if not isinstance(topic_id, int):
+            continue
+        correlation_entry = report.get("central_topics", {}).get(topic_id, {})
+        ordered_topics.append(
+            {
+                "topic_id": topic_id,
+                "score": row.get("score"),
+                "keywords": row.get("keywords", []),
+                "stats": row.get("stats", {}),
+                "correlations": correlation_entry.get("correlations", {}),
+                "windows_with_topic": correlation_entry.get("windows_with_topic"),
+                "windows_without_topic": correlation_entry.get("windows_without_topic"),
+            }
+        )
+
+    report["central_topics_ordered"] = ordered_topics
+    return report
 
 
 def _extract_unexpectedness_metrics(window_data: Dict[str, object]) -> Dict[str, Optional[float]]:
@@ -417,6 +597,11 @@ def _build_topic_dashboard_entry(
     use_soft_topic_scores: bool,
     soft_score_threshold: Optional[float],
     soft_top_k: Optional[int],
+    central_top_n: int,
+    central_only: bool,
+    variance_only: bool,
+    block_size: int,
+    permutations: int,
 ) -> Optional[Dict[str, object]]:
     topic_file = _find_topic_file(window_metrics_path)
     if not topic_file:
@@ -433,9 +618,29 @@ def _build_topic_dashboard_entry(
         use_soft_topic_scores=use_soft_topic_scores,
         soft_score_threshold=soft_score_threshold,
         soft_top_k=soft_top_k,
+        central_only=central_only,
+        central_top_n=central_top_n,
+        variance_only=variance_only,
+        topics_key="topics",
+        block_size=block_size,
+        permutations=permutations,
     )
     if not report:
         return None
+
+    central_report = _build_central_report(
+        window_data,
+        topics_data,
+        correlation_threshold=correlation_threshold,
+        min_topic_windows=min_topic_windows,
+        min_windows=min_windows,
+        use_soft_topic_scores=use_soft_topic_scores,
+        soft_score_threshold=soft_score_threshold,
+        soft_top_k=soft_top_k,
+        central_top_n=central_top_n,
+        block_size=block_size,
+        permutations=permutations,
+    )
 
     category = window_metrics_path.parent.parent.name
     text_name = window_metrics_path.parent.name
@@ -446,6 +651,54 @@ def _build_topic_dashboard_entry(
         "filename": window_metrics_path.name,
         "topic_file": str(topic_file),
         "report": report,
+        "central_topics": _central_topics(topics_data, top_n=central_top_n),
+        "central_report": central_report,
+    }
+
+
+def _build_central_topic_entry(
+    window_metrics_path: Path,
+    *,
+    correlation_threshold: float,
+    min_topic_windows: int,
+    min_windows: int,
+    use_soft_topic_scores: bool,
+    soft_score_threshold: Optional[float],
+    soft_top_k: Optional[int],
+    central_top_n: int,
+    block_size: int,
+    permutations: int,
+) -> Optional[Dict[str, object]]:
+    topic_file = _find_topic_file(window_metrics_path)
+    if not topic_file:
+        return None
+
+    window_data = _load_window_metrics(window_metrics_path)
+    topics_data = _load_window_metrics(topic_file)
+    central_report = _build_central_report(
+        window_data,
+        topics_data,
+        correlation_threshold=correlation_threshold,
+        min_topic_windows=min_topic_windows,
+        min_windows=min_windows,
+        use_soft_topic_scores=use_soft_topic_scores,
+        soft_score_threshold=soft_score_threshold,
+        soft_top_k=soft_top_k,
+        central_top_n=central_top_n,
+        block_size=block_size,
+        permutations=permutations,
+    )
+
+    category = window_metrics_path.parent.parent.name
+    text_name = window_metrics_path.parent.name
+
+    return {
+        "category": category,
+        "text_name": text_name,
+        "filename": window_metrics_path.name,
+        "topic_file": str(topic_file),
+        "central_topics": _central_topics(topics_data, top_n=central_top_n),
+        "central_report": central_report,
     }
 
 
@@ -456,8 +709,13 @@ def run_dashboard(
     min_topic_windows: int = 3,
     min_windows: int = 5,
     use_soft_topic_scores: bool = True,
-    soft_score_threshold: Optional[float] = 0.6,
+    soft_score_threshold: Optional[float] = 0.5,
     soft_top_k: Optional[int] = 3,
+    central_top_n: int = 5,
+    central_only: bool = False,
+    variance_only: bool = False,
+    block_size: int = 5,
+    permutations: int = 2000,
 ) -> List[Dict[str, object]]:
     """
     Build the dashboard table from window metrics and write JSON outputs.
@@ -465,14 +723,17 @@ def run_dashboard(
     Outputs (per text):
       data/analytics/dashboard/<category>/<name>/<name>_dashboard.json
       data/analytics/dashboard/<category>/<name>/<name>_topic_correlations.json
+      data/analytics/dashboard/<category>/<name>/<name>_central_topic_correlations.json
     Also writes aggregated tables at:
       data/analytics/dashboard/dashboard_table.json
       data/analytics/dashboard/dashboard_topic_correlations.json
+      data/analytics/dashboard/dashboard_central_topic_correlations.json
     """
     output_root = analytics_path("dashboard")
     output_root.mkdir(parents=True, exist_ok=True)
     aggregate_table_file = output_root / "dashboard_table.json"
     aggregate_topic_file = output_root / "dashboard_topic_correlations.json"
+    aggregate_central_file = output_root / "dashboard_central_topic_correlations.json"
 
     rows: List[Dict[str, object]] = []
     topic_reports: List[Dict[str, object]] = []
@@ -501,6 +762,7 @@ def run_dashboard(
             rows.append(row)
 
         topic_file = out_dir / f"{text_name}_topic_correlations.json"
+        central_file = out_dir / f"{text_name}_central_topic_correlations.json"
         topic_entry = None
         if use_existing and topic_file.exists():
             try:
@@ -517,19 +779,57 @@ def run_dashboard(
                 use_soft_topic_scores=use_soft_topic_scores,
                 soft_score_threshold=soft_score_threshold,
                 soft_top_k=soft_top_k,
+                central_top_n=central_top_n,
+                central_only=central_only,
+                variance_only=variance_only,
+                block_size=block_size,
+                permutations=permutations,
             )
             if topic_entry:
                 with open(topic_file, "w", encoding="utf-8") as f:
                     json.dump(topic_entry, f, indent=2)
 
+        central_entry = None
+        if use_existing and central_file.exists():
+            try:
+                with open(central_file, "r", encoding="utf-8") as f:
+                    central_entry = json.load(f)
+            except json.JSONDecodeError:
+                central_entry = None
+        if central_entry is None:
+            central_entry = _build_central_topic_entry(
+                file,
+                correlation_threshold=correlation_threshold,
+                min_topic_windows=min_topic_windows,
+                min_windows=min_windows,
+                use_soft_topic_scores=use_soft_topic_scores,
+                soft_score_threshold=soft_score_threshold,
+                soft_top_k=soft_top_k,
+                central_top_n=central_top_n,
+                block_size=block_size,
+                permutations=permutations,
+            )
+            if central_entry:
+                with open(central_file, "w", encoding="utf-8") as f:
+                    json.dump(central_entry, f, indent=2)
+
         if topic_entry:
             topic_reports.append(topic_entry)
+        if central_entry:
+            topic_reports.append(central_entry)
 
     with open(aggregate_table_file, "w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2)
 
     with open(aggregate_topic_file, "w", encoding="utf-8") as f:
         json.dump(topic_reports, f, indent=2)
+
+    with open(aggregate_central_file, "w", encoding="utf-8") as f:
+        json.dump(
+            [entry for entry in topic_reports if "central_topics" in entry],
+            f,
+            indent=2,
+        )
 
     return rows
 

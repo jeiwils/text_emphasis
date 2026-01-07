@@ -23,14 +23,15 @@ topic-window similarity matrix - join topics
 
 import json
 from dataclasses import dataclass
+from itertools import combinations
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
+from sklearn.decomposition import PCA
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import normalize
 
 from z_utils import (
     text_path,
@@ -38,6 +39,7 @@ from z_utils import (
     sliding_windows,
     encode_texts,
     hdbscan_cluster_labels,
+    l2_normalize_embeddings,
 )
 from x_configs import (
     DEFAULT_WINDOW_SIZE,
@@ -63,6 +65,7 @@ class TopicResult:
     topic_id: int
     keywords: List[str]
     mentions: List[TopicMention]
+    stats: Optional[Dict[str, float]] = None
 
 
 def load_segmented_topic_mentions(jsonl_path: Path) -> List[TopicMention]:
@@ -161,8 +164,8 @@ class NeuralTopicModeler:
         cluster_docs: List[str],
         labels: List[int],
         top_n: int = 8,
-        ngram_range: Tuple[int, int] = (1, 2),
-    ) -> Dict[int, List[str]]:
+        ngram_range: Tuple[int, int] = (1, 3),
+    ) -> Tuple[Dict[int, List[str]], TfidfVectorizer, np.ndarray]:
         """Build TF-IDF keywords for each topic cluster."""
         vectorizer = TfidfVectorizer(
             stop_words=self.stop_words,
@@ -170,6 +173,10 @@ class NeuralTopicModeler:
         )
         tfidf = vectorizer.fit_transform(cluster_docs)
         feature_names = np.array(vectorizer.get_feature_names_out())
+        topic_term_presence = (tfidf > 0).sum(axis=0)
+        term_topic_counts = np.asarray(topic_term_presence).ravel()
+        topic_count = max(1, tfidf.shape[0])
+        overlap_penalty = np.log((topic_count + 1) / (term_topic_counts + 1))
 
         keywords: Dict[int, List[str]] = {}
         for row_idx, label in enumerate(labels):
@@ -178,9 +185,106 @@ class NeuralTopicModeler:
                 keywords[label] = []
                 continue
             scores = row.toarray().ravel()
-            top_indices = scores.argsort()[::-1][:top_n]
+            adjusted_scores = scores * overlap_penalty
+            top_indices = adjusted_scores.argsort()[::-1][:top_n]
             keywords[label] = feature_names[top_indices].tolist()
-        return keywords
+        return keywords, vectorizer, term_topic_counts
+
+    def _topic_prevalence_persistence(
+        self,
+        window_topics: List[Dict[str, object]],
+        topic_ids: List[int],
+    ) -> Dict[int, Dict[str, float]]:
+        topic_windows: Dict[int, List[int]] = {topic_id: [] for topic_id in topic_ids}
+        total_windows = sum(1 for window in window_topics if not window.get("is_noise"))
+        total_windows = max(1, total_windows)
+        for window in window_topics:
+            if window.get("is_noise"):
+                continue
+            window_idx = window.get("window_index")
+            if window_idx is None:
+                continue
+            scores = window.get("topic_scores") or {}
+            for topic_id in topic_ids:
+                if topic_id in scores:
+                    topic_windows[topic_id].append(int(window_idx))
+
+        stats: Dict[int, Dict[str, float]] = {}
+        for topic_id, indices in topic_windows.items():
+            indices.sort()
+            prevalence = len(indices) / total_windows if total_windows else 0.0
+            if not indices:
+                stats[topic_id] = {"prevalence": 0.0, "persistence": 0.0}
+                continue
+            run_lengths = []
+            run = 1
+            for prev, curr in zip(indices, indices[1:]):
+                if curr == prev + 1:
+                    run += 1
+                else:
+                    run_lengths.append(run)
+                    run = 1
+            run_lengths.append(run)
+            persistence = float(np.mean(run_lengths)) if run_lengths else 0.0
+            stats[topic_id] = {
+                "prevalence": float(prevalence),
+                "persistence": persistence,
+            }
+        return stats
+
+    def _topic_coherence_exclusivity(
+        self,
+        keywords: Dict[int, List[str]],
+        vectorizer: TfidfVectorizer,
+        term_topic_counts: np.ndarray,
+        topic_window_texts: Dict[int, List[str]],
+    ) -> Dict[int, Dict[str, float]]:
+        if not keywords:
+            return {}
+        vocab = vectorizer.vocabulary_
+        if not vocab:
+            return {topic_id: {"coherence": 0.0, "exclusivity": 0.0} for topic_id in keywords}
+        stats: Dict[int, Dict[str, float]] = {}
+        for topic_id, terms in keywords.items():
+            topic_texts = topic_window_texts.get(topic_id, [])
+            if not topic_texts:
+                stats[topic_id] = {"coherence": 0.0, "exclusivity": 0.0}
+                continue
+            dtm = vectorizer.transform(topic_texts)
+            dtm = (dtm > 0).astype(int)
+            doc_count = max(1, dtm.shape[0])
+            df = np.asarray(dtm.sum(axis=0)).ravel()
+            term_indices = [vocab[t] for t in terms if t in vocab]
+            if not term_indices:
+                stats[topic_id] = {"coherence": 0.0, "exclusivity": 0.0}
+                continue
+            pair_scores = []
+            for i, j in combinations(term_indices, 2):
+                cooc = int(dtm[:, i].multiply(dtm[:, j]).sum())
+                if cooc == 0:
+                    continue
+                p_xy = cooc / doc_count
+                p_x = df[i] / doc_count
+                p_y = df[j] / doc_count
+                if p_x <= 0 or p_y <= 0 or p_xy <= 0 or p_xy >= 1:
+                    continue
+                pmi = np.log(p_xy / (p_x * p_y))
+                denom = -np.log(p_xy)
+                if denom <= 0:
+                    continue
+                npmi = pmi / denom
+                pair_scores.append(npmi)
+            coherence = float(np.mean(pair_scores)) if pair_scores else 0.0
+            exclusivity_scores = []
+            for idx in term_indices:
+                count = term_topic_counts[idx] if idx < len(term_topic_counts) else 1
+                exclusivity_scores.append(1.0 / max(1.0, float(count)))
+            exclusivity = float(np.mean(exclusivity_scores)) if exclusivity_scores else 0.0
+            stats[topic_id] = {
+                "coherence": coherence,
+                "exclusivity": exclusivity,
+            }
+        return stats
 
     def _build_topic_scores(
         self,
@@ -208,9 +312,9 @@ class NeuralTopicModeler:
                 idxs = idxs[::step]
             centroid_vectors.append(embeddings[idxs].mean(axis=0))
 
-        centroid_matrix = normalize(np.vstack(centroid_vectors))
-        norm_embeddings = normalize(embeddings)
-        sim_matrix = cosine_similarity(norm_embeddings, centroid_matrix)
+        centroid_matrix = np.vstack(centroid_vectors)
+        centroid_matrix = l2_normalize_embeddings(centroid_matrix)
+        sim_matrix = cosine_similarity(embeddings, centroid_matrix)
 
         topic_scores: List[Dict[int, float]] = []
         for idx, row in enumerate(sim_matrix):
@@ -235,36 +339,44 @@ class NeuralTopicModeler:
         min_cluster_size: int = 5,
         min_samples: Optional[int] = None,
         top_n: int = 8,
-        ngram_range: Tuple[int, int] = (1, 2),
+        ngram_range: Tuple[int, int] = (1, 3),
         window_multiple: int = 5,
         base_window_size: int = DEFAULT_WINDOW_SIZE,
         window_size: Optional[int] = None,
         window_stride: Optional[int] = None,
-        top_k_topics: Optional[int] = None,
+        top_k_topics: Optional[int] = 5,
         score_threshold: Optional[float] = None,
+        use_pca: bool = True,
+        pca_components: int = 50,
     ) -> Tuple[List[TopicResult], List[Dict[str, object]]]:
         """
         Main entrypoint: consumes pre-segmented sentences with offsets and returns clustered topics.
 
         Sentences are grouped into sliding windows of size
         `base_window_size * window_multiple` (default 3 * 5 = 15)
-        with stride `base_window_size` (default 3) so that topic windows
+        with stride `base_window_size * 2` (default 6) so that topic windows
         align to the sentence-scale metrics built on window size 3.
         """
         if not sentences:
             return [], []
 
         model_window_size = window_size or max(1, base_window_size * max(1, window_multiple))
-        stride = window_stride or max(1, base_window_size)
+        stride = window_stride or max(1, base_window_size * 2)
         windows = self.build_windows(sentences, model_window_size, stride=stride)
         window_texts = [w.text for w in windows]
 
         embeddings = encode_texts(self.encoder, window_texts)
+        reduced_embeddings = embeddings
+        if use_pca and embeddings.size and embeddings.shape[0] > 1:
+            max_components = min(pca_components, embeddings.shape[0], embeddings.shape[1])
+            if max_components > 0 and max_components < embeddings.shape[1]:
+                pca = PCA(n_components=max_components, random_state=42)
+                reduced_embeddings = pca.fit_transform(embeddings)
         if len(window_texts) < min_cluster_size:
             labels = np.zeros(len(window_texts), dtype=int)
         else:
             labels = hdbscan_cluster_labels(
-                embeddings,
+                reduced_embeddings,
                 min_cluster_size=min_cluster_size,
                 min_samples=min_samples,
             )
@@ -284,16 +396,16 @@ class NeuralTopicModeler:
             key=lambda label: (-len(topic_mentions.get(label, [])), label),
         )
         cluster_docs = [" ".join(topic_docs[label]) for label in cluster_labels]
-        keywords = (
-            self._build_topic_keywords(
+        keywords = {}
+        vectorizer = None
+        term_topic_counts = None
+        if cluster_labels:
+            keywords, vectorizer, term_topic_counts = self._build_topic_keywords(
                 cluster_docs,
                 cluster_labels,
                 top_n=top_n,
                 ngram_range=ngram_range,
             )
-            if cluster_labels
-            else {}
-        )
         topic_scores = self._build_topic_scores(
             embeddings=embeddings,
             labels=labels,
@@ -317,13 +429,35 @@ class NeuralTopicModeler:
                 }
             )
 
+        prevalence_stats = self._topic_prevalence_persistence(window_topics, cluster_labels)
+        topic_window_texts = {topic_id: [] for topic_id in cluster_labels}
+        for idx, window in enumerate(window_topics):
+            if window.get("is_noise"):
+                continue
+            scores = window.get("topic_scores") or {}
+            for topic_id in scores.keys():
+                if topic_id in topic_window_texts:
+                    topic_window_texts[topic_id].append(window_texts[idx])
+        coherence_exclusivity = {}
+        if vectorizer is not None and term_topic_counts is not None:
+            coherence_exclusivity = self._topic_coherence_exclusivity(
+                keywords,
+                vectorizer,
+                term_topic_counts,
+                topic_window_texts,
+            )
+
         results = []
         for label in cluster_labels:
+            stats = {}
+            stats.update(prevalence_stats.get(label, {}))
+            stats.update(coherence_exclusivity.get(label, {}))
             results.append(
                 TopicResult(
                     topic_id=int(label),
                     keywords=keywords.get(label, []),
                     mentions=topic_mentions.get(label, []),
+                    stats=stats if stats else None,
                 )
             )
         return results, window_topics
@@ -335,6 +469,7 @@ def serialize_topic_results(topic_results: List[TopicResult]) -> List[Dict[str, 
         {
             "topic_id": int(result.topic_id),
             "keywords": result.keywords,
+            "stats": result.stats,
             "mentions": [
                 {
                     "sentence_index": int(mention.sentence_index),
@@ -369,11 +504,39 @@ def _topic_debug_stats(
             continue
         best_topic = max(scores.items(), key=lambda kv: kv[1])[0]
         hard_label_counts[str(best_topic)] = hard_label_counts.get(str(best_topic), 0) + 1
+
+    score_entropies = []
+    for window in window_topics:
+        if window.get("is_noise"):
+            continue
+        scores = window.get("topic_scores") or {}
+        if not scores:
+            continue
+        values = np.array(list(scores.values()), dtype=float)
+        if values.size == 0:
+            continue
+        values = values - np.max(values)
+        probs = np.exp(values)
+        probs_sum = probs.sum()
+        if probs_sum <= 0:
+            continue
+        probs = probs / probs_sum
+        if probs.size == 1:
+            norm_entropy = 0.0
+        else:
+            entropy = float(-np.sum(probs * np.log(probs + 1e-12)))
+            norm_entropy = float(entropy / np.log(probs.size))
+        score_entropies.append(norm_entropy)
+
     return {
         "topic_count": len(topic_results),
         "window_count": len(window_topics),
         "noise_window_count": noise_windows,
         "hard_label_counts": hard_label_counts,
+        "score_entropy_mean": float(np.mean(score_entropies)) if score_entropies else None,
+        "score_entropy_median": float(np.median(score_entropies)) if score_entropies else None,
+        "score_stability_mean": float(1 - np.mean(score_entropies)) if score_entropies else None,
+        "score_stability_median": float(1 - np.median(score_entropies)) if score_entropies else None,
     }
 
 def _iter_sentence_span(mention: TopicMention):
@@ -437,7 +600,7 @@ def collect_topic_mentions(topics_data):
 
 def collect_soft_topic_mentions(
     topics_data: Optional[object],
-    score_threshold: Optional[float] = 0.6,
+    score_threshold: Optional[float] = 0.5,
     top_k: Optional[int] = None,
 ):
     """
@@ -667,7 +830,7 @@ def compute_topic_metric_report_from_window_result(
     min_topic_mentions: int = 1,
     min_windows: int = 2,
     use_soft_topic_scores: bool = False,
-    soft_score_threshold: Optional[float] = 0.6,
+    soft_score_threshold: Optional[float] = 0.5,
     soft_top_k: Optional[int] = None,
 ):
     """Compute a topic/metric report from a window result and topic model output."""
@@ -698,13 +861,15 @@ def run_topic_modelling(
     window_stride: Optional[int] = None,
     min_cluster_size: int = 5,
     min_samples: Optional[int] = None,
-    soft_score_threshold: Optional[float] = None,
-    soft_top_k_topics: Optional[int] = None,
+    soft_score_threshold: Optional[float] = 0.5,
+    soft_top_k_topics: Optional[int] = 3,
+    use_pca: bool = True,
+    pca_components: int = 50,
 ):
     """
     Batch topic modelling across all normalised, segmented text files.
 
-    Defaults: window size 15 (DEFAULT_WINDOW_SIZE * 5) with stride 3 (DEFAULT_WINDOW_SIZE)
+    Defaults: window size 15 (DEFAULT_WINDOW_SIZE * 5) with stride 6 (DEFAULT_WINDOW_SIZE * 2)
     so topic windows align to the sentence-level metrics that use window size 3.
     Output shape: data/analytics/topic_modelling/<category>/<name>/<name>_topics.json
     """
@@ -712,7 +877,7 @@ def run_topic_modelling(
     normalised_root = text_path("processed", "normalised_segmented_texts")
     output_root = analytics_path("topic")
     output_root.mkdir(parents=True, exist_ok=True)
-    stride = window_stride or base_window_size
+    stride = window_stride or (base_window_size * 2)
 
     for subdir in normalised_root.iterdir():
         if not subdir.is_dir():
@@ -747,6 +912,8 @@ def run_topic_modelling(
             book_min_samples = book_overrides.get("min_samples", category_min_samples)
             book_soft_score_threshold = book_overrides.get("soft_score_threshold", soft_score_threshold)
             book_soft_top_k_topics = book_overrides.get("soft_top_k_topics", soft_top_k_topics)
+            book_use_pca = book_overrides.get("use_pca", use_pca)
+            book_pca_components = book_overrides.get("pca_components", pca_components)
             effective_window_size = base_window_size * book_window_multiple
 
             print(f"Extracting topics for {file.name}...")
@@ -760,6 +927,8 @@ def run_topic_modelling(
                 window_stride=book_window_stride,
                 top_k_topics=book_soft_top_k_topics,
                 score_threshold=book_soft_score_threshold,
+                use_pca=book_use_pca,
+                pca_components=book_pca_components,
             )
             num_sentences = len(segmented_mentions)
             result = {
@@ -774,6 +943,8 @@ def run_topic_modelling(
                     "min_samples": book_min_samples,
                     "soft_score_threshold": book_soft_score_threshold,
                     "soft_top_k_topics": book_soft_top_k_topics,
+                    "use_pca": book_use_pca,
+                    "pca_components": book_pca_components,
                 },
                 "topics": serialize_topic_results(topic_results),
                 "windows": window_topics,
@@ -789,6 +960,8 @@ def run_topic_modelling(
                 "min_samples": book_min_samples,
                 "soft_score_threshold": book_soft_score_threshold,
                 "soft_top_k_topics": book_soft_top_k_topics,
+                "use_pca": book_use_pca,
+                "pca_components": book_pca_components,
             }
 
             with open(clustered_output_file, "w", encoding="utf-8") as f:

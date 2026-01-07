@@ -210,12 +210,25 @@ def load_json(path):
 def encode_texts(
     encoder: SentenceTransformer,
     texts: Sequence[str],
+    normalize: bool = True,
 ) -> np.ndarray:
     """Encode texts into embeddings using a shared encoder."""
     if not texts:
         dim = encoder.get_sentence_embedding_dimension()
         return np.empty((0, dim))
-    return encoder.encode(list(texts))
+    embeddings = encoder.encode(list(texts))
+    if normalize:
+        return l2_normalize_embeddings(embeddings)
+    return embeddings
+
+
+def l2_normalize_embeddings(embeddings: np.ndarray) -> np.ndarray:
+    """L2-normalize embeddings row-wise, keeping zero vectors unchanged."""
+    if embeddings.size == 0:
+        return embeddings
+    norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    return embeddings / norms
 
 
 def hdbscan_cluster_labels(
