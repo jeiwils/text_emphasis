@@ -105,9 +105,11 @@ def _collect_window_tables(window_data: Dict[str, object]) -> List[Dict[str, flo
 
     lengths = {name: len(entries) for name, entries in metrics_by_name.items()}
     if len(set(lengths.values())) > 1:
-        raise ValueError(f"Window metric lengths differ: {lengths}")
-
-    window_count = next(iter(lengths.values()))
+        window_count = min(lengths.values())
+    else:
+        window_count = next(iter(lengths.values()))
+    if window_count <= 0:
+        return []
     table: List[Dict[str, float]] = []
     for idx in range(window_count):
         row: Dict[str, float] = {}

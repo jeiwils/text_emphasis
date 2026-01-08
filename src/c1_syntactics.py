@@ -5,7 +5,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 
 from x_configs import DEFAULT_WINDOW_SIZE
-from z_utils import aggregate_windows, graph_path, load_json
+from z_utils import aggregate_windows, graph_path, load_json, sliding_windows
 
 """
 Sentence-level grammar metrics (clauses, syntactic depth, dependency complexity).
@@ -85,6 +85,7 @@ class SyntaxAnalyzer:
         sentence_metrics = []
 
         for sent in doc.sents:
+            token_count = len([t for t in sent if not t.is_punct])
             main_counts = sub_counts = coord_counts = 0
             for token in sent:
                 if token.dep_ == "ROOT":
@@ -104,10 +105,16 @@ class SyntaxAnalyzer:
                         "subordinate": sub_counts,
                         "coordinate": coord_counts,
                     },
+                    "avg_counts_per_token": {
+                        "main": round(main_counts / token_count, 6) if token_count else 0.0,
+                        "subordinate": round(sub_counts / token_count, 6) if token_count else 0.0,
+                        "coordinate": round(coord_counts / token_count, 6) if token_count else 0.0,
+                    },
                     "avg_ratios": {
                         "subordination_ratio": round(sub_to_main_ratio, 2),
                         "coordination_ratio": round(coord_to_main_ratio, 2),
                     },
+                    "token_count": token_count,
                 }
             )
 
@@ -221,6 +228,7 @@ class SyntaxAnalyzer:
                 {
                     "sentence_id": idx,
                     "clause_counts": clause_payload.get("avg_counts", {}),
+                    "clause_counts_per_token": clause_payload.get("avg_counts_per_token", {}),
                     "clause_ratios": clause_payload.get("avg_ratios", {}),
                     "max_depth": depth_payload.get("max_depth", 0),
                     "mean_depth": depth_payload.get("mean_depth", 0),
@@ -229,11 +237,13 @@ class SyntaxAnalyzer:
                     "avg_dependents_per_head": dep_payload.get("avg_dependents_per_head", {}),
                     "avg_max_dependents_per_head": dep_payload.get("avg_max_dependents_per_head", 0),
                     "avg_mean_dependency_distance": dep_payload.get("avg_mean_dependency_distance", 0),
+                    "token_count": clause_payload.get("token_count", 0),
                 }
             )
 
         windows = aggregate_windows(combined_sentences, window_size) if combined_sentences else []
         # Merge per-metric windowed summaries so everything lives under `windows`.
+        window_slices = list(sliding_windows(combined_sentences, window_size))
         for idx, window in enumerate(windows):
             if idx < len(clause_windows):
                 window.update(clause_windows[idx])
@@ -241,6 +251,19 @@ class SyntaxAnalyzer:
                 window.update(depth_windows[idx])
             if idx < len(dep_windows):
                 window.update(dep_windows[idx])
+            if idx < len(window_slices):
+                window_sents = window_slices[idx]
+                total_tokens = sum(sent.get("token_count", 0) for sent in window_sents)
+                clause_counts_total = {"main": 0, "subordinate": 0, "coordinate": 0}
+                for sent in window_sents:
+                    for key, value in sent.get("clause_counts", {}).items():
+                        clause_counts_total[key] = clause_counts_total.get(key, 0) + value
+                if total_tokens > 0:
+                    window["clause_counts_per_token"] = {
+                        k: round(v / total_tokens, 6) for k, v in clause_counts_total.items()
+                    }
+                else:
+                    window["clause_counts_per_token"] = {k: 0.0 for k in clause_counts_total}
 
         return {
             "meta": {

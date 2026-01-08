@@ -1,10 +1,11 @@
+import math
 import statistics
 from collections import Counter
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
-from z_utils import aggregate_windows
+from z_utils import aggregate_windows, sliding_windows
 
 """
 
@@ -85,6 +86,7 @@ class WholeTextMetrics:
         nlp=None,
         chunk_size=2048,
         stride=256,
+        sentence_spans=None,
     ):
         # Ensure we respect the model's maximum position embeddings (e.g., GPT-2 = 1024).
         max_len = (
@@ -100,9 +102,10 @@ class WholeTextMetrics:
         if stride >= effective_chunk:
             raise ValueError("stride must be smaller than chunk_size")
 
-        nlp = nlp or load_spacy_model()
-        doc = nlp(text)
-        sentence_spans = [(sent.start_char, sent.end_char) for sent in doc.sents]
+        if sentence_spans is None:
+            nlp = nlp or load_spacy_model()
+            doc = nlp(text)
+            sentence_spans = [(sent.start_char, sent.end_char) for sent in doc.sents]
         if not sentence_spans:
             return []
 
@@ -242,7 +245,14 @@ class WholeTextMetrics:
             "word_frequencies": corpus_freqs,
         }
 
-    def build_metrics_for_text(self, text, filename, nlp=None, window_size=DEFAULT_WINDOW_SIZE):
+    def build_metrics_for_text(
+        self,
+        text,
+        filename,
+        nlp=None,
+        window_size=DEFAULT_WINDOW_SIZE,
+        sentence_spans=None,
+    ):
         """
         Compute corpus-level and windowed log-prob/surprisal metrics for a single text.
 
@@ -263,6 +273,7 @@ class WholeTextMetrics:
             text,
             nlp=nlp,
             chunk_size=2048,
+            sentence_spans=sentence_spans,
         )
         sentence_log_prob_metrics = self.summarize_sentence_log_probs(sentence_log_probs)
 
@@ -298,6 +309,56 @@ class WholeTextMetrics:
             for sent in sentences
         ]
         windows = aggregate_windows(window_inputs, window_size) if window_inputs else []
+
+        if windows:
+            for window_idx, window_sents in enumerate(sliding_windows(window_inputs, window_size)):
+                log_prob_tokens = [
+                    sent.get("sentence_log_prob_metrics", {}) for sent in window_sents
+                ]
+                surprisal_tokens = [
+                    sent.get("sentence_surprisal_metrics", {}) for sent in window_sents
+                ]
+                total_tokens = sum(metrics.get("num_tokens", 0) for metrics in log_prob_tokens)
+                sum_log_prob = sum(metrics.get("sum_log_prob", 0.0) for metrics in log_prob_tokens)
+
+                if total_tokens > 0:
+                    token_weighted_mean_log_prob = sum_log_prob / total_tokens
+                    token_weighted_perplexity = math.exp(-token_weighted_mean_log_prob)
+                    sum_surprisal = sum(
+                        metrics.get("mean_surprisal", 0.0) * metrics.get("num_tokens", 0)
+                        for metrics in surprisal_tokens
+                    )
+                    token_weighted_mean_surprisal = sum_surprisal / total_tokens
+                    pooled_variance = 0.0
+                    for metrics in surprisal_tokens:
+                        token_count = metrics.get("num_tokens", 0)
+                        if token_count <= 0:
+                            continue
+                        mean_surprisal = metrics.get("mean_surprisal", 0.0)
+                        var_surprisal = metrics.get("surprisal_variance", 0.0)
+                        if token_count > 1:
+                            pooled_variance += (token_count - 1) * var_surprisal
+                        pooled_variance += token_count * (mean_surprisal - token_weighted_mean_surprisal) ** 2
+
+                    token_weighted_surprisal_variance = pooled_variance / total_tokens
+                else:
+                    token_weighted_mean_log_prob = 0.0
+                    token_weighted_perplexity = 0.0
+                    token_weighted_mean_surprisal = 0.0
+                    token_weighted_surprisal_variance = 0.0
+
+                windows[window_idx]["token_weighted_mean_log_prob"] = round(
+                    token_weighted_mean_log_prob, 6
+                )
+                windows[window_idx]["token_weighted_perplexity"] = round(
+                    token_weighted_perplexity, 6
+                )
+                windows[window_idx]["token_weighted_mean_surprisal"] = round(
+                    token_weighted_mean_surprisal, 6
+                )
+                windows[window_idx]["token_weighted_surprisal_variance"] = round(
+                    token_weighted_surprisal_variance, 6
+                )
 
         return {
             "meta": {

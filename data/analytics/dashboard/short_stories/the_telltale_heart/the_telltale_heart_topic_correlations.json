@@ -10,11 +10,16 @@
       "discourse.connective_counts.Contingency",
       "discourse.connective_counts.Expansion",
       "discourse.connective_counts.Temporal",
+      "discourse.connective_counts_per_token.Comparison",
+      "discourse.connective_counts_per_token.Contingency",
+      "discourse.connective_counts_per_token.Expansion",
+      "discourse.connective_counts_per_token.Temporal",
       "discourse.content_overlap",
       "discourse.content_overlap_ratio",
       "discourse.entity_overlap",
       "discourse.entity_overlap_ratio",
       "discourse.explicit_connectives",
+      "discourse.explicit_connectives_per_token",
       "discourse.num_tokens",
       "discourse.pronoun_ratio",
       "discourse.tense_shift",
@@ -25,13 +30,22 @@
       "information_content_metrics.sentence_surprisal_metrics.mean_surprisal",
       "information_content_metrics.sentence_surprisal_metrics.num_tokens",
       "information_content_metrics.sentence_surprisal_metrics.surprisal_variance",
+      "information_content_metrics.token_weighted_mean_log_prob",
+      "information_content_metrics.token_weighted_mean_surprisal",
+      "information_content_metrics.token_weighted_perplexity",
+      "information_content_metrics.token_weighted_surprisal_variance",
       "lexico_semantics.avg_word_freq",
+      "lexico_semantics.avg_word_freq_token_count",
       "lexico_semantics.avg_word_freq_window.avg_word_freq",
       "lexico_semantics.avg_word_freq_window.content_function_ratio",
       "lexico_semantics.avg_word_freq_window.normalized_freq",
+      "lexico_semantics.avg_word_freq_window.token_count",
+      "lexico_semantics.content_count",
       "lexico_semantics.content_function_ratio",
       "lexico_semantics.information_content",
+      "lexico_semantics.information_content_token_count",
       "lexico_semantics.information_content_window.information_content",
+      "lexico_semantics.information_content_window.token_count",
       "lexico_semantics.lexical_density",
       "lexico_semantics.lexical_density_window.content_count",
       "lexico_semantics.lexical_density_window.lexical_density",
@@ -41,13 +55,28 @@
       "lexico_semantics.mattr_window.window_token_span",
       "lexico_semantics.normalized_freq",
       "lexico_semantics.num_agents",
+      "lexico_semantics.num_agents_per_token",
       "lexico_semantics.num_clauses",
+      "lexico_semantics.num_clauses_per_token",
       "lexico_semantics.num_patients",
+      "lexico_semantics.num_patients_per_token",
       "lexico_semantics.role_count",
+      "lexico_semantics.role_count_per_token",
+      "lexico_semantics.role_counts_per_token.dobj",
+      "lexico_semantics.role_counts_per_token.iobj",
+      "lexico_semantics.role_counts_per_token.nsubj",
+      "lexico_semantics.role_counts_per_token.pobj",
       "lexico_semantics.semantic_roles_window.role_count",
+      "lexico_semantics.semantic_roles_window.role_count_per_token",
+      "lexico_semantics.semantic_roles_window.token_count",
       "lexico_semantics.semantic_structures_window.total_agents",
       "lexico_semantics.semantic_structures_window.total_clauses",
       "lexico_semantics.semantic_structures_window.total_patients",
+      "lexico_semantics.token_count",
+      "lexico_semantics.token_weighted_avg_word_freq",
+      "lexico_semantics.token_weighted_information_content",
+      "lexico_semantics.token_weighted_lexical_density",
+      "lexico_semantics.token_weighted_normalized_freq",
       "log_prob.sentence_log_prob_metrics.mean_log_prob",
       "log_prob.sentence_log_prob_metrics.num_tokens",
       "log_prob.sentence_log_prob_metrics.perplexity",
@@ -55,9 +84,16 @@
       "log_prob.sentence_surprisal_metrics.mean_surprisal",
       "log_prob.sentence_surprisal_metrics.num_tokens",
       "log_prob.sentence_surprisal_metrics.surprisal_variance",
+      "log_prob.token_weighted_mean_log_prob",
+      "log_prob.token_weighted_mean_surprisal",
+      "log_prob.token_weighted_perplexity",
+      "log_prob.token_weighted_surprisal_variance",
       "syntax.avg_counts.coordinate",
       "syntax.avg_counts.main",
       "syntax.avg_counts.subordinate",
+      "syntax.avg_counts_per_token.coordinate",
+      "syntax.avg_counts_per_token.main",
+      "syntax.avg_counts_per_token.subordinate",
       "syntax.avg_dependents_per_head.coordinate_clause",
       "syntax.avg_dependents_per_head.main_clause",
       "syntax.avg_dependents_per_head.subordinate_clause",
@@ -72,13 +108,17 @@
       "syntax.clause_counts.coordinate",
       "syntax.clause_counts.main",
       "syntax.clause_counts.subordinate",
+      "syntax.clause_counts_per_token.coordinate",
+      "syntax.clause_counts_per_token.main",
+      "syntax.clause_counts_per_token.subordinate",
       "syntax.clause_ratios.coordination_ratio",
       "syntax.clause_ratios.subordination_ratio",
       "syntax.depth_skew",
       "syntax.max_depth",
       "syntax.mean_depth",
       "syntax.median_depth",
-      "syntax.sentence_id"
+      "syntax.sentence_id",
+      "syntax.token_count"
     ],
     "topics": {
       "0": {
@@ -95,16 +135,9 @@
         "windows_with_topic": 13,
         "windows_without_topic": 124,
         "correlations": {
-          "discourse.tense_shift": {
-            "pearson_r": 0.4165862963602699,
-            "p_value": 0.013993003498250875,
-            "n": 137,
-            "mean_with_topic": 0.38384615384615384,
-            "mean_without_topic": 0.07241935483870968
-          },
           "syntax.sentence_id": {
             "pearson_r": -0.4912399851830595,
-            "p_value": 0.0014992503748125937,
+            "p_value": 0.0024987506246876563,
             "n": 137,
             "mean_with_topic": 9.0,
             "mean_without_topic": 75.29032258064517
@@ -127,17 +160,38 @@
         "correlations": {
           "discourse.connective_counts.Comparison": {
             "pearson_r": 0.3010808417192739,
-            "p_value": 0.027486256871564217,
+            "p_value": 0.02448775612193903,
             "n": 137,
             "mean_with_topic": 0.27181818181818185,
             "mean_without_topic": 0.07111111111111111
           },
+          "discourse.connective_counts_per_token.Comparison": {
+            "pearson_r": 0.32967410279901005,
+            "p_value": 0.013493253373313344,
+            "n": 137,
+            "mean_with_topic": 0.025417727272727272,
+            "mean_without_topic": 0.0061371269841269845
+          },
+          "lexico_semantics.num_clauses_per_token": {
+            "pearson_r": 0.31588697694156276,
+            "p_value": 0.004497751124437781,
+            "n": 137,
+            "mean_with_topic": 0.21464618181818185,
+            "mean_without_topic": 0.14248680158730154
+          },
           "syntax.avg_dependents_per_head.coordinate_clause": {
-            "pearson_r": 0.3790101232507759,
-            "p_value": 0.0024987506246876563,
+            "pearson_r": 0.417899191546558,
+            "p_value": 0.0014992503748125937,
             "n": 137,
             "mean_with_topic": 1.3036363636363637,
-            "mean_without_topic": 0.3996031746031746
+            "mean_without_topic": 0.3480952380952381
+          },
+          "syntax.clause_counts_per_token.coordinate": {
+            "pearson_r": 0.31691832323524516,
+            "p_value": 0.005497251374312844,
+            "n": 137,
+            "mean_with_topic": 0.05698818181818182,
+            "mean_without_topic": 0.02215764285714286
           }
         }
       },
@@ -156,60 +210,39 @@
         "windows_without_topic": 129,
         "correlations": {
           "discourse.tense_shift": {
-            "pearson_r": 0.3103460888105216,
-            "p_value": 0.04447776111944028,
+            "pearson_r": 0.3689092262350321,
+            "p_value": 0.04097951024487756,
             "n": 137,
             "mean_with_topic": 0.375,
-            "mean_without_topic": 0.08503875968992249
+            "mean_without_topic": 0.06945736434108528
           },
-          "syntax.avg_dependents_per_head.subordinate_clause": {
-            "pearson_r": -0.3105284300496025,
-            "p_value": 0.00849575212393803,
+          "information_content_metrics.sentence_log_prob_metrics.perplexity": {
+            "pearson_r": 0.3406505175037692,
+            "p_value": 0.06046976511744128,
             "n": 137,
-            "mean_with_topic": 0.125,
-            "mean_without_topic": 1.5531782945736432
+            "mean_with_topic": 5966.938749999999,
+            "mean_without_topic": 81.07852713178293
+          },
+          "log_prob.sentence_log_prob_metrics.perplexity": {
+            "pearson_r": 0.3406505175037692,
+            "p_value": 0.05647176411794103,
+            "n": 137,
+            "mean_with_topic": 5966.938749999999,
+            "mean_without_topic": 81.07852713178293
           },
           "syntax.avg_max_depth": {
-            "pearson_r": -0.3335979161809835,
-            "p_value": 0.005997001499250375,
+            "pearson_r": -0.32235163442179243,
+            "p_value": 0.012993503248375811,
             "n": 137,
-            "mean_with_topic": 1.74875,
-            "mean_without_topic": 3.3744186046511615
-          },
-          "syntax.avg_mean_depth": {
-            "pearson_r": -0.3215587941680166,
-            "p_value": 0.008995502248875561,
-            "n": 137,
-            "mean_with_topic": 1.02375,
-            "mean_without_topic": 1.6686046511627903
-          },
-          "syntax.avg_median_depth": {
-            "pearson_r": -0.3152817506579928,
-            "p_value": 0.010994502748625687,
-            "n": 137,
-            "mean_with_topic": 0.98,
-            "mean_without_topic": 1.539689922480622
+            "mean_with_topic": 1.8325,
+            "mean_without_topic": 3.279069767441859
           },
           "syntax.max_depth": {
-            "pearson_r": -0.3335979161809835,
-            "p_value": 0.004997501249375313,
-            "n": 137,
-            "mean_with_topic": 1.74875,
-            "mean_without_topic": 3.3744186046511615
-          },
-          "syntax.mean_depth": {
-            "pearson_r": -0.3215587941680166,
-            "p_value": 0.009995002498750625,
-            "n": 137,
-            "mean_with_topic": 1.02375,
-            "mean_without_topic": 1.6686046511627903
-          },
-          "syntax.median_depth": {
-            "pearson_r": -0.3152817506579928,
+            "pearson_r": -0.32235163442179243,
             "p_value": 0.009495252373813094,
             "n": 137,
-            "mean_with_topic": 0.98,
-            "mean_without_topic": 1.539689922480622
+            "mean_with_topic": 1.8325,
+            "mean_without_topic": 3.279069767441859
           },
           "syntax.sentence_id": {
             "pearson_r": 0.40615469568705526,
@@ -235,22 +268,22 @@
         "windows_without_topic": 129,
         "correlations": {
           "discourse.pronoun_ratio": {
-            "pearson_r": 0.40637581557123076,
-            "p_value": 0.004997501249375313,
+            "pearson_r": 0.4121831056842597,
+            "p_value": 0.00399800099950025,
             "n": 137,
-            "mean_with_topic": 0.2625,
-            "mean_without_topic": 0.14054263565891467
+            "mean_with_topic": 0.26375,
+            "mean_without_topic": 0.14170542635658911
           },
           "discourse.tense_shift": {
-            "pearson_r": 0.3089252421935234,
-            "p_value": 0.04047976011994003,
+            "pearson_r": 0.3673063921618941,
+            "p_value": 0.027486256871564217,
             "n": 137,
             "mean_with_topic": 0.37375,
-            "mean_without_topic": 0.08511627906976744
+            "mean_without_topic": 0.06953488372093024
           },
           "syntax.sentence_id": {
             "pearson_r": -0.33688800339934044,
-            "p_value": 0.049475262368815595,
+            "p_value": 0.044977511244377814,
             "n": 137,
             "mean_with_topic": 15.5,
             "mean_without_topic": 72.31782945736434
@@ -271,23 +304,9 @@
         "windows_with_topic": 8,
         "windows_without_topic": 129,
         "correlations": {
-          "discourse.content_overlap": {
-            "pearson_r": 0.32145038982139046,
-            "p_value": 0.013993003498250875,
-            "n": 137,
-            "mean_with_topic": 0.9575,
-            "mean_without_topic": 0.353410852713178
-          },
-          "discourse.tense_shift": {
-            "pearson_r": 0.40412196553237373,
-            "p_value": 0.014492753623188406,
-            "n": 137,
-            "mean_with_topic": 0.4575,
-            "mean_without_topic": 0.07992248062015504
-          },
           "syntax.sentence_id": {
             "pearson_r": -0.38096680758243173,
-            "p_value": 0.0029985007496251873,
+            "p_value": 0.0014992503748125937,
             "n": 137,
             "mean_with_topic": 8.5,
             "mean_without_topic": 72.75193798449612
@@ -308,30 +327,23 @@
         "windows_with_topic": 8,
         "windows_without_topic": 129,
         "correlations": {
-          "discourse.entity_overlap_ratio": {
-            "pearson_r": 0.3399082020836704,
-            "p_value": 0.0029985007496251873,
+          "information_content_metrics.token_weighted_perplexity": {
+            "pearson_r": 0.3140829838858337,
+            "p_value": 0.06096951524237881,
             "n": 137,
-            "mean_with_topic": 0.255,
-            "mean_without_topic": 0.07031007751937983
+            "mean_with_topic": 54.794172,
+            "mean_without_topic": 22.509300488372094
           },
-          "information_content_metrics.sentence_log_prob_metrics.perplexity": {
-            "pearson_r": 0.31297335737291215,
-            "p_value": 0.06446776611694154,
+          "log_prob.token_weighted_perplexity": {
+            "pearson_r": 0.3140829838858337,
+            "p_value": 0.05847076461769116,
             "n": 137,
-            "mean_with_topic": 54.635000000000005,
-            "mean_without_topic": 24.566589147286816
-          },
-          "log_prob.sentence_log_prob_metrics.perplexity": {
-            "pearson_r": 0.31297335737291215,
-            "p_value": 0.05747126436781609,
-            "n": 137,
-            "mean_with_topic": 54.635000000000005,
-            "mean_without_topic": 24.566589147286816
+            "mean_with_topic": 54.794172,
+            "mean_without_topic": 22.509300488372094
           },
           "syntax.sentence_id": {
             "pearson_r": -0.40615469568705537,
-            "p_value": 0.0034982508745627187,
+            "p_value": 0.0014992503748125937,
             "n": 137,
             "mean_with_topic": 4.5,
             "mean_without_topic": 73.0
@@ -352,13 +364,6 @@
         "windows_with_topic": 14,
         "windows_without_topic": 123,
         "correlations": {
-          "discourse.tense_shift": {
-            "pearson_r": 0.3555467781815942,
-            "p_value": 0.03248375812093953,
-            "n": 137,
-            "mean_with_topic": 0.33285714285714285,
-            "mean_without_topic": 0.07569105691056911
-          },
           "syntax.sentence_id": {
             "pearson_r": -0.5246482197393821,
             "p_value": 0.0004997501249375312,
@@ -383,18 +388,39 @@
         "windows_without_topic": 128,
         "correlations": {
           "lexico_semantics.num_agents": {
-            "pearson_r": -0.3572157809958975,
-            "p_value": 0.0004997501249375312,
+            "pearson_r": -0.34147456803122306,
+            "p_value": 0.0034982508745627187,
             "n": 137,
-            "mean_with_topic": 0.4811111111111111,
-            "mean_without_topic": 1.1644531249999992
+            "mean_with_topic": 0.5177777777777778,
+            "mean_without_topic": 1.169687499999999
+          },
+          "lexico_semantics.num_agents_per_token": {
+            "pearson_r": -0.30072655769558204,
+            "p_value": 0.010994502748625687,
+            "n": 137,
+            "mean_with_topic": 0.058903888888888895,
+            "mean_without_topic": 0.11396635937499994
           },
           "lexico_semantics.semantic_structures_window.total_agents": {
-            "pearson_r": -0.3564756882249589,
-            "p_value": 0.004497751124437781,
+            "pearson_r": -0.34059772937364086,
+            "p_value": 0.00399800099950025,
             "n": 137,
-            "mean_with_topic": 1.4444444444444444,
-            "mean_without_topic": 3.4921875
+            "mean_with_topic": 1.5555555555555556,
+            "mean_without_topic": 3.5078125
+          },
+          "syntax.avg_max_dependents_per_head": {
+            "pearson_r": -0.307790016644531,
+            "p_value": 0.033483258370814596,
+            "n": 137,
+            "mean_with_topic": 3.6666666666666665,
+            "mean_without_topic": 5.054453125
+          },
+          "syntax.clause_counts_per_token.main": {
+            "pearson_r": 0.3068690390900688,
+            "p_value": 0.03498250874562719,
+            "n": 137,
+            "mean_with_topic": 0.1870928888888889,
+            "mean_without_topic": 0.10797346875
           }
         }
       },
@@ -412,9 +438,37 @@
         "windows_with_topic": 9,
         "windows_without_topic": 128,
         "correlations": {
+          "lexico_semantics.role_counts_per_token.nsubj": {
+            "pearson_r": 0.3659208786049275,
+            "p_value": 0.02048975512243878,
+            "n": 137,
+            "mean_with_topic": 0.20799188888888887,
+            "mean_without_topic": 0.14289240625000002
+          },
+          "lexico_semantics.token_weighted_lexical_density": {
+            "pearson_r": -0.34819414530669124,
+            "p_value": 0.014492753623188406,
+            "n": 137,
+            "mean_with_topic": 0.3532951111111111,
+            "mean_without_topic": 0.4688016718750001
+          },
+          "syntax.avg_counts_per_token.main": {
+            "pearson_r": 0.35875479910295105,
+            "p_value": 0.012993503248375811,
+            "n": 137,
+            "mean_with_topic": 0.32222222222222224,
+            "mean_without_topic": 0.1525
+          },
+          "syntax.clause_counts_per_token.main": {
+            "pearson_r": 0.35484199289747265,
+            "p_value": 0.015492253873063468,
+            "n": 137,
+            "mean_with_topic": 0.1986491111111111,
+            "mean_without_topic": 0.107160921875
+          },
           "syntax.sentence_id": {
             "pearson_r": 0.38218421973349354,
-            "p_value": 0.025987006496751622,
+            "p_value": 0.02348825587206397,
             "n": 137,
             "mean_with_topic": 126.0,
             "mean_without_topic": 64.9921875
@@ -435,6 +489,20 @@
         "windows_with_topic": 14,
         "windows_without_topic": 123,
         "correlations": {
+          "syntax.avg_depth_skew": {
+            "pearson_r": -0.341151767557501,
+            "p_value": 0.0034982508745627187,
+            "n": 137,
+            "mean_with_topic": -0.042857142857142864,
+            "mean_without_topic": 0.11195121951219517
+          },
+          "syntax.depth_skew": {
+            "pearson_r": -0.341151767557501,
+            "p_value": 0.004497751124437781,
+            "n": 137,
+            "mean_with_topic": -0.042857142857142864,
+            "mean_without_topic": 0.11195121951219517
+          },
           "syntax.sentence_id": {
             "pearson_r": 0.43629282849407414,
             "p_value": 0.001999000499750125,
@@ -459,15 +527,15 @@
         "windows_without_topic": 125,
         "correlations": {
           "syntax.avg_dependents_per_head.subordinate_clause": {
-            "pearson_r": 0.3081919128151108,
-            "p_value": 0.010994502748625687,
+            "pearson_r": 0.3424393067098137,
+            "p_value": 0.006496751624187906,
             "n": 137,
-            "mean_with_topic": 2.5425,
-            "mean_without_topic": 1.3668
+            "mean_with_topic": 2.6649999999999996,
+            "mean_without_topic": 1.3763199999999998
           },
           "syntax.sentence_id": {
             "pearson_r": -0.3120785307861858,
-            "p_value": 0.03698150924537731,
+            "p_value": 0.03648175912043978,
             "n": 137,
             "mean_with_topic": 29.166666666666668,
             "mean_without_topic": 72.824
@@ -490,7 +558,7 @@
         "correlations": {
           "syntax.sentence_id": {
             "pearson_r": 0.3044130804062534,
-            "p_value": 0.08695652173913043,
+            "p_value": 0.07896051974012994,
             "n": 137,
             "mean_with_topic": 103.33333333333333,
             "mean_without_topic": 64.77868852459017
@@ -525,47 +593,89 @@
             "mean_with_topic": 0.15208333333333335,
             "mean_without_topic": 0.029203539823008853
           },
+          "discourse.content_overlap": {
+            "pearson_r": 0.3168587705414132,
+            "p_value": 0.010494752623688156,
+            "n": 137,
+            "mean_with_topic": 0.66625,
+            "mean_without_topic": 0.3210619469026547
+          },
           "discourse.explicit_connectives": {
             "pearson_r": 0.32911060203158926,
-            "p_value": 0.009995002498750625,
+            "p_value": 0.010994502748625687,
             "n": 137,
             "mean_with_topic": 0.8891666666666668,
             "mean_without_topic": 0.4658407079646017
           },
           "discourse.num_tokens": {
             "pearson_r": 0.467043252617672,
-            "p_value": 0.0009995002498750624,
+            "p_value": 0.0004997501249375312,
             "n": 137,
             "mean_with_topic": 18.43,
             "mean_without_topic": 11.722477876106193
           },
           "information_content_metrics.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.45867023591388956,
+            "pearson_r": 0.4610470718793395,
             "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": 17.680833333333336,
-            "mean_without_topic": 10.932035398230088
+            "mean_with_topic": 18.722083333333334,
+            "mean_without_topic": 11.929026548672567
           },
           "information_content_metrics.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.4742599107918913,
-            "p_value": 0.0004997501249375312,
-            "n": 137,
-            "mean_with_topic": -55.41916666666666,
-            "mean_without_topic": -31.697345132743376
-          },
-          "information_content_metrics.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.45867023591388956,
-            "p_value": 0.0004997501249375312,
-            "n": 137,
-            "mean_with_topic": 17.680833333333336,
-            "mean_without_topic": 10.932035398230088
-          },
-          "lexico_semantics.lexical_density_window.content_count": {
-            "pearson_r": 0.4169445788465714,
+            "pearson_r": -0.4669856726383514,
             "p_value": 0.0009995002498750624,
             "n": 137,
-            "mean_with_topic": 7.4725,
-            "mean_without_topic": 4.675221238938053
+            "mean_with_topic": -59.523749999999986,
+            "mean_without_topic": -36.01778761061948
+          },
+          "information_content_metrics.sentence_surprisal_metrics.num_tokens": {
+            "pearson_r": 0.4610470718793395,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 18.722083333333334,
+            "mean_without_topic": 11.929026548672567
+          },
+          "lexico_semantics.avg_word_freq_token_count": {
+            "pearson_r": 0.45640653310558865,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 48.0,
+            "mean_without_topic": 29.831858407079647
+          },
+          "lexico_semantics.avg_word_freq_window.token_count": {
+            "pearson_r": 0.4564693599794157,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 16.000833333333336,
+            "mean_without_topic": 9.943893805309733
+          },
+          "lexico_semantics.content_count": {
+            "pearson_r": 0.42456900555088384,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 22.75,
+            "mean_without_topic": 14.017699115044248
+          },
+          "lexico_semantics.information_content_token_count": {
+            "pearson_r": 0.4628738708449899,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 45.958333333333336,
+            "mean_without_topic": 27.920353982300885
+          },
+          "lexico_semantics.information_content_window.token_count": {
+            "pearson_r": 0.46287593325393495,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 15.319583333333336,
+            "mean_without_topic": 9.306725663716815
+          },
+          "lexico_semantics.lexical_density_window.content_count": {
+            "pearson_r": 0.42457136263191514,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 7.5825000000000005,
+            "mean_without_topic": 4.672123893805309
           },
           "lexico_semantics.lexical_density_window.token_count": {
             "pearson_r": 0.4547509858390229,
@@ -583,94 +693,115 @@
           },
           "lexico_semantics.mattr_window.window_token_span": {
             "pearson_r": 0.3601001864430082,
-            "p_value": 0.0079960019990005,
+            "p_value": 0.0069965017491254375,
             "n": 137,
             "mean_with_topic": 41.416666666666664,
             "mean_without_topic": 30.01769911504425
           },
           "lexico_semantics.num_agents": {
-            "pearson_r": 0.3966864407569104,
+            "pearson_r": 0.39037726412138324,
             "p_value": 0.0024987506246876563,
             "n": 137,
             "mean_with_topic": 1.5274999999999999,
-            "mean_without_topic": 1.032920353982301
+            "mean_without_topic": 1.041769911504425
           },
           "lexico_semantics.role_count": {
-            "pearson_r": 0.36300896172739777,
-            "p_value": 0.004497751124437781,
+            "pearson_r": 0.3656317953681171,
+            "p_value": 0.006496751624187906,
             "n": 137,
             "mean_with_topic": 3.7641666666666667,
-            "mean_without_topic": 2.5926548672566376
+            "mean_without_topic": 2.5924778761061944
           },
           "lexico_semantics.semantic_roles_window.role_count": {
-            "pearson_r": 0.36300896172739777,
-            "p_value": 0.0069965017491254375,
+            "pearson_r": 0.3656317953681171,
+            "p_value": 0.005997001499250375,
             "n": 137,
             "mean_with_topic": 3.7641666666666667,
-            "mean_without_topic": 2.5926548672566376
+            "mean_without_topic": 2.5924778761061944
+          },
+          "lexico_semantics.semantic_roles_window.token_count": {
+            "pearson_r": 0.4547509858390229,
+            "p_value": 0.001999000499750125,
+            "n": 137,
+            "mean_with_topic": 16.14,
+            "mean_without_topic": 10.029646017699116
           },
           "lexico_semantics.semantic_structures_window.total_agents": {
-            "pearson_r": 0.3969066892693837,
-            "p_value": 0.00399800099950025,
-            "n": 137,
-            "mean_with_topic": 4.583333333333333,
-            "mean_without_topic": 3.0973451327433628
-          },
-          "log_prob.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.45867023591388956,
-            "p_value": 0.0004997501249375312,
-            "n": 137,
-            "mean_with_topic": 17.680833333333336,
-            "mean_without_topic": 10.932035398230088
-          },
-          "log_prob.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.4742599107918913,
-            "p_value": 0.0004997501249375312,
-            "n": 137,
-            "mean_with_topic": -55.41916666666666,
-            "mean_without_topic": -31.697345132743376
-          },
-          "log_prob.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.45867023591388956,
-            "p_value": 0.0009995002498750624,
-            "n": 137,
-            "mean_with_topic": 17.680833333333336,
-            "mean_without_topic": 10.932035398230088
-          },
-          "syntax.avg_dependents_per_head.main_clause": {
-            "pearson_r": 0.35974398072471464,
-            "p_value": 0.009995002498750625,
-            "n": 137,
-            "mean_with_topic": 5.652083333333333,
-            "mean_without_topic": 4.6162831858407065
-          },
-          "syntax.avg_dependents_per_head.subordinate_clause": {
-            "pearson_r": 0.3599432629909678,
-            "p_value": 0.0034982508745627187,
-            "n": 137,
-            "mean_with_topic": 2.3120833333333333,
-            "mean_without_topic": 1.2908849557522126
-          },
-          "syntax.avg_max_dependents_per_head": {
-            "pearson_r": 0.4285293060320818,
-            "p_value": 0.0014992503748125937,
-            "n": 137,
-            "mean_with_topic": 5.999583333333333,
-            "mean_without_topic": 4.710707964601769
-          },
-          "syntax.avg_mean_dependency_distance": {
-            "pearson_r": 0.3795954533365193,
+            "pearson_r": 0.39066947576159056,
             "p_value": 0.004497751124437781,
             "n": 137,
-            "mean_with_topic": 2.874166666666667,
-            "mean_without_topic": 2.3523893805309735
+            "mean_with_topic": 4.583333333333333,
+            "mean_without_topic": 3.1238938053097347
+          },
+          "lexico_semantics.token_count": {
+            "pearson_r": 0.45468825351812153,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 48.416666666666664,
+            "mean_without_topic": 30.088495575221238
+          },
+          "log_prob.sentence_log_prob_metrics.num_tokens": {
+            "pearson_r": 0.4610470718793395,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 18.722083333333334,
+            "mean_without_topic": 11.929026548672567
+          },
+          "log_prob.sentence_log_prob_metrics.sum_log_prob": {
+            "pearson_r": -0.4669856726383514,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": -59.523749999999986,
+            "mean_without_topic": -36.01778761061948
+          },
+          "log_prob.sentence_surprisal_metrics.num_tokens": {
+            "pearson_r": 0.4610470718793395,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 18.722083333333334,
+            "mean_without_topic": 11.929026548672567
+          },
+          "syntax.avg_dependents_per_head.main_clause": {
+            "pearson_r": 0.37256347925165534,
+            "p_value": 0.00849575212393803,
+            "n": 137,
+            "mean_with_topic": 5.75,
+            "mean_without_topic": 4.6544247787610615
+          },
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": 0.3019573519244412,
+            "p_value": 0.01699150424787606,
+            "n": 137,
+            "mean_with_topic": 2.1862499999999994,
+            "mean_without_topic": 1.3411504424778764
+          },
+          "syntax.avg_max_dependents_per_head": {
+            "pearson_r": 0.38783138032535663,
+            "p_value": 0.004497751124437781,
+            "n": 137,
+            "mean_with_topic": 5.903333333333333,
+            "mean_without_topic": 4.763628318584071
+          },
+          "syntax.avg_mean_dependency_distance": {
+            "pearson_r": 0.3935203225587639,
+            "p_value": 0.00399800099950025,
+            "n": 137,
+            "mean_with_topic": 2.8945833333333333,
+            "mean_without_topic": 2.365221238938053
           },
           "syntax.sentence_id": {
             "pearson_r": -0.36950595320020474,
-            "p_value": 0.028985507246376812,
+            "p_value": 0.03298350824587706,
             "n": 137,
             "mean_with_topic": 37.291666666666664,
             "mean_without_topic": 75.73451327433628
+          },
+          "syntax.token_count": {
+            "pearson_r": 0.4547509858390229,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 16.14,
+            "mean_without_topic": 10.029646017699116
           }
         }
       },
@@ -689,32 +820,32 @@
         "windows_without_topic": 126,
         "correlations": {
           "lexico_semantics.num_clauses": {
-            "pearson_r": 0.33406240206421844,
-            "p_value": 0.004997501249375313,
+            "pearson_r": 0.3256599822671189,
+            "p_value": 0.00849575212393803,
             "n": 137,
             "mean_with_topic": 2.2709090909090905,
-            "mean_without_topic": 1.4469841269841273
+            "mean_without_topic": 1.4549999999999996
           },
           "lexico_semantics.num_patients": {
-            "pearson_r": 0.4261767780558009,
-            "p_value": 0.0024987506246876563,
-            "n": 137,
-            "mean_with_topic": 1.1518181818181819,
-            "mean_without_topic": 0.47142857142857164
-          },
-          "lexico_semantics.semantic_structures_window.total_clauses": {
-            "pearson_r": 0.33470760366668056,
-            "p_value": 0.005997001499250375,
-            "n": 137,
-            "mean_with_topic": 6.818181818181818,
-            "mean_without_topic": 4.341269841269841
-          },
-          "lexico_semantics.semantic_structures_window.total_patients": {
-            "pearson_r": 0.42689433891751355,
+            "pearson_r": 0.4155716904207533,
             "p_value": 0.001999000499750125,
             "n": 137,
+            "mean_with_topic": 1.1518181818181819,
+            "mean_without_topic": 0.48722222222222245
+          },
+          "lexico_semantics.semantic_structures_window.total_clauses": {
+            "pearson_r": 0.3263204774635773,
+            "p_value": 0.010994502748625687,
+            "n": 137,
+            "mean_with_topic": 6.818181818181818,
+            "mean_without_topic": 4.365079365079365
+          },
+          "lexico_semantics.semantic_structures_window.total_patients": {
+            "pearson_r": 0.4162040825630106,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
             "mean_with_topic": 3.4545454545454546,
-            "mean_without_topic": 1.4126984126984128
+            "mean_without_topic": 1.4603174603174602
           }
         }
       },
@@ -732,9 +863,16 @@
         "windows_with_topic": 16,
         "windows_without_topic": 121,
         "correlations": {
+          "syntax.avg_counts_per_token.coordinate": {
+            "pearson_r": 0.33303074176738223,
+            "p_value": 0.009995002498750625,
+            "n": 137,
+            "mean_with_topic": 0.04562500000000001,
+            "mean_without_topic": 0.018925619834710757
+          },
           "syntax.sentence_id": {
             "pearson_r": 0.4281394254329652,
-            "p_value": 0.0034982508745627187,
+            "p_value": 0.00399800099950025,
             "n": 137,
             "mean_with_topic": 115.5625,
             "mean_without_topic": 62.84297520661157
@@ -756,22 +894,43 @@
         "windows_without_topic": 119,
         "correlations": {
           "information_content_metrics.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": 0.3029821959555207,
-            "p_value": 0.01249375312343828,
+            "pearson_r": 0.3130530213149397,
+            "p_value": 0.015492253873063468,
             "n": 137,
-            "mean_with_topic": -21.041111111111107,
-            "mean_without_topic": -38.09344537815129
+            "mean_with_topic": -24.73444444444444,
+            "mean_without_topic": -42.46521008403358
           },
           "log_prob.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": 0.3029821959555207,
-            "p_value": 0.01899050474762619,
+            "pearson_r": 0.3130530213149397,
+            "p_value": 0.015992003998001,
             "n": 137,
-            "mean_with_topic": -21.041111111111107,
-            "mean_without_topic": -38.09344537815129
+            "mean_with_topic": -24.73444444444444,
+            "mean_without_topic": -42.46521008403358
+          },
+          "syntax.avg_max_depth": {
+            "pearson_r": -0.3113437352664749,
+            "p_value": 0.011494252873563218,
+            "n": 137,
+            "mean_with_topic": 2.352222222222222,
+            "mean_without_topic": 3.3220168067226874
+          },
+          "syntax.clause_counts_per_token.main": {
+            "pearson_r": 0.3087432789394391,
+            "p_value": 0.0239880059970015,
+            "n": 137,
+            "mean_with_topic": 0.1638783888888889,
+            "mean_without_topic": 0.10550108403361345
+          },
+          "syntax.max_depth": {
+            "pearson_r": -0.3113437352664749,
+            "p_value": 0.006496751624187906,
+            "n": 137,
+            "mean_with_topic": 2.352222222222222,
+            "mean_without_topic": 3.3220168067226874
           },
           "syntax.sentence_id": {
             "pearson_r": 0.33382057635641227,
-            "p_value": 0.03248375812093953,
+            "p_value": 0.04297851074462768,
             "n": 137,
             "mean_with_topic": 102.94444444444444,
             "mean_without_topic": 63.865546218487395
@@ -792,9 +951,23 @@
         "windows_with_topic": 13,
         "windows_without_topic": 124,
         "correlations": {
+          "discourse.connective_counts_per_token.Expansion": {
+            "pearson_r": 0.3285594792184103,
+            "p_value": 0.0069965017491254375,
+            "n": 137,
+            "mean_with_topic": 0.05539592307692308,
+            "mean_without_topic": 0.02252652419354839
+          },
+          "syntax.avg_counts_per_token.coordinate": {
+            "pearson_r": 0.4192645503860031,
+            "p_value": 0.0069965017491254375,
+            "n": 137,
+            "mean_with_topic": 0.0553846153846154,
+            "mean_without_topic": 0.018548387096774206
+          },
           "syntax.sentence_id": {
             "pearson_r": 0.4011793212328324,
-            "p_value": 0.02348825587206397,
+            "p_value": 0.02048975512243878,
             "n": 137,
             "mean_with_topic": 118.0,
             "mean_without_topic": 63.86290322580645
@@ -816,18 +989,18 @@
         "windows_without_topic": 125,
         "correlations": {
           "lexico_semantics.num_patients": {
-            "pearson_r": 0.4581037038869457,
-            "p_value": 0.0014992503748125937,
+            "pearson_r": 0.4469636667144344,
+            "p_value": 0.001999000499750125,
             "n": 137,
             "mean_with_topic": 1.1675,
-            "mean_without_topic": 0.46448000000000017
+            "mean_without_topic": 0.4804000000000002
           },
           "lexico_semantics.semantic_structures_window.total_patients": {
-            "pearson_r": 0.4584920517565233,
-            "p_value": 0.0014992503748125937,
+            "pearson_r": 0.4472627834795315,
+            "p_value": 0.001999000499750125,
             "n": 137,
             "mean_with_topic": 3.5,
-            "mean_without_topic": 1.392
+            "mean_without_topic": 1.44
           }
         }
       },
@@ -845,35 +1018,26 @@
         "windows_with_topic": 12,
         "windows_without_topic": 125,
         "correlations": {
+          "discourse.connective_counts_per_token.Expansion": {
+            "pearson_r": 0.33938826573574593,
+            "p_value": 0.00399800099950025,
+            "n": 137,
+            "mean_with_topic": 0.05776,
+            "mean_without_topic": 0.022562528000000002
+          },
+          "syntax.avg_counts_per_token.coordinate": {
+            "pearson_r": 0.3965736369212412,
+            "p_value": 0.00849575212393803,
+            "n": 137,
+            "mean_with_topic": 0.055000000000000014,
+            "mean_without_topic": 0.018880000000000015
+          },
           "syntax.sentence_id": {
             "pearson_r": 0.38781306963806317,
-            "p_value": 0.01699150424787606,
+            "p_value": 0.01899050474762619,
             "n": 137,
             "mean_with_topic": 118.5,
             "mean_without_topic": 64.248
-          }
-        }
-      },
-      "21": {
-        "keywords": [
-          "strongly power sure",
-          "strongly power",
-          "strongly",
-          "power sure success",
-          "power sure",
-          "sure success",
-          "power",
-          "feel strongly"
-        ],
-        "windows_with_topic": 8,
-        "windows_without_topic": 129,
-        "correlations": {
-          "syntax.avg_dependents_per_head.subordinate_clause": {
-            "pearson_r": 0.3103409179707738,
-            "p_value": 0.014992503748125937,
-            "n": 137,
-            "mean_with_topic": 2.81375,
-            "mean_without_topic": 1.3864341085271317
           }
         }
       },
@@ -892,18 +1056,18 @@
         "windows_without_topic": 123,
         "correlations": {
           "lexico_semantics.num_patients": {
-            "pearson_r": 0.40577525179853074,
-            "p_value": 0.0034982508745627187,
+            "pearson_r": 0.3938044251149709,
+            "p_value": 0.004997501249375313,
             "n": 137,
             "mean_with_topic": 1.0478571428571428,
-            "mean_without_topic": 0.4666666666666669
+            "mean_without_topic": 0.4828455284552848
           },
           "lexico_semantics.semantic_structures_window.total_patients": {
-            "pearson_r": 0.4065359253769129,
-            "p_value": 0.0029985007496251873,
+            "pearson_r": 0.39447200747784905,
+            "p_value": 0.004497751124437781,
             "n": 137,
             "mean_with_topic": 3.142857142857143,
-            "mean_without_topic": 1.3983739837398375
+            "mean_without_topic": 1.4471544715447155
           }
         }
       },
@@ -921,19 +1085,33 @@
         "windows_with_topic": 12,
         "windows_without_topic": 125,
         "correlations": {
+          "lexico_semantics.num_agents_per_token": {
+            "pearson_r": -0.340777910742033,
+            "p_value": 0.0069965017491254375,
+            "n": 137,
+            "mean_with_topic": 0.06045775,
+            "mean_without_topic": 0.11513868799999993
+          },
           "lexico_semantics.num_patients": {
-            "pearson_r": 0.4581037038869457,
-            "p_value": 0.0009995002498750624,
+            "pearson_r": 0.4469636667144344,
+            "p_value": 0.0014992503748125937,
             "n": 137,
             "mean_with_topic": 1.1675,
-            "mean_without_topic": 0.46448000000000017
+            "mean_without_topic": 0.4804000000000002
+          },
+          "lexico_semantics.role_counts_per_token.nsubj": {
+            "pearson_r": -0.3364970269901921,
+            "p_value": 0.021989005497251374,
+            "n": 137,
+            "mean_with_topic": 0.09930141666666666,
+            "mean_without_topic": 0.151764304
           },
           "lexico_semantics.semantic_structures_window.total_patients": {
-            "pearson_r": 0.45849205175652324,
-            "p_value": 0.0009995002498750624,
+            "pearson_r": 0.4472627834795315,
+            "p_value": 0.0004997501249375312,
             "n": 137,
             "mean_with_topic": 3.5,
-            "mean_without_topic": 1.392
+            "mean_without_topic": 1.44
           }
         }
       },
@@ -951,9 +1129,100 @@
         "windows_with_topic": 23,
         "windows_without_topic": 114,
         "correlations": {
+          "discourse.connective_counts_per_token.Expansion": {
+            "pearson_r": 0.33709278507491763,
+            "p_value": 0.00849575212393803,
+            "n": 137,
+            "mean_with_topic": 0.04764830434782609,
+            "mean_without_topic": 0.02120635964912281
+          },
+          "lexico_semantics.avg_word_freq_window.content_function_ratio": {
+            "pearson_r": 0.3212947388471442,
+            "p_value": 0.01999000499750125,
+            "n": 137,
+            "mean_with_topic": 0.55,
+            "mean_without_topic": 0.4568421052631576
+          },
+          "lexico_semantics.content_function_ratio": {
+            "pearson_r": 0.3212947388471442,
+            "p_value": 0.021989005497251374,
+            "n": 137,
+            "mean_with_topic": 0.55,
+            "mean_without_topic": 0.4568421052631576
+          },
+          "lexico_semantics.lexical_density": {
+            "pearson_r": 0.3239357248643136,
+            "p_value": 0.01899050474762619,
+            "n": 137,
+            "mean_with_topic": 0.5460869565217391,
+            "mean_without_topic": 0.4528070175438595
+          },
+          "lexico_semantics.lexical_density_window.lexical_density": {
+            "pearson_r": 0.3239357248643136,
+            "p_value": 0.0239880059970015,
+            "n": 137,
+            "mean_with_topic": 0.5460869565217391,
+            "mean_without_topic": 0.4528070175438595
+          },
+          "lexico_semantics.role_count_per_token": {
+            "pearson_r": -0.31488195642156525,
+            "p_value": 0.0074962518740629685,
+            "n": 137,
+            "mean_with_topic": 0.21626839130434786,
+            "mean_without_topic": 0.26626228947368424
+          },
+          "syntax.avg_counts.subordinate": {
+            "pearson_r": -0.30093932892543307,
+            "p_value": 0.03248375812093953,
+            "n": 137,
+            "mean_with_topic": 0.34782608695652173,
+            "mean_without_topic": 0.806578947368421
+          },
+          "syntax.avg_counts_per_token.coordinate": {
+            "pearson_r": 0.44976332618613746,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 0.04782608695652176,
+            "mean_without_topic": 0.016842105263157905
+          },
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": -0.3008961860546983,
+            "p_value": 0.020989505247376312,
+            "n": 137,
+            "mean_with_topic": 0.7765217391304348,
+            "mean_without_topic": 1.6329824561403505
+          },
+          "syntax.avg_ratios.subordination_ratio": {
+            "pearson_r": -0.30093932892543307,
+            "p_value": 0.022988505747126436,
+            "n": 137,
+            "mean_with_topic": 0.34782608695652173,
+            "mean_without_topic": 0.806578947368421
+          },
+          "syntax.clause_counts.subordinate": {
+            "pearson_r": -0.30093932892543307,
+            "p_value": 0.017991004497751123,
+            "n": 137,
+            "mean_with_topic": 0.34782608695652173,
+            "mean_without_topic": 0.806578947368421
+          },
+          "syntax.clause_counts_per_token.subordinate": {
+            "pearson_r": -0.30236795405423117,
+            "p_value": 0.01899050474762619,
+            "n": 137,
+            "mean_with_topic": 0.03393047826086956,
+            "mean_without_topic": 0.06559720175438598
+          },
+          "syntax.clause_ratios.subordination_ratio": {
+            "pearson_r": -0.30093932892543307,
+            "p_value": 0.02848575712143928,
+            "n": 137,
+            "mean_with_topic": 0.34782608695652173,
+            "mean_without_topic": 0.806578947368421
+          },
           "syntax.sentence_id": {
             "pearson_r": 0.3644363126229347,
-            "p_value": 0.03498250874562719,
+            "p_value": 0.038980509745127435,
             "n": 137,
             "mean_with_topic": 101.08695652173913,
             "mean_without_topic": 62.526315789473685
@@ -974,9 +1243,51 @@
         "windows_with_topic": 18,
         "windows_without_topic": 119,
         "correlations": {
+          "discourse.connective_counts_per_token.Expansion": {
+            "pearson_r": 0.38855901385494274,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 0.05493649999999999,
+            "mean_without_topic": 0.021214949579831933
+          },
+          "discourse.explicit_connectives_per_token": {
+            "pearson_r": 0.31583618911320605,
+            "p_value": 0.010994502748625687,
+            "n": 137,
+            "mean_with_topic": 0.06986194444444445,
+            "mean_without_topic": 0.03746223529411765
+          },
+          "lexico_semantics.lexical_density": {
+            "pearson_r": 0.30064803834129783,
+            "p_value": 0.021989005497251374,
+            "n": 137,
+            "mean_with_topic": 0.5516666666666665,
+            "mean_without_topic": 0.4558823529411763
+          },
+          "lexico_semantics.lexical_density_window.lexical_density": {
+            "pearson_r": 0.30064803834129783,
+            "p_value": 0.022488755622188907,
+            "n": 137,
+            "mean_with_topic": 0.5516666666666665,
+            "mean_without_topic": 0.4558823529411763
+          },
+          "syntax.avg_counts_per_token.coordinate": {
+            "pearson_r": 0.5481447309991637,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 0.05833333333333336,
+            "mean_without_topic": 0.016554621848739508
+          },
+          "syntax.clause_counts_per_token.coordinate": {
+            "pearson_r": 0.3046773619725545,
+            "p_value": 0.009995002498750625,
+            "n": 137,
+            "mean_with_topic": 0.048350777777777784,
+            "mean_without_topic": 0.02141528571428571
+          },
           "syntax.sentence_id": {
             "pearson_r": 0.4305247367738999,
-            "p_value": 0.010994502748625687,
+            "p_value": 0.005497251374312844,
             "n": 137,
             "mean_with_topic": 112.77777777777777,
             "mean_without_topic": 62.378151260504204
@@ -998,32 +1309,39 @@
         "windows_without_topic": 93,
         "correlations": {
           "lexico_semantics.avg_word_freq_window.content_function_ratio": {
-            "pearson_r": 0.3401989039824944,
-            "p_value": 0.009495252373813094,
+            "pearson_r": 0.3910374069907627,
+            "p_value": 0.005997001499250375,
             "n": 137,
-            "mean_with_topic": 0.5334090909090908,
-            "mean_without_topic": 0.4539784946236558
+            "mean_with_topic": 0.5340909090909091,
+            "mean_without_topic": 0.4433333333333333
           },
           "lexico_semantics.content_function_ratio": {
-            "pearson_r": 0.3401989039824944,
-            "p_value": 0.01249375312343828,
+            "pearson_r": 0.3910374069907627,
+            "p_value": 0.004497751124437781,
             "n": 137,
-            "mean_with_topic": 0.5334090909090908,
-            "mean_without_topic": 0.4539784946236558
+            "mean_with_topic": 0.5340909090909091,
+            "mean_without_topic": 0.4433333333333333
           },
           "lexico_semantics.lexical_density": {
-            "pearson_r": 0.34284251896775764,
-            "p_value": 0.015492253873063468,
+            "pearson_r": 0.3932481497326135,
+            "p_value": 0.0029985007496251873,
             "n": 137,
-            "mean_with_topic": 0.5293181818181818,
-            "mean_without_topic": 0.4501075268817205
+            "mean_with_topic": 0.53,
+            "mean_without_topic": 0.4393548387096774
           },
           "lexico_semantics.lexical_density_window.lexical_density": {
-            "pearson_r": 0.34284251896775764,
-            "p_value": 0.008995502248875561,
+            "pearson_r": 0.3932481497326135,
+            "p_value": 0.00399800099950025,
             "n": 137,
-            "mean_with_topic": 0.5293181818181818,
-            "mean_without_topic": 0.4501075268817205
+            "mean_with_topic": 0.53,
+            "mean_without_topic": 0.4393548387096774
+          },
+          "lexico_semantics.token_weighted_lexical_density": {
+            "pearson_r": 0.32224266410431485,
+            "p_value": 0.017991004497751123,
+            "n": 137,
+            "mean_with_topic": 0.49971615909090905,
+            "mean_without_topic": 0.4429974086021506
           }
         }
       },
@@ -1042,32 +1360,55 @@
         "windows_without_topic": 129,
         "correlations": {
           "information_content_metrics.sentence_surprisal_metrics.surprisal_variance": {
-            "pearson_r": 0.4619681244259181,
-            "p_value": 0.0029985007496251873,
+            "pearson_r": 0.483540508807064,
+            "p_value": 0.0024987506246876563,
             "n": 137,
-            "mean_with_topic": 10.1075,
-            "mean_without_topic": 5.136744186046513
+            "mean_with_topic": 10.26375,
+            "mean_without_topic": 5.52387596899225
           },
-          "log_prob.sentence_surprisal_metrics.surprisal_variance": {
-            "pearson_r": 0.4619681244259181,
+          "information_content_metrics.token_weighted_surprisal_variance": {
+            "pearson_r": 0.43086438866934995,
             "p_value": 0.004497751124437781,
             "n": 137,
-            "mean_with_topic": 10.1075,
-            "mean_without_topic": 5.136744186046513
+            "mean_with_topic": 9.52719725,
+            "mean_without_topic": 5.5142915348837205
           },
-          "syntax.avg_depth_skew": {
-            "pearson_r": 0.3725295062146003,
-            "p_value": 0.005497251374312844,
+          "log_prob.sentence_surprisal_metrics.surprisal_variance": {
+            "pearson_r": 0.483540508807064,
+            "p_value": 0.0009995002498750624,
             "n": 137,
-            "mean_with_topic": 0.37,
-            "mean_without_topic": 0.1084496124031008
+            "mean_with_topic": 10.26375,
+            "mean_without_topic": 5.52387596899225
           },
-          "syntax.depth_skew": {
-            "pearson_r": 0.3725295062146003,
+          "log_prob.token_weighted_surprisal_variance": {
+            "pearson_r": 0.43086438866934995,
             "p_value": 0.00399800099950025,
             "n": 137,
-            "mean_with_topic": 0.37,
-            "mean_without_topic": 0.1084496124031008
+            "mean_with_topic": 9.52719725,
+            "mean_without_topic": 5.5142915348837205
+          }
+        }
+      },
+      "29": {
+        "keywords": [
+          "know opening door",
+          "opening door",
+          "black",
+          "room black",
+          "know opening",
+          "opening",
+          "darkness room black",
+          "darkness room"
+        ],
+        "windows_with_topic": 25,
+        "windows_without_topic": 112,
+        "correlations": {
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": 0.3144195197323976,
+            "p_value": 0.008995502248875561,
+            "n": 137,
+            "mean_with_topic": 2.1972,
+            "mean_without_topic": 1.3311607142857145
           }
         }
       },
@@ -1094,24 +1435,38 @@
           },
           "lexico_semantics.avg_word_freq_window.avg_word_freq": {
             "pearson_r": -0.3440185630884777,
-            "p_value": 0.001999000499750125,
+            "p_value": 0.0034982508745627187,
             "n": 137,
             "mean_with_topic": 15.27157894736842,
             "mean_without_topic": 19.777542372881353
           },
           "lexico_semantics.avg_word_freq_window.normalized_freq": {
             "pearson_r": -0.34395342172307036,
-            "p_value": 0.001999000499750125,
+            "p_value": 0.005497251374312844,
             "n": 137,
             "mean_with_topic": 3.9110526315789476,
             "mean_without_topic": 5.064661016949153
           },
           "lexico_semantics.normalized_freq": {
             "pearson_r": -0.34395342172307036,
-            "p_value": 0.0034982508745627187,
+            "p_value": 0.004497751124437781,
             "n": 137,
             "mean_with_topic": 3.9110526315789476,
             "mean_without_topic": 5.064661016949153
+          },
+          "syntax.avg_counts_per_token.main": {
+            "pearson_r": 0.3244639950266329,
+            "p_value": 0.017491254372813594,
+            "n": 137,
+            "mean_with_topic": 0.25842105263157894,
+            "mean_without_topic": 0.14838983050847462
+          },
+          "syntax.clause_counts_per_token.main": {
+            "pearson_r": 0.36706643322134114,
+            "p_value": 0.0074962518740629685,
+            "n": 137,
+            "mean_with_topic": 0.17160226315789476,
+            "mean_without_topic": 0.10376268644067796
           }
         }
       },
@@ -1136,40 +1491,54 @@
             "mean_with_topic": 0.9057142857142857,
             "mean_without_topic": 0.2889999999999998
           },
+          "discourse.entity_overlap": {
+            "pearson_r": 0.32805289045596214,
+            "p_value": 0.015492253873063468,
+            "n": 137,
+            "mean_with_topic": 0.5714285714285714,
+            "mean_without_topic": 0.1507692307692307
+          },
           "discourse.explicit_connectives": {
             "pearson_r": 0.46713372511659346,
-            "p_value": 0.0034982508745627187,
+            "p_value": 0.0014992503748125937,
             "n": 137,
             "mean_with_topic": 1.5242857142857142,
             "mean_without_topic": 0.487
           },
+          "discourse.explicit_connectives_per_token": {
+            "pearson_r": 0.30875758989821306,
+            "p_value": 0.005497251374312844,
+            "n": 137,
+            "mean_with_topic": 0.08783057142857142,
+            "mean_without_topic": 0.03923620769230769
+          },
           "syntax.avg_counts.coordinate": {
-            "pearson_r": 0.3415476352028915,
-            "p_value": 0.005997001499250375,
+            "pearson_r": 0.3415431650594122,
+            "p_value": 0.010994502748625687,
             "n": 137,
             "mean_with_topic": 0.7157142857142856,
-            "mean_without_topic": 0.24530769230769214
+            "mean_without_topic": 0.23761538461538445
           },
           "syntax.avg_ratios.coordination_ratio": {
-            "pearson_r": 0.3415476352028915,
-            "p_value": 0.009495252373813094,
+            "pearson_r": 0.3415431650594122,
+            "p_value": 0.009995002498750625,
             "n": 137,
             "mean_with_topic": 0.7157142857142856,
-            "mean_without_topic": 0.24530769230769214
+            "mean_without_topic": 0.23761538461538445
           },
           "syntax.clause_counts.coordinate": {
-            "pearson_r": 0.3415476352028915,
+            "pearson_r": 0.3415431650594122,
             "p_value": 0.0074962518740629685,
             "n": 137,
             "mean_with_topic": 0.7157142857142856,
-            "mean_without_topic": 0.24530769230769214
+            "mean_without_topic": 0.23761538461538445
           },
           "syntax.clause_ratios.coordination_ratio": {
-            "pearson_r": 0.3415476352028915,
-            "p_value": 0.00849575212393803,
+            "pearson_r": 0.3415431650594122,
+            "p_value": 0.01249375312343828,
             "n": 137,
             "mean_with_topic": 0.7157142857142856,
-            "mean_without_topic": 0.24530769230769214
+            "mean_without_topic": 0.23761538461538445
           }
         }
       },
@@ -1189,45 +1558,45 @@
         "correlations": {
           "lexico_semantics.mattr_window.window_token_span": {
             "pearson_r": 0.32892008846306126,
-            "p_value": 0.0079960019990005,
+            "p_value": 0.011494252873563218,
             "n": 137,
             "mean_with_topic": 40.19230769230769,
             "mean_without_topic": 30.0990990990991
           },
           "lexico_semantics.num_agents": {
-            "pearson_r": 0.30955749481423006,
-            "p_value": 0.01249375312343828,
+            "pearson_r": 0.31609633283466876,
+            "p_value": 0.009995002498750625,
             "n": 137,
-            "mean_with_topic": 1.4226923076923075,
-            "mean_without_topic": 1.0485585585585588
+            "mean_with_topic": 1.4357692307692307,
+            "mean_without_topic": 1.0545045045045047
           },
           "lexico_semantics.semantic_structures_window.total_agents": {
-            "pearson_r": 0.3100004612752252,
-            "p_value": 0.008995502248875561,
+            "pearson_r": 0.31632478267384817,
+            "p_value": 0.0079960019990005,
             "n": 137,
-            "mean_with_topic": 4.269230769230769,
-            "mean_without_topic": 3.144144144144144
+            "mean_with_topic": 4.3076923076923075,
+            "mean_without_topic": 3.1621621621621623
           },
           "syntax.avg_dependents_per_head.main_clause": {
-            "pearson_r": 0.39557882179202936,
-            "p_value": 0.001999000499750125,
+            "pearson_r": 0.44387689928243856,
+            "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": 5.692307692307693,
-            "mean_without_topic": 4.588198198198198
+            "mean_with_topic": 5.871538461538463,
+            "mean_without_topic": 4.606216216216216
           },
           "syntax.avg_max_dependents_per_head": {
-            "pearson_r": 0.40656945690841423,
-            "p_value": 0.0009995002498750624,
+            "pearson_r": 0.487830552006705,
+            "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": 5.896923076923078,
-            "mean_without_topic": 4.711531531531532
+            "mean_with_topic": 6.08923076923077,
+            "mean_without_topic": 4.69954954954955
           },
           "syntax.avg_mean_dependency_distance": {
-            "pearson_r": 0.4735123464351091,
-            "p_value": 0.0009995002498750624,
+            "pearson_r": 0.45115232156755897,
+            "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": 2.9550000000000005,
-            "mean_without_topic": 2.3240540540540544
+            "mean_with_topic": 2.9346153846153844,
+            "mean_without_topic": 2.3463063063063063
           }
         }
       },
@@ -1245,12 +1614,19 @@
         "windows_with_topic": 28,
         "windows_without_topic": 109,
         "correlations": {
-          "syntax.avg_mean_dependency_distance": {
-            "pearson_r": 0.3202330838280446,
-            "p_value": 0.009495252373813094,
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": 0.33948306613022666,
+            "p_value": 0.00849575212393803,
             "n": 137,
-            "mean_with_topic": 2.7739285714285713,
-            "mean_without_topic": 2.358990825688074
+            "mean_with_topic": 2.2017857142857142,
+            "mean_without_topic": 1.3061467889908265
+          },
+          "syntax.avg_max_dependents_per_head": {
+            "pearson_r": 0.3190334287499812,
+            "p_value": 0.017991004497751123,
+            "n": 137,
+            "mean_with_topic": 5.666428571428571,
+            "mean_without_topic": 4.782660550458715
           }
         }
       },
@@ -1270,80 +1646,143 @@
         "correlations": {
           "discourse.num_tokens": {
             "pearson_r": 0.32529903471257515,
-            "p_value": 0.009495252373813094,
+            "p_value": 0.010994502748625687,
             "n": 137,
             "mean_with_topic": 16.114375,
             "mean_without_topic": 11.917142857142858
           },
           "information_content_metrics.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.31573286276600365,
-            "p_value": 0.017491254372813594,
+            "pearson_r": 0.31581926052461745,
+            "p_value": 0.015992003998001,
             "n": 137,
-            "mean_with_topic": 15.313125000000005,
-            "mean_without_topic": 11.139428571428573
+            "mean_with_topic": 16.323125,
+            "mean_without_topic": 12.14257142857143
           },
           "information_content_metrics.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.3430272113112103,
-            "p_value": 0.00849575212393803,
+            "pearson_r": -0.34302783350429217,
+            "p_value": 0.006496751624187906,
             "n": 137,
-            "mean_with_topic": -47.66718749999999,
-            "mean_without_topic": -32.25247619047621
+            "mean_with_topic": -52.0246875,
+            "mean_without_topic": -36.512285714285724
           },
           "information_content_metrics.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.31573286276600365,
-            "p_value": 0.017491254372813594,
+            "pearson_r": 0.31581926052461745,
+            "p_value": 0.01699150424787606,
             "n": 137,
-            "mean_with_topic": 15.313125000000005,
-            "mean_without_topic": 11.139428571428573
+            "mean_with_topic": 16.323125,
+            "mean_without_topic": 12.14257142857143
           },
           "information_content_metrics.sentence_surprisal_metrics.surprisal_variance": {
-            "pearson_r": 0.3071139019465304,
-            "p_value": 0.020989505247376312,
+            "pearson_r": 0.3054644314829099,
+            "p_value": 0.02048975512243878,
             "n": 137,
-            "mean_with_topic": 6.830624999999999,
-            "mean_without_topic": 4.999238095238096
+            "mean_with_topic": 7.072500000000002,
+            "mean_without_topic": 5.413047619047623
+          },
+          "information_content_metrics.token_weighted_surprisal_variance": {
+            "pearson_r": 0.3045255586497067,
+            "p_value": 0.017991004497751123,
+            "n": 137,
+            "mean_with_topic": 6.95332771875,
+            "mean_without_topic": 5.3814733238095265
+          },
+          "lexico_semantics.avg_word_freq_token_count": {
+            "pearson_r": 0.32325913810339224,
+            "p_value": 0.01249375312343828,
+            "n": 137,
+            "mean_with_topic": 41.875,
+            "mean_without_topic": 30.314285714285713
+          },
+          "lexico_semantics.avg_word_freq_window.token_count": {
+            "pearson_r": 0.3233935672950976,
+            "p_value": 0.017491254372813594,
+            "n": 137,
+            "mean_with_topic": 13.959687500000005,
+            "mean_without_topic": 10.104476190476188
+          },
+          "lexico_semantics.information_content_token_count": {
+            "pearson_r": 0.32775722239466215,
+            "p_value": 0.00849575212393803,
+            "n": 137,
+            "mean_with_topic": 39.875,
+            "mean_without_topic": 28.4
+          },
+          "lexico_semantics.information_content_window.token_count": {
+            "pearson_r": 0.32773897048285744,
+            "p_value": 0.015492253873063468,
+            "n": 137,
+            "mean_with_topic": 13.291562500000003,
+            "mean_without_topic": 9.466666666666667
           },
           "lexico_semantics.lexical_density_window.token_count": {
             "pearson_r": 0.3214421135684104,
-            "p_value": 0.014992503748125937,
+            "p_value": 0.013493253373313344,
             "n": 137,
             "mean_with_topic": 14.074062500000002,
             "mean_without_topic": 10.193714285714284
           },
           "lexico_semantics.mattr_window.token_count": {
             "pearson_r": 0.3163320893749502,
-            "p_value": 0.013493253373313344,
+            "p_value": 0.014492753623188406,
             "n": 137,
             "mean_with_topic": 42.125,
             "mean_without_topic": 30.63809523809524
           },
-          "log_prob.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.31573286276600365,
-            "p_value": 0.015992003998001,
+          "lexico_semantics.semantic_roles_window.token_count": {
+            "pearson_r": 0.3214421135684104,
+            "p_value": 0.01199400299850075,
             "n": 137,
-            "mean_with_topic": 15.313125000000005,
-            "mean_without_topic": 11.139428571428573
+            "mean_with_topic": 14.074062500000002,
+            "mean_without_topic": 10.193714285714284
+          },
+          "lexico_semantics.token_count": {
+            "pearson_r": 0.321358803016463,
+            "p_value": 0.01699150424787606,
+            "n": 137,
+            "mean_with_topic": 42.21875,
+            "mean_without_topic": 30.580952380952382
+          },
+          "log_prob.sentence_log_prob_metrics.num_tokens": {
+            "pearson_r": 0.31581926052461745,
+            "p_value": 0.01649175412293853,
+            "n": 137,
+            "mean_with_topic": 16.323125,
+            "mean_without_topic": 12.14257142857143
           },
           "log_prob.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.3430272113112103,
+            "pearson_r": -0.34302783350429217,
             "p_value": 0.005997001499250375,
             "n": 137,
-            "mean_with_topic": -47.66718749999999,
-            "mean_without_topic": -32.25247619047621
+            "mean_with_topic": -52.0246875,
+            "mean_without_topic": -36.512285714285724
           },
           "log_prob.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.31573286276600365,
-            "p_value": 0.014492753623188406,
+            "pearson_r": 0.31581926052461745,
+            "p_value": 0.01899050474762619,
             "n": 137,
-            "mean_with_topic": 15.313125000000005,
-            "mean_without_topic": 11.139428571428573
+            "mean_with_topic": 16.323125,
+            "mean_without_topic": 12.14257142857143
           },
           "log_prob.sentence_surprisal_metrics.surprisal_variance": {
-            "pearson_r": 0.3071139019465304,
-            "p_value": 0.02498750624687656,
+            "pearson_r": 0.3054644314829099,
+            "p_value": 0.01649175412293853,
             "n": 137,
-            "mean_with_topic": 6.830624999999999,
-            "mean_without_topic": 4.999238095238096
+            "mean_with_topic": 7.072500000000002,
+            "mean_without_topic": 5.413047619047623
+          },
+          "log_prob.token_weighted_surprisal_variance": {
+            "pearson_r": 0.3045255586497067,
+            "p_value": 0.02148925537231384,
+            "n": 137,
+            "mean_with_topic": 6.95332771875,
+            "mean_without_topic": 5.3814733238095265
+          },
+          "syntax.token_count": {
+            "pearson_r": 0.3214421135684104,
+            "p_value": 0.012993503248375811,
+            "n": 137,
+            "mean_with_topic": 14.074062500000002,
+            "mean_without_topic": 10.193714285714284
           }
         }
       },
@@ -1363,7 +1802,7 @@
         "correlations": {
           "discourse.connective_counts.Expansion": {
             "pearson_r": -0.3042839185070316,
-            "p_value": 0.013493253373313344,
+            "p_value": 0.0069965017491254375,
             "n": 137,
             "mean_with_topic": 0.12375000000000001,
             "mean_without_topic": 0.3804761904761903
@@ -1386,7 +1825,7 @@
         "correlations": {
           "syntax.sentence_id": {
             "pearson_r": -0.3950027841316198,
-            "p_value": 0.02048975512243878,
+            "p_value": 0.01999000499750125,
             "n": 137,
             "mean_with_topic": 38.17857142857143,
             "mean_without_topic": 76.91743119266054
@@ -1409,63 +1848,98 @@
         "correlations": {
           "discourse.connective_counts.Contingency": {
             "pearson_r": 0.34317007940849564,
-            "p_value": 0.009995002498750625,
+            "p_value": 0.00849575212393803,
             "n": 137,
             "mean_with_topic": 0.21181818181818182,
             "mean_without_topic": 0.05460869565217392
           },
           "discourse.connective_counts.Temporal": {
             "pearson_r": 0.33129046980423915,
-            "p_value": 0.01699150424787606,
+            "p_value": 0.020989505247376312,
             "n": 137,
             "mean_with_topic": 0.1509090909090909,
             "mean_without_topic": 0.03156521739130435
           },
           "discourse.explicit_connectives": {
             "pearson_r": 0.30374073404221597,
-            "p_value": 0.014492753623188406,
+            "p_value": 0.01899050474762619,
             "n": 137,
             "mean_with_topic": 0.8795454545454547,
             "mean_without_topic": 0.4750434782608695
           },
           "discourse.num_tokens": {
             "pearson_r": 0.4500281294151669,
-            "p_value": 0.0004997501249375312,
+            "p_value": 0.0009995002498750624,
             "n": 137,
             "mean_with_topic": 18.514545454545456,
             "mean_without_topic": 11.82295652173913
           },
           "information_content_metrics.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
-            "p_value": 0.0009995002498750624,
+            "pearson_r": 0.4403117869588051,
+            "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
           },
           "information_content_metrics.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.4674072133309281,
+            "pearson_r": -0.4553854083869573,
             "p_value": 0.0009995002498750624,
             "n": 137,
-            "mean_with_topic": -56.17136363636364,
-            "mean_without_topic": -31.966000000000008
+            "mean_with_topic": -60.05681818181818,
+            "mean_without_topic": -36.32460869565218
           },
           "information_content_metrics.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
+            "pearson_r": 0.4403117869588051,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
+          },
+          "lexico_semantics.avg_word_freq_token_count": {
+            "pearson_r": 0.43972894646013266,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 48.22727272727273,
+            "mean_without_topic": 30.104347826086958
+          },
+          "lexico_semantics.avg_word_freq_window.token_count": {
+            "pearson_r": 0.4398476337867563,
             "p_value": 0.0009995002498750624,
             "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
+            "mean_with_topic": 16.07727272727273,
+            "mean_without_topic": 10.034608695652175
           },
-          "lexico_semantics.lexical_density_window.content_count": {
-            "pearson_r": 0.3821819338535331,
+          "lexico_semantics.content_count": {
+            "pearson_r": 0.3889575061349911,
             "p_value": 0.001999000499750125,
             "n": 137,
-            "mean_with_topic": 7.3936363636363645,
-            "mean_without_topic": 4.738956521739128
+            "mean_with_topic": 22.5,
+            "mean_without_topic": 14.217391304347826
+          },
+          "lexico_semantics.information_content_token_count": {
+            "pearson_r": 0.4458961943713668,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 46.18181818181818,
+            "mean_without_topic": 28.191304347826087
+          },
+          "lexico_semantics.information_content_window.token_count": {
+            "pearson_r": 0.44589908236364706,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 15.394090909090913,
+            "mean_without_topic": 9.397043478260871
+          },
+          "lexico_semantics.lexical_density_window.content_count": {
+            "pearson_r": 0.38886877207082293,
+            "p_value": 0.004497751124437781,
+            "n": 137,
+            "mean_with_topic": 7.498636363636365,
+            "mean_without_topic": 4.738782608695651
           },
           "lexico_semantics.lexical_density_window.token_count": {
             "pearson_r": 0.4340016248281892,
-            "p_value": 0.0009995002498750624,
+            "p_value": 0.0014992503748125937,
             "n": 137,
             "mean_with_topic": 16.16818181818182,
             "mean_without_topic": 10.130521739130437
@@ -1479,122 +1953,159 @@
           },
           "lexico_semantics.mattr_window.window_token_span": {
             "pearson_r": 0.3414831599923472,
-            "p_value": 0.009495252373813094,
+            "p_value": 0.010494752623688156,
             "n": 137,
             "mean_with_topic": 41.40909090909091,
             "mean_without_topic": 30.217391304347824
           },
           "lexico_semantics.num_agents": {
-            "pearson_r": 0.35110183662453653,
-            "p_value": 0.00399800099950025,
+            "pearson_r": 0.3450626332859329,
+            "p_value": 0.009495252373813094,
             "n": 137,
             "mean_with_topic": 1.5,
-            "mean_without_topic": 1.0467826086956524
+            "mean_without_topic": 1.0554782608695654
           },
           "lexico_semantics.role_count": {
-            "pearson_r": 0.3854942932761902,
-            "p_value": 0.0024987506246876563,
+            "pearson_r": 0.3665664060249362,
+            "p_value": 0.0029985007496251873,
             "n": 137,
-            "mean_with_topic": 3.8790909090909094,
-            "mean_without_topic": 2.591043478260869
+            "mean_with_topic": 3.818636363636364,
+            "mean_without_topic": 2.6024347826086953
           },
           "lexico_semantics.semantic_roles_window.role_count": {
-            "pearson_r": 0.3854942932761902,
-            "p_value": 0.0014992503748125937,
+            "pearson_r": 0.3665664060249362,
+            "p_value": 0.00399800099950025,
             "n": 137,
-            "mean_with_topic": 3.8790909090909094,
-            "mean_without_topic": 2.591043478260869
+            "mean_with_topic": 3.818636363636364,
+            "mean_without_topic": 2.6024347826086953
+          },
+          "lexico_semantics.semantic_roles_window.token_count": {
+            "pearson_r": 0.4340016248281892,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 16.16818181818182,
+            "mean_without_topic": 10.130521739130437
           },
           "lexico_semantics.semantic_structures_window.total_agents": {
-            "pearson_r": 0.351079100457154,
-            "p_value": 0.004497751124437781,
+            "pearson_r": 0.34510347508734884,
+            "p_value": 0.0074962518740629685,
             "n": 137,
             "mean_with_topic": 4.5,
-            "mean_without_topic": 3.139130434782609
+            "mean_without_topic": 3.1652173913043478
           },
-          "log_prob.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
-            "p_value": 0.0009995002498750624,
-            "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
-          },
-          "log_prob.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.4674072133309281,
+          "lexico_semantics.token_count": {
+            "pearson_r": 0.4339075352338758,
             "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": -56.17136363636364,
-            "mean_without_topic": -31.966000000000008
+            "mean_with_topic": 48.5,
+            "mean_without_topic": 30.391304347826086
+          },
+          "log_prob.sentence_log_prob_metrics.num_tokens": {
+            "pearson_r": 0.4403117869588051,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
+          },
+          "log_prob.sentence_log_prob_metrics.sum_log_prob": {
+            "pearson_r": -0.4553854083869573,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": -60.05681818181818,
+            "mean_without_topic": -36.32460869565218
           },
           "log_prob.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
-            "p_value": 0.0014992503748125937,
-            "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
-          },
-          "syntax.avg_counts.subordinate": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.010494752623688156,
-            "n": 137,
-            "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
-          },
-          "syntax.avg_dependents_per_head.main_clause": {
-            "pearson_r": 0.3167918929419702,
-            "p_value": 0.017991004497751123,
-            "n": 137,
-            "mean_with_topic": 5.590454545454546,
-            "mean_without_topic": 4.646086956521739
-          },
-          "syntax.avg_dependents_per_head.subordinate_clause": {
-            "pearson_r": 0.41431968839216127,
-            "p_value": 0.0014992503748125937,
-            "n": 137,
-            "mean_with_topic": 2.491363636363636,
-            "mean_without_topic": 1.274347826086957
-          },
-          "syntax.avg_max_dependents_per_head": {
-            "pearson_r": 0.42425104713200534,
+            "pearson_r": 0.4403117869588051,
             "p_value": 0.0009995002498750624,
             "n": 137,
-            "mean_with_topic": 6.045454545454546,
-            "mean_without_topic": 4.724347826086956
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
+          },
+          "syntax.avg_counts.subordinate": {
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.025987006496751622,
+            "n": 137,
+            "mean_with_topic": 1.1204545454545451,
+            "mean_without_topic": 0.6547826086956521
+          },
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": 0.38379936081326194,
+            "p_value": 0.00399800099950025,
+            "n": 137,
+            "mean_with_topic": 2.422727272727272,
+            "mean_without_topic": 1.3106086956521743
+          },
+          "syntax.avg_max_dependents_per_head": {
+            "pearson_r": 0.3528897997880396,
+            "p_value": 0.009495252373813094,
+            "n": 137,
+            "mean_with_topic": 5.864545454545455,
+            "mean_without_topic": 4.790869565217392
           },
           "syntax.avg_mean_dependency_distance": {
-            "pearson_r": 0.3601973954324739,
-            "p_value": 0.004997501249375313,
+            "pearson_r": 0.3357301124527979,
+            "p_value": 0.0069965017491254375,
             "n": 137,
-            "mean_with_topic": 2.8740909090909095,
-            "mean_without_topic": 2.3614782608695646
+            "mean_with_topic": 2.850454545454545,
+            "mean_without_topic": 2.382869565217391
           },
           "syntax.avg_ratios.subordination_ratio": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.015992003998001,
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.02348825587206397,
             "n": 137,
             "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
+            "mean_without_topic": 0.6547826086956521
           },
           "syntax.clause_counts.subordinate": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.013493253373313344,
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.02798600699650175,
             "n": 137,
             "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
+            "mean_without_topic": 0.6547826086956521
           },
           "syntax.clause_ratios.subordination_ratio": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.013493253373313344,
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.02448775612193903,
             "n": 137,
             "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
+            "mean_without_topic": 0.6547826086956521
           },
           "syntax.sentence_id": {
             "pearson_r": -0.38306840763903754,
-            "p_value": 0.009995002498750625,
+            "p_value": 0.01199400299850075,
             "n": 137,
             "mean_with_topic": 34.36363636363637,
             "mean_without_topic": 75.62608695652175
+          },
+          "syntax.token_count": {
+            "pearson_r": 0.4340016248281892,
+            "p_value": 0.0014992503748125937,
+            "n": 137,
+            "mean_with_topic": 16.16818181818182,
+            "mean_without_topic": 10.130521739130437
+          }
+        }
+      },
+      "41": {
+        "keywords": [
+          "success near",
+          "near",
+          "heart beat smile",
+          "feel success",
+          "smile feel success",
+          "smile feel",
+          "feel success near",
+          "beat smile"
+        ],
+        "windows_with_topic": 20,
+        "windows_without_topic": 117,
+        "correlations": {
+          "discourse.connective_counts_per_token.Comparison": {
+            "pearson_r": 0.3053064560234255,
+            "p_value": 0.014492753623188406,
+            "n": 137,
+            "mean_with_topic": 0.01942095,
+            "mean_without_topic": 0.005679094017094018
           }
         }
       }
@@ -1722,11 +2233,16 @@
       "discourse.connective_counts.Contingency",
       "discourse.connective_counts.Expansion",
       "discourse.connective_counts.Temporal",
+      "discourse.connective_counts_per_token.Comparison",
+      "discourse.connective_counts_per_token.Contingency",
+      "discourse.connective_counts_per_token.Expansion",
+      "discourse.connective_counts_per_token.Temporal",
       "discourse.content_overlap",
       "discourse.content_overlap_ratio",
       "discourse.entity_overlap",
       "discourse.entity_overlap_ratio",
       "discourse.explicit_connectives",
+      "discourse.explicit_connectives_per_token",
       "discourse.num_tokens",
       "discourse.pronoun_ratio",
       "discourse.tense_shift",
@@ -1737,13 +2253,22 @@
       "information_content_metrics.sentence_surprisal_metrics.mean_surprisal",
       "information_content_metrics.sentence_surprisal_metrics.num_tokens",
       "information_content_metrics.sentence_surprisal_metrics.surprisal_variance",
+      "information_content_metrics.token_weighted_mean_log_prob",
+      "information_content_metrics.token_weighted_mean_surprisal",
+      "information_content_metrics.token_weighted_perplexity",
+      "information_content_metrics.token_weighted_surprisal_variance",
       "lexico_semantics.avg_word_freq",
+      "lexico_semantics.avg_word_freq_token_count",
       "lexico_semantics.avg_word_freq_window.avg_word_freq",
       "lexico_semantics.avg_word_freq_window.content_function_ratio",
       "lexico_semantics.avg_word_freq_window.normalized_freq",
+      "lexico_semantics.avg_word_freq_window.token_count",
+      "lexico_semantics.content_count",
       "lexico_semantics.content_function_ratio",
       "lexico_semantics.information_content",
+      "lexico_semantics.information_content_token_count",
       "lexico_semantics.information_content_window.information_content",
+      "lexico_semantics.information_content_window.token_count",
       "lexico_semantics.lexical_density",
       "lexico_semantics.lexical_density_window.content_count",
       "lexico_semantics.lexical_density_window.lexical_density",
@@ -1753,13 +2278,28 @@
       "lexico_semantics.mattr_window.window_token_span",
       "lexico_semantics.normalized_freq",
       "lexico_semantics.num_agents",
+      "lexico_semantics.num_agents_per_token",
       "lexico_semantics.num_clauses",
+      "lexico_semantics.num_clauses_per_token",
       "lexico_semantics.num_patients",
+      "lexico_semantics.num_patients_per_token",
       "lexico_semantics.role_count",
+      "lexico_semantics.role_count_per_token",
+      "lexico_semantics.role_counts_per_token.dobj",
+      "lexico_semantics.role_counts_per_token.iobj",
+      "lexico_semantics.role_counts_per_token.nsubj",
+      "lexico_semantics.role_counts_per_token.pobj",
       "lexico_semantics.semantic_roles_window.role_count",
+      "lexico_semantics.semantic_roles_window.role_count_per_token",
+      "lexico_semantics.semantic_roles_window.token_count",
       "lexico_semantics.semantic_structures_window.total_agents",
       "lexico_semantics.semantic_structures_window.total_clauses",
       "lexico_semantics.semantic_structures_window.total_patients",
+      "lexico_semantics.token_count",
+      "lexico_semantics.token_weighted_avg_word_freq",
+      "lexico_semantics.token_weighted_information_content",
+      "lexico_semantics.token_weighted_lexical_density",
+      "lexico_semantics.token_weighted_normalized_freq",
       "log_prob.sentence_log_prob_metrics.mean_log_prob",
       "log_prob.sentence_log_prob_metrics.num_tokens",
       "log_prob.sentence_log_prob_metrics.perplexity",
@@ -1767,9 +2307,16 @@
       "log_prob.sentence_surprisal_metrics.mean_surprisal",
       "log_prob.sentence_surprisal_metrics.num_tokens",
       "log_prob.sentence_surprisal_metrics.surprisal_variance",
+      "log_prob.token_weighted_mean_log_prob",
+      "log_prob.token_weighted_mean_surprisal",
+      "log_prob.token_weighted_perplexity",
+      "log_prob.token_weighted_surprisal_variance",
       "syntax.avg_counts.coordinate",
       "syntax.avg_counts.main",
       "syntax.avg_counts.subordinate",
+      "syntax.avg_counts_per_token.coordinate",
+      "syntax.avg_counts_per_token.main",
+      "syntax.avg_counts_per_token.subordinate",
       "syntax.avg_dependents_per_head.coordinate_clause",
       "syntax.avg_dependents_per_head.main_clause",
       "syntax.avg_dependents_per_head.subordinate_clause",
@@ -1784,38 +2331,19 @@
       "syntax.clause_counts.coordinate",
       "syntax.clause_counts.main",
       "syntax.clause_counts.subordinate",
+      "syntax.clause_counts_per_token.coordinate",
+      "syntax.clause_counts_per_token.main",
+      "syntax.clause_counts_per_token.subordinate",
       "syntax.clause_ratios.coordination_ratio",
       "syntax.clause_ratios.subordination_ratio",
       "syntax.depth_skew",
       "syntax.max_depth",
       "syntax.mean_depth",
       "syntax.median_depth",
-      "syntax.sentence_id"
+      "syntax.sentence_id",
+      "syntax.token_count"
     ],
     "central_topics": {
-      "21": {
-        "keywords": [
-          "strongly power sure",
-          "strongly power",
-          "strongly",
-          "power sure success",
-          "power sure",
-          "sure success",
-          "power",
-          "feel strongly"
-        ],
-        "windows_with_topic": 8,
-        "windows_without_topic": 129,
-        "correlations": {
-          "syntax.avg_dependents_per_head.subordinate_clause": {
-            "pearson_r": 0.3103409179707738,
-            "p_value": 0.012993503248375811,
-            "n": 137,
-            "mean_with_topic": 2.81375,
-            "mean_without_topic": 1.3864341085271317
-          }
-        }
-      },
       "26": {
         "keywords": [
           "try",
@@ -1831,32 +2359,39 @@
         "windows_without_topic": 93,
         "correlations": {
           "lexico_semantics.avg_word_freq_window.content_function_ratio": {
-            "pearson_r": 0.3401989039824944,
-            "p_value": 0.019490254872563718,
+            "pearson_r": 0.3910374069907627,
+            "p_value": 0.004997501249375313,
             "n": 137,
-            "mean_with_topic": 0.5334090909090908,
-            "mean_without_topic": 0.4539784946236558
+            "mean_with_topic": 0.5340909090909091,
+            "mean_without_topic": 0.4433333333333333
           },
           "lexico_semantics.content_function_ratio": {
-            "pearson_r": 0.3401989039824944,
-            "p_value": 0.015492253873063468,
+            "pearson_r": 0.3910374069907627,
+            "p_value": 0.005997001499250375,
             "n": 137,
-            "mean_with_topic": 0.5334090909090908,
-            "mean_without_topic": 0.4539784946236558
+            "mean_with_topic": 0.5340909090909091,
+            "mean_without_topic": 0.4433333333333333
           },
           "lexico_semantics.lexical_density": {
-            "pearson_r": 0.34284251896775764,
-            "p_value": 0.01249375312343828,
+            "pearson_r": 0.3932481497326135,
+            "p_value": 0.004997501249375313,
             "n": 137,
-            "mean_with_topic": 0.5293181818181818,
-            "mean_without_topic": 0.4501075268817205
+            "mean_with_topic": 0.53,
+            "mean_without_topic": 0.4393548387096774
           },
           "lexico_semantics.lexical_density_window.lexical_density": {
-            "pearson_r": 0.34284251896775764,
+            "pearson_r": 0.3932481497326135,
+            "p_value": 0.0034982508745627187,
+            "n": 137,
+            "mean_with_topic": 0.53,
+            "mean_without_topic": 0.4393548387096774
+          },
+          "lexico_semantics.token_weighted_lexical_density": {
+            "pearson_r": 0.32224266410431485,
             "p_value": 0.014992503748125937,
             "n": 137,
-            "mean_with_topic": 0.5293181818181818,
-            "mean_without_topic": 0.4501075268817205
+            "mean_with_topic": 0.49971615909090905,
+            "mean_without_topic": 0.4429974086021506
           }
         }
       },
@@ -1903,165 +2438,237 @@
             "mean_without_topic": 11.82295652173913
           },
           "information_content_metrics.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
+            "pearson_r": 0.4403117869588051,
             "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
           },
           "information_content_metrics.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.4674072133309281,
-            "p_value": 0.0004997501249375312,
-            "n": 137,
-            "mean_with_topic": -56.17136363636364,
-            "mean_without_topic": -31.966000000000008
-          },
-          "information_content_metrics.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
-            "p_value": 0.0009995002498750624,
-            "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
-          },
-          "lexico_semantics.lexical_density_window.content_count": {
-            "pearson_r": 0.3821819338535331,
+            "pearson_r": -0.4553854083869573,
             "p_value": 0.0014992503748125937,
             "n": 137,
-            "mean_with_topic": 7.3936363636363645,
-            "mean_without_topic": 4.738956521739128
+            "mean_with_topic": -60.05681818181818,
+            "mean_without_topic": -36.32460869565218
+          },
+          "information_content_metrics.sentence_surprisal_metrics.num_tokens": {
+            "pearson_r": 0.4403117869588051,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
+          },
+          "lexico_semantics.avg_word_freq_token_count": {
+            "pearson_r": 0.43972894646013266,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 48.22727272727273,
+            "mean_without_topic": 30.104347826086958
+          },
+          "lexico_semantics.avg_word_freq_window.token_count": {
+            "pearson_r": 0.4398476337867563,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 16.07727272727273,
+            "mean_without_topic": 10.034608695652175
+          },
+          "lexico_semantics.content_count": {
+            "pearson_r": 0.3889575061349911,
+            "p_value": 0.0034982508745627187,
+            "n": 137,
+            "mean_with_topic": 22.5,
+            "mean_without_topic": 14.217391304347826
+          },
+          "lexico_semantics.information_content_token_count": {
+            "pearson_r": 0.4458961943713668,
+            "p_value": 0.0014992503748125937,
+            "n": 137,
+            "mean_with_topic": 46.18181818181818,
+            "mean_without_topic": 28.191304347826087
+          },
+          "lexico_semantics.information_content_window.token_count": {
+            "pearson_r": 0.44589908236364706,
+            "p_value": 0.0014992503748125937,
+            "n": 137,
+            "mean_with_topic": 15.394090909090913,
+            "mean_without_topic": 9.397043478260871
+          },
+          "lexico_semantics.lexical_density_window.content_count": {
+            "pearson_r": 0.38886877207082293,
+            "p_value": 0.0014992503748125937,
+            "n": 137,
+            "mean_with_topic": 7.498636363636365,
+            "mean_without_topic": 4.738782608695651
           },
           "lexico_semantics.lexical_density_window.token_count": {
             "pearson_r": 0.4340016248281892,
-            "p_value": 0.0004997501249375312,
+            "p_value": 0.0009995002498750624,
             "n": 137,
             "mean_with_topic": 16.16818181818182,
             "mean_without_topic": 10.130521739130437
           },
           "lexico_semantics.mattr_window.token_count": {
             "pearson_r": 0.42822566097737913,
-            "p_value": 0.0009995002498750624,
+            "p_value": 0.0004997501249375312,
             "n": 137,
             "mean_with_topic": 48.36363636363637,
             "mean_without_topic": 30.443478260869565
           },
           "lexico_semantics.mattr_window.window_token_span": {
             "pearson_r": 0.3414831599923472,
-            "p_value": 0.0079960019990005,
+            "p_value": 0.00849575212393803,
             "n": 137,
             "mean_with_topic": 41.40909090909091,
             "mean_without_topic": 30.217391304347824
           },
           "lexico_semantics.num_agents": {
-            "pearson_r": 0.35110183662453653,
-            "p_value": 0.0034982508745627187,
+            "pearson_r": 0.3450626332859329,
+            "p_value": 0.004997501249375313,
             "n": 137,
             "mean_with_topic": 1.5,
-            "mean_without_topic": 1.0467826086956524
+            "mean_without_topic": 1.0554782608695654
           },
           "lexico_semantics.role_count": {
-            "pearson_r": 0.3854942932761902,
-            "p_value": 0.0024987506246876563,
+            "pearson_r": 0.3665664060249362,
+            "p_value": 0.0069965017491254375,
             "n": 137,
-            "mean_with_topic": 3.8790909090909094,
-            "mean_without_topic": 2.591043478260869
+            "mean_with_topic": 3.818636363636364,
+            "mean_without_topic": 2.6024347826086953
           },
           "lexico_semantics.semantic_roles_window.role_count": {
-            "pearson_r": 0.3854942932761902,
+            "pearson_r": 0.3665664060249362,
+            "p_value": 0.004497751124437781,
+            "n": 137,
+            "mean_with_topic": 3.818636363636364,
+            "mean_without_topic": 2.6024347826086953
+          },
+          "lexico_semantics.semantic_roles_window.token_count": {
+            "pearson_r": 0.4340016248281892,
             "p_value": 0.0014992503748125937,
             "n": 137,
-            "mean_with_topic": 3.8790909090909094,
-            "mean_without_topic": 2.591043478260869
+            "mean_with_topic": 16.16818181818182,
+            "mean_without_topic": 10.130521739130437
           },
           "lexico_semantics.semantic_structures_window.total_agents": {
-            "pearson_r": 0.351079100457154,
-            "p_value": 0.005497251374312844,
+            "pearson_r": 0.34510347508734884,
+            "p_value": 0.0074962518740629685,
             "n": 137,
             "mean_with_topic": 4.5,
-            "mean_without_topic": 3.139130434782609
+            "mean_without_topic": 3.1652173913043478
+          },
+          "lexico_semantics.token_count": {
+            "pearson_r": 0.4339075352338758,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 48.5,
+            "mean_without_topic": 30.391304347826086
           },
           "log_prob.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
-            "p_value": 0.0014992503748125937,
+            "pearson_r": 0.4403117869588051,
+            "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
           },
           "log_prob.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.4674072133309281,
+            "pearson_r": -0.4553854083869573,
             "p_value": 0.0009995002498750624,
             "n": 137,
-            "mean_with_topic": -56.17136363636364,
-            "mean_without_topic": -31.966000000000008
+            "mean_with_topic": -60.05681818181818,
+            "mean_without_topic": -36.32460869565218
           },
           "log_prob.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
-            "p_value": 0.001999000499750125,
-            "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
-          },
-          "syntax.avg_counts.subordinate": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.012993503248375811,
-            "n": 137,
-            "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
-          },
-          "syntax.avg_dependents_per_head.main_clause": {
-            "pearson_r": 0.3167918929419702,
-            "p_value": 0.01899050474762619,
-            "n": 137,
-            "mean_with_topic": 5.590454545454546,
-            "mean_without_topic": 4.646086956521739
-          },
-          "syntax.avg_dependents_per_head.subordinate_clause": {
-            "pearson_r": 0.41431968839216127,
-            "p_value": 0.0024987506246876563,
-            "n": 137,
-            "mean_with_topic": 2.491363636363636,
-            "mean_without_topic": 1.274347826086957
-          },
-          "syntax.avg_max_dependents_per_head": {
-            "pearson_r": 0.42425104713200534,
+            "pearson_r": 0.4403117869588051,
             "p_value": 0.0009995002498750624,
             "n": 137,
-            "mean_with_topic": 6.045454545454546,
-            "mean_without_topic": 4.724347826086956
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
+          },
+          "syntax.avg_counts.subordinate": {
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.02498750624687656,
+            "n": 137,
+            "mean_with_topic": 1.1204545454545451,
+            "mean_without_topic": 0.6547826086956521
+          },
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": 0.38379936081326194,
+            "p_value": 0.001999000499750125,
+            "n": 137,
+            "mean_with_topic": 2.422727272727272,
+            "mean_without_topic": 1.3106086956521743
+          },
+          "syntax.avg_max_dependents_per_head": {
+            "pearson_r": 0.3528897997880396,
+            "p_value": 0.009495252373813094,
+            "n": 137,
+            "mean_with_topic": 5.864545454545455,
+            "mean_without_topic": 4.790869565217392
           },
           "syntax.avg_mean_dependency_distance": {
-            "pearson_r": 0.3601973954324739,
-            "p_value": 0.00399800099950025,
+            "pearson_r": 0.3357301124527979,
+            "p_value": 0.004497751124437781,
             "n": 137,
-            "mean_with_topic": 2.8740909090909095,
-            "mean_without_topic": 2.3614782608695646
+            "mean_with_topic": 2.850454545454545,
+            "mean_without_topic": 2.382869565217391
           },
           "syntax.avg_ratios.subordination_ratio": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.014992503748125937,
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.0239880059970015,
             "n": 137,
             "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
+            "mean_without_topic": 0.6547826086956521
           },
           "syntax.clause_counts.subordinate": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.013493253373313344,
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.02948525737131434,
             "n": 137,
             "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
+            "mean_without_topic": 0.6547826086956521
           },
           "syntax.clause_ratios.subordination_ratio": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.014992503748125937,
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.020989505247376312,
             "n": 137,
             "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
+            "mean_without_topic": 0.6547826086956521
           },
           "syntax.sentence_id": {
             "pearson_r": -0.38306840763903754,
-            "p_value": 0.015492253873063468,
+            "p_value": 0.012993503248375811,
             "n": 137,
             "mean_with_topic": 34.36363636363637,
             "mean_without_topic": 75.62608695652175
+          },
+          "syntax.token_count": {
+            "pearson_r": 0.4340016248281892,
+            "p_value": 0.0024987506246876563,
+            "n": 137,
+            "mean_with_topic": 16.16818181818182,
+            "mean_without_topic": 10.130521739130437
+          }
+        }
+      },
+      "41": {
+        "keywords": [
+          "success near",
+          "near",
+          "heart beat smile",
+          "feel success",
+          "smile feel success",
+          "smile feel",
+          "feel success near",
+          "beat smile"
+        ],
+        "windows_with_topic": 20,
+        "windows_without_topic": 117,
+        "correlations": {
+          "discourse.connective_counts_per_token.Comparison": {
+            "pearson_r": 0.3053064560234255,
+            "p_value": 0.013993003498250875,
+            "n": 137,
+            "mean_with_topic": 0.01942095,
+            "mean_without_topic": 0.005679094017094018
           }
         }
       }
@@ -2152,165 +2759,214 @@
             "mean_without_topic": 11.82295652173913
           },
           "information_content_metrics.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
+            "pearson_r": 0.4403117869588051,
             "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
           },
           "information_content_metrics.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.4674072133309281,
-            "p_value": 0.0004997501249375312,
-            "n": 137,
-            "mean_with_topic": -56.17136363636364,
-            "mean_without_topic": -31.966000000000008
-          },
-          "information_content_metrics.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
-            "p_value": 0.0009995002498750624,
-            "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
-          },
-          "lexico_semantics.lexical_density_window.content_count": {
-            "pearson_r": 0.3821819338535331,
+            "pearson_r": -0.4553854083869573,
             "p_value": 0.0014992503748125937,
             "n": 137,
-            "mean_with_topic": 7.3936363636363645,
-            "mean_without_topic": 4.738956521739128
+            "mean_with_topic": -60.05681818181818,
+            "mean_without_topic": -36.32460869565218
+          },
+          "information_content_metrics.sentence_surprisal_metrics.num_tokens": {
+            "pearson_r": 0.4403117869588051,
+            "p_value": 0.0009995002498750624,
+            "n": 137,
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
+          },
+          "lexico_semantics.avg_word_freq_token_count": {
+            "pearson_r": 0.43972894646013266,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 48.22727272727273,
+            "mean_without_topic": 30.104347826086958
+          },
+          "lexico_semantics.avg_word_freq_window.token_count": {
+            "pearson_r": 0.4398476337867563,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 16.07727272727273,
+            "mean_without_topic": 10.034608695652175
+          },
+          "lexico_semantics.content_count": {
+            "pearson_r": 0.3889575061349911,
+            "p_value": 0.0034982508745627187,
+            "n": 137,
+            "mean_with_topic": 22.5,
+            "mean_without_topic": 14.217391304347826
+          },
+          "lexico_semantics.information_content_token_count": {
+            "pearson_r": 0.4458961943713668,
+            "p_value": 0.0014992503748125937,
+            "n": 137,
+            "mean_with_topic": 46.18181818181818,
+            "mean_without_topic": 28.191304347826087
+          },
+          "lexico_semantics.information_content_window.token_count": {
+            "pearson_r": 0.44589908236364706,
+            "p_value": 0.0014992503748125937,
+            "n": 137,
+            "mean_with_topic": 15.394090909090913,
+            "mean_without_topic": 9.397043478260871
+          },
+          "lexico_semantics.lexical_density_window.content_count": {
+            "pearson_r": 0.38886877207082293,
+            "p_value": 0.0014992503748125937,
+            "n": 137,
+            "mean_with_topic": 7.498636363636365,
+            "mean_without_topic": 4.738782608695651
           },
           "lexico_semantics.lexical_density_window.token_count": {
             "pearson_r": 0.4340016248281892,
-            "p_value": 0.0004997501249375312,
+            "p_value": 0.0009995002498750624,
             "n": 137,
             "mean_with_topic": 16.16818181818182,
             "mean_without_topic": 10.130521739130437
           },
           "lexico_semantics.mattr_window.token_count": {
             "pearson_r": 0.42822566097737913,
-            "p_value": 0.0009995002498750624,
+            "p_value": 0.0004997501249375312,
             "n": 137,
             "mean_with_topic": 48.36363636363637,
             "mean_without_topic": 30.443478260869565
           },
           "lexico_semantics.mattr_window.window_token_span": {
             "pearson_r": 0.3414831599923472,
-            "p_value": 0.0079960019990005,
+            "p_value": 0.00849575212393803,
             "n": 137,
             "mean_with_topic": 41.40909090909091,
             "mean_without_topic": 30.217391304347824
           },
           "lexico_semantics.num_agents": {
-            "pearson_r": 0.35110183662453653,
-            "p_value": 0.0034982508745627187,
+            "pearson_r": 0.3450626332859329,
+            "p_value": 0.004997501249375313,
             "n": 137,
             "mean_with_topic": 1.5,
-            "mean_without_topic": 1.0467826086956524
+            "mean_without_topic": 1.0554782608695654
           },
           "lexico_semantics.role_count": {
-            "pearson_r": 0.3854942932761902,
-            "p_value": 0.0024987506246876563,
+            "pearson_r": 0.3665664060249362,
+            "p_value": 0.0069965017491254375,
             "n": 137,
-            "mean_with_topic": 3.8790909090909094,
-            "mean_without_topic": 2.591043478260869
+            "mean_with_topic": 3.818636363636364,
+            "mean_without_topic": 2.6024347826086953
           },
           "lexico_semantics.semantic_roles_window.role_count": {
-            "pearson_r": 0.3854942932761902,
+            "pearson_r": 0.3665664060249362,
+            "p_value": 0.004497751124437781,
+            "n": 137,
+            "mean_with_topic": 3.818636363636364,
+            "mean_without_topic": 2.6024347826086953
+          },
+          "lexico_semantics.semantic_roles_window.token_count": {
+            "pearson_r": 0.4340016248281892,
             "p_value": 0.0014992503748125937,
             "n": 137,
-            "mean_with_topic": 3.8790909090909094,
-            "mean_without_topic": 2.591043478260869
+            "mean_with_topic": 16.16818181818182,
+            "mean_without_topic": 10.130521739130437
           },
           "lexico_semantics.semantic_structures_window.total_agents": {
-            "pearson_r": 0.351079100457154,
-            "p_value": 0.005497251374312844,
+            "pearson_r": 0.34510347508734884,
+            "p_value": 0.0074962518740629685,
             "n": 137,
             "mean_with_topic": 4.5,
-            "mean_without_topic": 3.139130434782609
+            "mean_without_topic": 3.1652173913043478
+          },
+          "lexico_semantics.token_count": {
+            "pearson_r": 0.4339075352338758,
+            "p_value": 0.0004997501249375312,
+            "n": 137,
+            "mean_with_topic": 48.5,
+            "mean_without_topic": 30.391304347826086
           },
           "log_prob.sentence_log_prob_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
-            "p_value": 0.0014992503748125937,
+            "pearson_r": 0.4403117869588051,
+            "p_value": 0.0004997501249375312,
             "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
           },
           "log_prob.sentence_log_prob_metrics.sum_log_prob": {
-            "pearson_r": -0.4674072133309281,
+            "pearson_r": -0.4553854083869573,
             "p_value": 0.0009995002498750624,
             "n": 137,
-            "mean_with_topic": -56.17136363636364,
-            "mean_without_topic": -31.966000000000008
+            "mean_with_topic": -60.05681818181818,
+            "mean_without_topic": -36.32460869565218
           },
           "log_prob.sentence_surprisal_metrics.num_tokens": {
-            "pearson_r": 0.43776652299527874,
-            "p_value": 0.001999000499750125,
-            "n": 137,
-            "mean_with_topic": 17.71227272727273,
-            "mean_without_topic": 11.043391304347825
-          },
-          "syntax.avg_counts.subordinate": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.012993503248375811,
-            "n": 137,
-            "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
-          },
-          "syntax.avg_dependents_per_head.main_clause": {
-            "pearson_r": 0.3167918929419702,
-            "p_value": 0.01899050474762619,
-            "n": 137,
-            "mean_with_topic": 5.590454545454546,
-            "mean_without_topic": 4.646086956521739
-          },
-          "syntax.avg_dependents_per_head.subordinate_clause": {
-            "pearson_r": 0.41431968839216127,
-            "p_value": 0.0024987506246876563,
-            "n": 137,
-            "mean_with_topic": 2.491363636363636,
-            "mean_without_topic": 1.274347826086957
-          },
-          "syntax.avg_max_dependents_per_head": {
-            "pearson_r": 0.42425104713200534,
+            "pearson_r": 0.4403117869588051,
             "p_value": 0.0009995002498750624,
             "n": 137,
-            "mean_with_topic": 6.045454545454546,
-            "mean_without_topic": 4.724347826086956
+            "mean_with_topic": 18.757272727272728,
+            "mean_without_topic": 12.040434782608694
+          },
+          "syntax.avg_counts.subordinate": {
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.02498750624687656,
+            "n": 137,
+            "mean_with_topic": 1.1204545454545451,
+            "mean_without_topic": 0.6547826086956521
+          },
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": 0.38379936081326194,
+            "p_value": 0.001999000499750125,
+            "n": 137,
+            "mean_with_topic": 2.422727272727272,
+            "mean_without_topic": 1.3106086956521743
+          },
+          "syntax.avg_max_dependents_per_head": {
+            "pearson_r": 0.3528897997880396,
+            "p_value": 0.009495252373813094,
+            "n": 137,
+            "mean_with_topic": 5.864545454545455,
+            "mean_without_topic": 4.790869565217392
           },
           "syntax.avg_mean_dependency_distance": {
-            "pearson_r": 0.3601973954324739,
-            "p_value": 0.00399800099950025,
+            "pearson_r": 0.3357301124527979,
+            "p_value": 0.004497751124437781,
             "n": 137,
-            "mean_with_topic": 2.8740909090909095,
-            "mean_without_topic": 2.3614782608695646
+            "mean_with_topic": 2.850454545454545,
+            "mean_without_topic": 2.382869565217391
           },
           "syntax.avg_ratios.subordination_ratio": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.014992503748125937,
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.0239880059970015,
             "n": 137,
             "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
+            "mean_without_topic": 0.6547826086956521
           },
           "syntax.clause_counts.subordinate": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.013493253373313344,
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.02948525737131434,
             "n": 137,
             "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
+            "mean_without_topic": 0.6547826086956521
           },
           "syntax.clause_ratios.subordination_ratio": {
-            "pearson_r": 0.3213212061219364,
-            "p_value": 0.014992503748125937,
+            "pearson_r": 0.3000710834283541,
+            "p_value": 0.020989505247376312,
             "n": 137,
             "mean_with_topic": 1.1204545454545451,
-            "mean_without_topic": 0.6372173913043476
+            "mean_without_topic": 0.6547826086956521
           },
           "syntax.sentence_id": {
             "pearson_r": -0.38306840763903754,
-            "p_value": 0.015492253873063468,
+            "p_value": 0.012993503248375811,
             "n": 137,
             "mean_with_topic": 34.36363636363637,
             "mean_without_topic": 75.62608695652175
+          },
+          "syntax.token_count": {
+            "pearson_r": 0.4340016248281892,
+            "p_value": 0.0024987506246876563,
+            "n": 137,
+            "mean_with_topic": 16.16818181818182,
+            "mean_without_topic": 10.130521739130437
           }
         },
         "windows_with_topic": 22,
@@ -2337,32 +2993,39 @@
         },
         "correlations": {
           "lexico_semantics.avg_word_freq_window.content_function_ratio": {
-            "pearson_r": 0.3401989039824944,
-            "p_value": 0.019490254872563718,
+            "pearson_r": 0.3910374069907627,
+            "p_value": 0.004997501249375313,
             "n": 137,
-            "mean_with_topic": 0.5334090909090908,
-            "mean_without_topic": 0.4539784946236558
+            "mean_with_topic": 0.5340909090909091,
+            "mean_without_topic": 0.4433333333333333
           },
           "lexico_semantics.content_function_ratio": {
-            "pearson_r": 0.3401989039824944,
-            "p_value": 0.015492253873063468,
+            "pearson_r": 0.3910374069907627,
+            "p_value": 0.005997001499250375,
             "n": 137,
-            "mean_with_topic": 0.5334090909090908,
-            "mean_without_topic": 0.4539784946236558
+            "mean_with_topic": 0.5340909090909091,
+            "mean_without_topic": 0.4433333333333333
           },
           "lexico_semantics.lexical_density": {
-            "pearson_r": 0.34284251896775764,
-            "p_value": 0.01249375312343828,
+            "pearson_r": 0.3932481497326135,
+            "p_value": 0.004997501249375313,
             "n": 137,
-            "mean_with_topic": 0.5293181818181818,
-            "mean_without_topic": 0.4501075268817205
+            "mean_with_topic": 0.53,
+            "mean_without_topic": 0.4393548387096774
           },
           "lexico_semantics.lexical_density_window.lexical_density": {
-            "pearson_r": 0.34284251896775764,
+            "pearson_r": 0.3932481497326135,
+            "p_value": 0.0034982508745627187,
+            "n": 137,
+            "mean_with_topic": 0.53,
+            "mean_without_topic": 0.4393548387096774
+          },
+          "lexico_semantics.token_weighted_lexical_density": {
+            "pearson_r": 0.32224266410431485,
             "p_value": 0.014992503748125937,
             "n": 137,
-            "mean_with_topic": 0.5293181818181818,
-            "mean_without_topic": 0.4501075268817205
+            "mean_with_topic": 0.49971615909090905,
+            "mean_without_topic": 0.4429974086021506
           }
         },
         "windows_with_topic": 44,
@@ -2387,9 +3050,17 @@
           "prevalence": 0.06923076923076923,
           "persistence": 3.0
         },
-        "correlations": {},
-        "windows_with_topic": null,
-        "windows_without_topic": null
+        "correlations": {
+          "discourse.connective_counts_per_token.Comparison": {
+            "pearson_r": 0.3053064560234255,
+            "p_value": 0.013993003498250875,
+            "n": 137,
+            "mean_with_topic": 0.01942095,
+            "mean_without_topic": 0.005679094017094018
+          }
+        },
+        "windows_with_topic": 20,
+        "windows_without_topic": 117
       },
       {
         "topic_id": 21,
@@ -2410,17 +3081,9 @@
           "prevalence": 0.03076923076923077,
           "persistence": 4.0
         },
-        "correlations": {
-          "syntax.avg_dependents_per_head.subordinate_clause": {
-            "pearson_r": 0.3103409179707738,
-            "p_value": 0.012993503248375811,
-            "n": 137,
-            "mean_with_topic": 2.81375,
-            "mean_without_topic": 1.3864341085271317
-          }
-        },
-        "windows_with_topic": 8,
-        "windows_without_topic": 129
+        "correlations": {},
+        "windows_with_topic": null,
+        "windows_without_topic": null
       }
     ]
   }

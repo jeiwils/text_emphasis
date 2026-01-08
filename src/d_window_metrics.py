@@ -69,6 +69,7 @@ def run_corpus_metrics(use_existing=True):
     nlp = load_spacy_model()
 
     cleaned_root = text_path("processed", "cleaned_texts")
+    segmented_root = text_path("processed", "cleaned_segmented_texts")
     output_root = analytics_path("corpus")
     output_root.mkdir(parents=True, exist_ok=True)
 
@@ -110,7 +111,26 @@ def run_corpus_metrics(use_existing=True):
                 print(f"Skipping {output_file.name} (exists)")
                 continue
 
-            result = metrics.build_metrics_for_text(text, file.name, nlp=nlp, window_size=window_size)
+            segmented_path = segmented_root / subdir.name / f"{base_name}_cleaned_segmented.jsonl"
+            if segmented_path.exists():
+                segmented_sentences = _load_segmented_jsonl(segmented_path)
+                text = "\n".join(segmented_sentences)
+                spans = []
+                cursor = 0
+                for sent in segmented_sentences:
+                    end = cursor + len(sent)
+                    spans.append((cursor, end))
+                    cursor = end + 1
+            else:
+                spans = None
+
+            result = metrics.build_metrics_for_text(
+                text,
+                file.name,
+                nlp=nlp,
+                window_size=window_size,
+                sentence_spans=spans,
+            )
             output_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
             print(f"Saved corpus metrics for {file.name}")
 

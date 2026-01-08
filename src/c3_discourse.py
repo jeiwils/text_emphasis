@@ -3,7 +3,7 @@ from collections import Counter
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
-from z_utils import aggregate_windows
+from z_utils import aggregate_windows, sliding_windows
 
 """
 Discourse-level metrics and cohesion across sentences (heuristic, no training).
@@ -163,10 +163,14 @@ class DiscourseAnalyzer:
             overlap = None
             if prev_sent_content is not None:
                 overlap = len(set(words) & set(prev_sent_content))
+            overlap_ratio = None
+            if overlap is not None:
+                overlap_ratio = round(overlap / max(len(words), 1), 3) if words else 0.0
 
             sent_metrics.append(
                 {
                     "cohesion_overlap": overlap,
+                    "cohesion_overlap_ratio": overlap_ratio,
                 }
             )
 
@@ -233,6 +237,11 @@ class DiscourseAnalyzer:
             pronoun_count = sum(1 for t in sent if t.pos_ == "PRON")
             pronoun_ratio = round(pronoun_count / len(tokens), 3) if tokens else 0.0
 
+            explicit_connectives_per_token = round(len(connectives) / len(tokens), 6) if tokens else 0.0
+            connective_counts_per_token = {
+                k: round(v / len(tokens), 6) if tokens else 0.0 for k, v in connective_counts.items()
+            }
+
             tense = self._infer_tense(sent)
             tense_shift = int(prev_tense is not None and tense is not None and tense != prev_tense)
 
@@ -241,7 +250,9 @@ class DiscourseAnalyzer:
                     "sentence_index": idx,
                     "num_tokens": len(tokens),
                     "explicit_connectives": len(connectives),
+                    "explicit_connectives_per_token": explicit_connectives_per_token,
                     "connective_counts": connective_counts,
+                    "connective_counts_per_token": connective_counts_per_token,
                     "entity_overlap": entity_overlap,
                     "entity_overlap_ratio": entity_ratio,
                     "content_overlap": content_overlap,
@@ -258,6 +269,26 @@ class DiscourseAnalyzer:
             prev_tense = tense
 
         windowed_metrics = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
+        if windowed_metrics:
+            window_slices = list(sliding_windows(sent_metrics, window_size))
+            for idx, window in enumerate(windowed_metrics):
+                if idx >= len(window_slices):
+                    break
+                window_sents = window_slices[idx]
+                total_tokens = sum(sent.get("num_tokens", 0) for sent in window_sents)
+                total_connectives = sum(sent.get("explicit_connectives", 0) for sent in window_sents)
+                connective_counts_total: Dict[str, int] = self._empty_connective_counts()
+                for sent in window_sents:
+                    for key, value in sent.get("connective_counts", {}).items():
+                        connective_counts_total[key] = connective_counts_total.get(key, 0) + value
+                if total_tokens > 0:
+                    window["explicit_connectives_per_token"] = round(total_connectives / total_tokens, 6)
+                    window["connective_counts_per_token"] = {
+                        k: round(v / total_tokens, 6) for k, v in connective_counts_total.items()
+                    }
+                else:
+                    window["explicit_connectives_per_token"] = 0.0
+                    window["connective_counts_per_token"] = {k: 0.0 for k in connective_counts_total}
 
         return sent_metrics, windowed_metrics
 

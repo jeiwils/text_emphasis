@@ -198,6 +198,8 @@ class LexicoSemanticsAnalyzer:
             sent_metrics.append({
                 "information_content": float(np.mean(ics)) if ics else None,
                 "ic_values": ics,
+                "token_count": len(ics),
+
             })
 
         windowed = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
@@ -212,14 +214,26 @@ class LexicoSemanticsAnalyzer:
         sent_metrics = []
 
         for sent in doc.sents:
+            tokens = [t for t in sent if not t.is_punct]
+            token_count = len(tokens)
             role_counts = {"nsubj": 0, "dobj": 0, "iobj": 0, "pobj": 0}
             for token in sent:
                 if token.dep_ in ["nsubj", "dobj", "iobj", "pobj"]:
                     role_counts[token.dep_] += 1
 
+            role_count = sum(role_counts.values())
+            role_counts_per_token = {
+                key: (count / token_count if token_count else 0.0)
+                for key, count in role_counts.items()
+            }
+            role_count_per_token = role_count / token_count if token_count else 0.0
+
             sent_metrics.append({
                 "role_counts": role_counts,
-                "role_count": sum(role_counts.values()),
+                "role_count": role_count,
+                "role_count_per_token": round(role_count_per_token, 6),
+                "role_counts_per_token": {k: round(v, 6) for k, v in role_counts_per_token.items()},
+                "token_count": token_count,
             })
 
         windowed = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
@@ -256,7 +270,8 @@ class LexicoSemanticsAnalyzer:
             sent_metrics.append({
                 "avg_word_freq": round(avg_word_freq, 3),
                 "normalized_freq": norm_freq,
-                "content_function_ratio": content_function_ratio
+                "content_function_ratio": content_function_ratio,
+                "token_count": total_tokens,
             })
 
         windowed_metrics = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
@@ -376,18 +391,39 @@ class LexicoSemanticsAnalyzer:
                     "token_count": lexical_density_sent[idx].get("token_count") if idx < len(lexical_density_sent) else 0,
                     "content_count": lexical_density_sent[idx].get("content_count") if idx < len(lexical_density_sent) else 0,
                     "information_content": info_content_sent[idx].get("information_content") if idx < len(info_content_sent) else None,
+                    "information_content_token_count": info_content_sent[idx].get("token_count") if idx < len(info_content_sent) else 0,
                     "role_count": semantic_roles_sent[idx].get("role_count") if idx < len(semantic_roles_sent) else 0,
                     "role_counts": semantic_roles_sent[idx].get("role_counts") if idx < len(semantic_roles_sent) else {},
+                    "role_count_per_token": 0.0,
+                    "role_counts_per_token": {},
                     "avg_word_freq": avg_word_freq_sent[idx].get("avg_word_freq") if idx < len(avg_word_freq_sent) else 0,
                     "normalized_freq": avg_word_freq_sent[idx].get("normalized_freq") if idx < len(avg_word_freq_sent) else 0,
                     "content_function_ratio": avg_word_freq_sent[idx].get("content_function_ratio") if idx < len(avg_word_freq_sent) else 0,
+                    "avg_word_freq_token_count": avg_word_freq_sent[idx].get("token_count") if idx < len(avg_word_freq_sent) else 0,
                     "num_clauses": semantic_structures_sent[idx].get("num_clauses") if idx < len(semantic_structures_sent) else 0,
                     "num_agents": semantic_structures_sent[idx].get("num_agents") if idx < len(semantic_structures_sent) else 0,
                     "num_patients": semantic_structures_sent[idx].get("num_patients") if idx < len(semantic_structures_sent) else 0,
+                    "num_clauses_per_token": 0.0,
+                    "num_agents_per_token": 0.0,
+                    "num_patients_per_token": 0.0,
                     "information_content_values": info_content_sent[idx].get("ic_values") if idx < len(info_content_sent) else [],
                     "semantic_structures": semantic_structures_sent[idx] if idx < len(semantic_structures_sent) else {},
                 }
             )
+            token_count = combined_sentences[-1]["token_count"]
+            role_count = combined_sentences[-1]["role_count"]
+            role_counts = combined_sentences[-1]["role_counts"]
+            num_clauses = combined_sentences[-1]["num_clauses"]
+            num_agents = combined_sentences[-1]["num_agents"]
+            num_patients = combined_sentences[-1]["num_patients"]
+            if token_count:
+                combined_sentences[-1]["role_count_per_token"] = round(role_count / token_count, 6)
+                combined_sentences[-1]["role_counts_per_token"] = {
+                    k: round(v / token_count, 6) for k, v in role_counts.items()
+                }
+                combined_sentences[-1]["num_clauses_per_token"] = round(num_clauses / token_count, 6)
+                combined_sentences[-1]["num_agents_per_token"] = round(num_agents / token_count, 6)
+                combined_sentences[-1]["num_patients_per_token"] = round(num_patients / token_count, 6)
 
         # Build window inputs with numeric fields only (avoid nested lists/dicts during aggregation)
         window_inputs = [
@@ -406,6 +442,92 @@ class LexicoSemanticsAnalyzer:
         ]
 
         windows = aggregate_windows(window_inputs, window_size) if window_inputs else []
+
+        if windows:
+            for window_idx, window_sents in enumerate(sliding_windows(combined_sentences, window_size)):
+                total_tokens = sum(sent.get("token_count", 0) for sent in window_sents)
+                total_content = sum(sent.get("content_count", 0) for sent in window_sents)
+                info_tokens = sum(sent.get("information_content_token_count", 0) for sent in window_sents)
+                avg_word_tokens = sum(sent.get("avg_word_freq_token_count", 0) for sent in window_sents)
+
+                if total_tokens > 0:
+                    token_weighted_lexical_density = total_content / total_tokens
+                else:
+                    token_weighted_lexical_density = 0.0
+
+                if info_tokens > 0:
+                    info_weighted_sum = sum(
+                        (sent.get("information_content") or 0.0)
+                        * sent.get("information_content_token_count", 0)
+                        for sent in window_sents
+                    )
+                    token_weighted_information_content = info_weighted_sum / info_tokens
+                else:
+                    token_weighted_information_content = 0.0
+
+                if avg_word_tokens > 0:
+                    avg_word_weighted_sum = sum(
+                        sent.get("avg_word_freq", 0.0) * sent.get("avg_word_freq_token_count", 0)
+                        for sent in window_sents
+                    )
+                    normalized_weighted_sum = sum(
+                        sent.get("normalized_freq", 0.0) * sent.get("avg_word_freq_token_count", 0)
+                        for sent in window_sents
+                    )
+                    token_weighted_avg_word_freq = avg_word_weighted_sum / avg_word_tokens
+                    token_weighted_normalized_freq = normalized_weighted_sum / avg_word_tokens
+                else:
+                    token_weighted_avg_word_freq = 0.0
+                    token_weighted_normalized_freq = 0.0
+
+                total_role_count = sum(sent.get("role_count", 0) for sent in window_sents)
+                total_num_clauses = sum(sent.get("num_clauses", 0) for sent in window_sents)
+                total_num_agents = sum(sent.get("num_agents", 0) for sent in window_sents)
+                total_num_patients = sum(sent.get("num_patients", 0) for sent in window_sents)
+                role_counts_total = {}
+                for sent in window_sents:
+                    for key, value in sent.get("role_counts", {}).items():
+                        role_counts_total[key] = role_counts_total.get(key, 0) + value
+
+                if total_tokens > 0:
+                    role_count_per_token = total_role_count / total_tokens
+                    num_clauses_per_token = total_num_clauses / total_tokens
+                    num_agents_per_token = total_num_agents / total_tokens
+                    num_patients_per_token = total_num_patients / total_tokens
+                    role_counts_per_token = {
+                        k: v / total_tokens for k, v in role_counts_total.items()
+                    }
+                else:
+                    role_count_per_token = 0.0
+                    num_clauses_per_token = 0.0
+                    num_agents_per_token = 0.0
+                    num_patients_per_token = 0.0
+                    role_counts_per_token = {}
+
+                windows[window_idx]["token_count"] = total_tokens
+                windows[window_idx]["content_count"] = total_content
+                windows[window_idx]["information_content_token_count"] = info_tokens
+                windows[window_idx]["avg_word_freq_token_count"] = avg_word_tokens
+                windows[window_idx]["token_weighted_lexical_density"] = round(
+                    token_weighted_lexical_density, 6
+                )
+                windows[window_idx]["token_weighted_information_content"] = round(
+                    token_weighted_information_content, 6
+                )
+                windows[window_idx]["token_weighted_avg_word_freq"] = round(
+                    token_weighted_avg_word_freq, 6
+                )
+                windows[window_idx]["token_weighted_normalized_freq"] = round(
+                    token_weighted_normalized_freq, 6
+                )
+                windows[window_idx]["role_count_per_token"] = round(role_count_per_token, 6)
+                windows[window_idx]["num_clauses_per_token"] = round(num_clauses_per_token, 6)
+                windows[window_idx]["num_agents_per_token"] = round(num_agents_per_token, 6)
+                windows[window_idx]["num_patients_per_token"] = round(num_patients_per_token, 6)
+                windows[window_idx]["role_counts_per_token"] = {
+                    k: round(v, 6) for k, v in role_counts_per_token.items()
+                }
+
 
         # Attach window-level metrics from individual analyzers for richer payloads
         for idx, win in enumerate(windows):
