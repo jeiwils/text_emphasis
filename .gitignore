@@ -5,34 +5,24 @@ __pycache__/
 *.so
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
 .eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
 
 # Virtual environments
 venv/
 env/
-ENV/
-.env/
 .venv/
+.env/
 
-
-# IDE specific files
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+
+# big files
+data/analytics/window_metrics/
 
 # Testing
 .coverage
@@ -40,12 +30,13 @@ htmlcov/
 .tox/
 .pytest_cache/
 
-# Keep only src directory and essential files
+# Whitelist approach
 /*
 !.gitignore
 !README.md
 !requirements.txt
 !setup.py
 !src/
-!data
-!data/raw_texts
+!src/**
+!data/
+!data/**
