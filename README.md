@@ -5,6 +5,18 @@ Python 3.10
 ## Overview
 The pipeline analyzes textual emphasis using linguistic metrics, topic modeling, embeddings, and visualization. Windowed metrics are computed over sliding sentence windows (default size 3, stride 1) so syntax/lexico-semantics/discourse/surprisal can be aligned to topic windows and compared across shared sentence indices.
 
+
+## Running the pipeline
+
+- `d_window_metrics.py` runs the full analysis end-to-end (preprocessing, embeddings, topic modeling, corpus metrics, window metrics, then dashboard outputs).
+- `w_dashboard.py` can be run independently to build the summary dashboard outputs from existing window metrics. It loads the pruned window-metric JSONs, computes per-text summary rows and topic correlations, and writes:
+  - `data/analytics/dashboard/<category>/<name>/<name>_dashboard.json`
+  - `data/analytics/dashboard/<category>/<name>/<name>_topic_correlations.json`
+  - `data/analytics/dashboard/<category>/<name>/<name>_central_topic_correlations.json`
+
+Note: `w_dashboard.py` requires window metrics produced by `d_window_metrics.py`.
+
+
 ## Architecture flow
 
 ```mermaid

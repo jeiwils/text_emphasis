@@ -132,9 +132,26 @@ def generate_embeddings(
     embeddings_raw_file = concept_dir / f"{base_name}_embeddings.pkl"
     embeddings_norm_file = concept_dir / f"{base_name}_embeddings_l2.pkl"
 
-    if use_existing and phrases_path.exists() and embeddings_raw_file.exists() and embeddings_norm_file.exists():
+    if use_existing and phrases_path.exists() and (embeddings_norm_file.exists() or embeddings_raw_file.exists()):
+        with open(normalised_text_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            normalised_text = data.get("text", "")
+
+        with open(phrases_path, "rb") as f:
+            phrases = pickle.load(f)
+
+        if embeddings_norm_file.exists():
+            with open(embeddings_norm_file, "rb") as f:
+                embeddings = pickle.load(f)
+        else:
+            with open(embeddings_raw_file, "rb") as f:
+                raw_embeddings = pickle.load(f)
+            embeddings = l2_normalize_embeddings(raw_embeddings)
+            with open(embeddings_norm_file, "wb") as f:
+                pickle.dump(embeddings, f)
+
         print(f"[INFO] Skipping concept embeddings for {base_name} (exists)")
-        return None, None, None
+        return normalised_text, phrases, embeddings
 
     extractor = extractor or ConceptExtractor()
     with open(normalised_text_path, "r", encoding="utf-8") as f:

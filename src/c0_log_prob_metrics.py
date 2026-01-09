@@ -222,14 +222,21 @@ class WholeTextMetrics:
 
         return sent_metrics
 
-    def compute_corpus_frequencies(self, texts, lowercase=True, min_freq=1):
+    def compute_corpus_frequencies(self, texts, nlp=None, lowercase=True, min_freq=1):
         """
         Computes corpus-level word frequencies from a list of texts.
+        Tokenization is aligned with spaCy's token.is_alpha when available.
         """
+        nlp = nlp or load_spacy_model()
         word_counter = Counter()
         total_tokens = 0
         for text in texts:
-            words = [w.lower() if lowercase else w for w in text.split() if w.isalpha()]
+            doc = nlp(text)
+            words = [
+                (token.text.lower() if lowercase else token.text)
+                for token in doc
+                if token.is_alpha
+            ]
             total_tokens += len(words)
             word_counter.update(words)
 

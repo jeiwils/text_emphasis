@@ -160,7 +160,7 @@ def run_corpus_metrics(use_existing=True, authors=None):
                 except json.JSONDecodeError:
                     freqs = {}
             else:
-                freqs = metrics.compute_corpus_frequencies([text])
+                freqs = metrics.compute_corpus_frequencies([text], nlp=nlp)
                 freq_path.write_text(json.dumps(freqs, indent=2), encoding="utf-8")
 
             output_file = text_dir / f"{base_name}_corpus_metrics.json"
@@ -296,6 +296,13 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True, authors=None):
                         continue
                     doc = proc(doc)
                 num_sentences = len(segmented_sentences)
+                doc_sentence_count = len(list(doc.sents))
+                if doc_sentence_count != num_sentences:
+                    raise ValueError(
+                        f"Sentence count mismatch after spaCy pipeline for {file.name}: "
+                        f"segmented={num_sentences}, parsed={doc_sentence_count}. "
+                        "Check sentence boundary drift or adjust pipeline components."
+                    )
 
                 syntax_metrics = syntax_analyzer.analyze_document(doc, window_size=window_size)
                 lex_metrics = lex_analyzer.analyze_document(
