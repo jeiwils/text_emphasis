@@ -230,6 +230,8 @@ class DiscourseAnalyzer:
                 for t in sent
                 if t.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "ADV"} and t.is_alpha
             }
+            noun_lemma_count = len(noun_lemmas)
+            content_lemma_count = len(content_lemmas)
 
             entity_overlap, entity_ratio = self._overlap(prev_entities, noun_lemmas)
             content_overlap, content_ratio = self._overlap(prev_content, content_lemmas)
@@ -241,6 +243,8 @@ class DiscourseAnalyzer:
             connective_counts_per_token = {
                 k: round(v / len(tokens), 6) if tokens else 0.0 for k, v in connective_counts.items()
             }
+            entity_overlap_per_token = round(entity_overlap / len(tokens), 6) if tokens else 0.0
+            content_overlap_per_token = round(content_overlap / len(tokens), 6) if tokens else 0.0
 
             tense = self._infer_tense(sent)
             tense_shift = int(prev_tense is not None and tense is not None and tense != prev_tense)
@@ -249,18 +253,23 @@ class DiscourseAnalyzer:
                 {
                     "sentence_index": idx,
                     "num_tokens": len(tokens),
+                    "pronoun_count": pronoun_count,
                     "explicit_connectives": len(connectives),
                     "explicit_connectives_per_token": explicit_connectives_per_token,
                     "connective_counts": connective_counts,
                     "connective_counts_per_token": connective_counts_per_token,
                     "entity_overlap": entity_overlap,
                     "entity_overlap_ratio": entity_ratio,
+                    "entity_overlap_per_token": entity_overlap_per_token,
                     "content_overlap": content_overlap,
                     "content_overlap_ratio": content_ratio,
+                    "content_overlap_per_token": content_overlap_per_token,
                     "pronoun_ratio": pronoun_ratio,
                     "tense_shift": tense_shift,
                     "dominant_relation": self._dominant_relation(connective_counts),
                     "verb_tense": tense,
+                    "noun_lemma_count": noun_lemma_count,
+                    "content_lemma_count": content_lemma_count,
                 }
             )
 
@@ -277,18 +286,59 @@ class DiscourseAnalyzer:
                 window_sents = window_slices[idx]
                 total_tokens = sum(sent.get("num_tokens", 0) for sent in window_sents)
                 total_connectives = sum(sent.get("explicit_connectives", 0) for sent in window_sents)
+                total_entity_overlap = sum(sent.get("entity_overlap", 0) for sent in window_sents)
+                total_content_overlap = sum(sent.get("content_overlap", 0) for sent in window_sents)
+                total_pronouns = sum(sent.get("pronoun_count", 0) for sent in window_sents)
+                total_noun_lemmas = sum(sent.get("noun_lemma_count", 0) for sent in window_sents)
+                total_content_lemmas = sum(sent.get("content_lemma_count", 0) for sent in window_sents)
                 connective_counts_total: Dict[str, int] = self._empty_connective_counts()
                 for sent in window_sents:
                     for key, value in sent.get("connective_counts", {}).items():
                         connective_counts_total[key] = connective_counts_total.get(key, 0) + value
                 if total_tokens > 0:
+                    window["num_tokens"] = total_tokens
+                    window["pronoun_count"] = total_pronouns
+                    window["explicit_connectives"] = total_connectives
+                    window["connective_counts"] = connective_counts_total
+                    window["entity_overlap"] = total_entity_overlap
+                    window["content_overlap"] = total_content_overlap
+                    window["noun_lemma_count"] = total_noun_lemmas
+                    window["content_lemma_count"] = total_content_lemmas
                     window["explicit_connectives_per_token"] = round(total_connectives / total_tokens, 6)
                     window["connective_counts_per_token"] = {
                         k: round(v / total_tokens, 6) for k, v in connective_counts_total.items()
                     }
+                    window["entity_overlap_per_token"] = round(total_entity_overlap / total_tokens, 6)
+                    window["content_overlap_per_token"] = round(total_content_overlap / total_tokens, 6)
+                    window["pronoun_ratio"] = round(total_pronouns / total_tokens, 3)
                 else:
+                    window["num_tokens"] = 0
+                    window["pronoun_count"] = 0
+                    window["explicit_connectives"] = 0
+                    window["connective_counts"] = connective_counts_total
+                    window["entity_overlap"] = 0
+                    window["content_overlap"] = 0
+                    window["noun_lemma_count"] = 0
+                    window["content_lemma_count"] = 0
                     window["explicit_connectives_per_token"] = 0.0
                     window["connective_counts_per_token"] = {k: 0.0 for k in connective_counts_total}
+                    window["entity_overlap_per_token"] = 0.0
+                    window["content_overlap_per_token"] = 0.0
+                    window["pronoun_ratio"] = 0.0
+                if total_noun_lemmas > 0:
+                    window["entity_overlap_ratio"] = round(total_entity_overlap / total_noun_lemmas, 3)
+                else:
+                    window["entity_overlap_ratio"] = 0.0
+                if total_content_lemmas > 0:
+                    window["content_overlap_ratio"] = round(total_content_overlap / total_content_lemmas, 3)
+                else:
+                    window["content_overlap_ratio"] = 0.0
+                window["pronoun_ratio_per_token"] = window.get("pronoun_ratio", 0.0)
+                window["explicit_connectives_count"] = window.get("explicit_connectives", 0)
+                window["entity_overlap_count"] = window.get("entity_overlap", 0)
+                window["content_overlap_count"] = window.get("content_overlap", 0)
+                window["entity_overlap_ratio_per_noun_lemma"] = window.get("entity_overlap_ratio", 0.0)
+                window["content_overlap_ratio_per_content_lemma"] = window.get("content_overlap_ratio", 0.0)
 
         return sent_metrics, windowed_metrics
 

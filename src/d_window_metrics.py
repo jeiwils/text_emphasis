@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from spacy.tokens import Doc
 
 from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
@@ -38,6 +38,61 @@ Flow:
    with nested blocks: meta, syntax (meta/sentences/windows + heavy), lexico_semantics (same shape),
    discourse (same shape), information_content_metrics (c0 windows)
 """
+
+_DASHBOARD_METRICS = {
+    "discourse": {
+        "explicit_connectives_per_token",
+        "connective_counts_per_token",
+        "entity_overlap_ratio",
+        "content_overlap_ratio",
+        "pronoun_ratio",
+    },
+    "lexico_semantics": {
+        "lexical_density",
+        "content_function_ratio",
+        "num_clauses_per_token",
+        "num_agents_per_token",
+        "num_patients_per_token",
+        "role_count_per_token",
+        "role_counts_per_token",
+    },
+    "syntax": {
+        "clause_counts_per_token",
+        "clause_ratios",
+        "avg_dependents_per_head",
+        "avg_mean_dependency_distance",
+        "mean_depth",
+        "median_depth",
+        "max_depth",
+        "depth_skew",
+        "avg_tokens_per_sentence",
+    },
+    "log_prob": {
+        "token_weighted_mean_surprisal",
+        "token_weighted_surprisal_variance",
+    },
+}
+
+
+def _prune_window_metrics(
+    metrics: dict,
+    keep_keys: set,
+    *,
+    nested_keys: Optional[set] = None,
+) -> dict:
+    if not isinstance(metrics, dict):
+        return {}
+    pruned = {}
+    for key in ("start_sentence", "end_sentence", "token_count"):
+        if key in metrics:
+            pruned[key] = metrics.get(key)
+    for key in keep_keys:
+        value = metrics.get(key)
+        if key in (nested_keys or set()) and isinstance(value, dict):
+            pruned[key] = value
+        elif value is not None:
+            pruned[key] = value
+    return pruned
 
 
 def run_concept_embeddings(top_n=100, use_existing=True):
@@ -267,6 +322,36 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True):
                     "avg_log_prob": meta_block.get("avg_log_prob"),
                 }
 
+                # Prune window metrics to the dashboard-relevant fields only.
+                syntax_windows = [
+                    _prune_window_metrics(
+                        window,
+                        _DASHBOARD_METRICS["syntax"],
+                        nested_keys={"clause_counts_per_token", "clause_ratios", "avg_dependents_per_head"},
+                    )
+                    for window in syntax_metrics.get("windows", [])
+                ]
+                lex_windows = [
+                    _prune_window_metrics(
+                        window,
+                        _DASHBOARD_METRICS["lexico_semantics"],
+                        nested_keys={"role_counts_per_token"},
+                    )
+                    for window in lex_metrics.get("windows", [])
+                ]
+                discourse_windows = [
+                    _prune_window_metrics(
+                        window,
+                        _DASHBOARD_METRICS["discourse"],
+                        nested_keys={"connective_counts_per_token"},
+                    )
+                    for window in discourse_metrics.get("windows", [])
+                ]
+                log_prob_windows = [
+                    _prune_window_metrics(window, _DASHBOARD_METRICS["log_prob"])
+                    for window in log_prob_windows
+                ]
+
                 result = {
                     "meta": {
                         "filename": meta_block.get("filename", file.name),
@@ -274,15 +359,27 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True):
                         "window_size": window_size,
                         "num_sentences": num_sentences,
                     },
-                    "syntax": syntax_metrics,
-                    "lexico_semantics": lex_metrics,
+                    "syntax": {
+                        "meta": syntax_metrics.get("meta", {}),
+                        "sentences": syntax_metrics.get("sentences", []),
+                        "windows": syntax_windows,
+                    },
+                    "lexico_semantics": {
+                        "meta": lex_metrics.get("meta", {}),
+                        "sentences": lex_metrics.get("sentences", []),
+                        "windows": lex_windows,
+                    },
                     "information_content_metrics": log_prob_windows,
                     "log_prob": {
                         "meta": log_prob_meta,
                         "sentences": log_prob_sentences,
                         "windows": log_prob_windows,
                     },
-                    "discourse": discourse_metrics,
+                    "discourse": {
+                        "meta": discourse_metrics.get("meta", {}),
+                        "sentences": discourse_metrics.get("sentences", []),
+                        "windows": discourse_windows,
+                    },
                 }
 
                 with open(output_file, "w", encoding="utf-8") as f:

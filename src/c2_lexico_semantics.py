@@ -138,7 +138,7 @@ class LexicoSemanticsAnalyzer:
             sent_metrics.append({
                 "token_count": len(tokens),
                 "content_count": len(content_words),
-                "lexical_density": len(content_words) / len(tokens) if tokens else None,
+                "lexical_density": len(content_words) / len(tokens) if tokens else 0.0,
             })
 
         windowed = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
@@ -196,7 +196,7 @@ class LexicoSemanticsAnalyzer:
                         ics.append(-np.log(prob))
 
             sent_metrics.append({
-                "information_content": float(np.mean(ics)) if ics else None,
+                "information_content": float(np.mean(ics)) if ics else 0.0,
                 "ic_values": ics,
                 "token_count": len(ics),
 
@@ -506,20 +506,39 @@ class LexicoSemanticsAnalyzer:
 
                 windows[window_idx]["token_count"] = total_tokens
                 windows[window_idx]["content_count"] = total_content
+                windows[window_idx]["lexical_density"] = round(
+                    token_weighted_lexical_density, 6
+                )
                 windows[window_idx]["information_content_token_count"] = info_tokens
                 windows[window_idx]["avg_word_freq_token_count"] = avg_word_tokens
                 windows[window_idx]["token_weighted_lexical_density"] = round(
                     token_weighted_lexical_density, 6
                 )
+                windows[window_idx]["information_content"] = round(
+                    token_weighted_information_content, 6
+                )
                 windows[window_idx]["token_weighted_information_content"] = round(
                     token_weighted_information_content, 6
+                )
+                windows[window_idx]["avg_word_freq"] = round(
+                    token_weighted_avg_word_freq, 6
                 )
                 windows[window_idx]["token_weighted_avg_word_freq"] = round(
                     token_weighted_avg_word_freq, 6
                 )
+                windows[window_idx]["normalized_freq"] = round(
+                    token_weighted_normalized_freq, 6
+                )
                 windows[window_idx]["token_weighted_normalized_freq"] = round(
                     token_weighted_normalized_freq, 6
                 )
+                windows[window_idx]["content_function_ratio"] = round(
+                    total_content / total_tokens, 6
+                ) if total_tokens else 0.0
+                windows[window_idx]["role_count"] = total_role_count
+                windows[window_idx]["num_clauses"] = total_num_clauses
+                windows[window_idx]["num_agents"] = total_num_agents
+                windows[window_idx]["num_patients"] = total_num_patients
                 windows[window_idx]["role_count_per_token"] = round(role_count_per_token, 6)
                 windows[window_idx]["num_clauses_per_token"] = round(num_clauses_per_token, 6)
                 windows[window_idx]["num_agents_per_token"] = round(num_agents_per_token, 6)
@@ -527,18 +546,77 @@ class LexicoSemanticsAnalyzer:
                 windows[window_idx]["role_counts_per_token"] = {
                     k: round(v, 6) for k, v in role_counts_per_token.items()
                 }
+                if total_num_clauses > 0:
+                    windows[window_idx]["num_agents_per_clause"] = round(
+                        total_num_agents / total_num_clauses, 6
+                    )
+                    windows[window_idx]["num_patients_per_clause"] = round(
+                        total_num_patients / total_num_clauses, 6
+                    )
+                    windows[window_idx]["role_count_per_clause"] = round(
+                        total_role_count / total_num_clauses, 6
+                    )
+                else:
+                    windows[window_idx]["num_agents_per_clause"] = 0.0
+                    windows[window_idx]["num_patients_per_clause"] = 0.0
+                    windows[window_idx]["role_count_per_clause"] = 0.0
+                windows[window_idx]["lexical_density_per_token"] = windows[window_idx]["lexical_density"]
+                windows[window_idx]["information_content_per_token"] = windows[window_idx]["information_content"]
+                windows[window_idx]["avg_word_freq_per_token"] = windows[window_idx]["avg_word_freq"]
+                windows[window_idx]["normalized_freq_per_token"] = windows[window_idx]["normalized_freq"]
+                windows[window_idx]["content_function_ratio_per_token"] = windows[window_idx]["content_function_ratio"]
+                windows[window_idx]["num_clauses_count"] = windows[window_idx]["num_clauses"]
+                windows[window_idx]["num_agents_count"] = windows[window_idx]["num_agents"]
+                windows[window_idx]["num_patients_count"] = windows[window_idx]["num_patients"]
 
 
         # Attach window-level metrics from individual analyzers for richer payloads
         for idx, win in enumerate(windows):
             if idx < len(lexical_density_win):
-                win["lexical_density_window"] = lexical_density_win[idx]
+                lex_win = lexical_density_win[idx]
+                if isinstance(lex_win, dict):
+                    lex_win["lexical_density"] = win.get("lexical_density_per_token", win.get("lexical_density"))
+                    lex_win["token_count"] = win.get("token_count", lex_win.get("token_count"))
+                    lex_win["content_count"] = win.get("content_count", lex_win.get("content_count"))
+                win["lexical_density_window"] = lex_win
             if idx < len(info_content_win):
-                win["information_content_window"] = info_content_win[idx]
+                ic_win = info_content_win[idx]
+                if isinstance(ic_win, dict):
+                    ic_win["information_content"] = win.get(
+                        "information_content_per_token", win.get("information_content")
+                    )
+                    ic_win["token_count"] = win.get(
+                        "information_content_token_count", ic_win.get("token_count")
+                    )
+                win["information_content_window"] = ic_win
             if idx < len(semantic_roles_win):
-                win["semantic_roles_window"] = semantic_roles_win[idx]
+                role_win = semantic_roles_win[idx]
+                if isinstance(role_win, dict):
+                    role_win["role_count"] = win.get("role_count", role_win.get("role_count"))
+                    role_win["role_count_per_token"] = win.get(
+                        "role_count_per_token", role_win.get("role_count_per_token")
+                    )
+                    role_win["role_counts_per_token"] = win.get(
+                        "role_counts_per_token", role_win.get("role_counts_per_token")
+                    )
+                    role_win["token_count"] = win.get("token_count", role_win.get("token_count"))
+                win["semantic_roles_window"] = role_win
             if idx < len(avg_word_freq_win):
-                win["avg_word_freq_window"] = avg_word_freq_win[idx]
+                freq_win = avg_word_freq_win[idx]
+                if isinstance(freq_win, dict):
+                    freq_win["avg_word_freq"] = win.get(
+                        "avg_word_freq_per_token", win.get("avg_word_freq")
+                    )
+                    freq_win["normalized_freq"] = win.get(
+                        "normalized_freq_per_token", win.get("normalized_freq")
+                    )
+                    freq_win["content_function_ratio"] = win.get(
+                        "content_function_ratio_per_token", win.get("content_function_ratio")
+                    )
+                    freq_win["token_count"] = win.get(
+                        "avg_word_freq_token_count", freq_win.get("token_count")
+                    )
+                win["avg_word_freq_window"] = freq_win
             if idx < len(semantic_structures_win):
                 win["semantic_structures_window"] = semantic_structures_win[idx]
             if idx < len(mattr_windows):

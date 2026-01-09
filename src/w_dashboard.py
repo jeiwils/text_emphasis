@@ -259,7 +259,7 @@ def _build_topic_correlation_report(
     correlation_threshold: float = 0.3,
     min_topic_windows: int = 3,
     min_windows: int = 5,
-    use_soft_topic_scores: bool = True,
+    use_soft_topic_scores: bool = False,
     soft_score_threshold: Optional[float] = 0.5,
     soft_top_k: Optional[int] = 3,
     central_only: bool = False,
@@ -477,11 +477,13 @@ def _extract_cohesion_metrics(window_data: Dict[str, object]) -> Dict[str, Optio
     windows = discourse.get("windows", []) if isinstance(discourse, dict) else []
     if not isinstance(windows, list):
         windows = []
-    overlap_rates = [
-        window.get("entity_overlap_ratio")
-        for window in windows
-        if isinstance(window, dict) and isinstance(window.get("entity_overlap_ratio"), (int, float))
-    ]
+    overlap_rates = []
+    for window in windows:
+        if not isinstance(window, dict):
+            continue
+        value = window.get("entity_overlap_ratio_per_noun_lemma", window.get("entity_overlap_ratio"))
+        if isinstance(value, (int, float)):
+            overlap_rates.append(value)
     return {"entity_overlap_rate": _safe_mean(overlap_rates)}
 
 
@@ -490,11 +492,13 @@ def _extract_lexical_metrics(window_data: Dict[str, object]) -> Dict[str, Option
     windows = lexico.get("windows", []) if isinstance(lexico, dict) else []
     if not isinstance(windows, list):
         windows = []
-    densities = [
-        window.get("lexical_density")
-        for window in windows
-        if isinstance(window, dict) and isinstance(window.get("lexical_density"), (int, float))
-    ]
+    densities = []
+    for window in windows:
+        if not isinstance(window, dict):
+            continue
+        value = window.get("lexical_density_per_token", window.get("lexical_density"))
+        if isinstance(value, (int, float)):
+            densities.append(value)
     return {"lexical_density": _safe_mean(densities)}
 
 
@@ -514,10 +518,10 @@ def _extract_structure_metrics(window_data: Dict[str, object]) -> Dict[str, Opti
             continue
         mean_depths.append(window.get("mean_depth"))
         max_depths.append(window.get("max_depth"))
-        clause_counts = window.get("clause_counts", {})
-        if isinstance(clause_counts, dict):
+        clause_counts_per_token = window.get("clause_counts_per_token", {})
+        if isinstance(clause_counts_per_token, dict):
             clause_total = sum(
-                val for val in clause_counts.values() if isinstance(val, (int, float))
+                val for val in clause_counts_per_token.values() if isinstance(val, (int, float))
             )
             clauses.append(clause_total)
         dep_per_head = window.get("avg_dependents_per_head", {})
@@ -547,18 +551,16 @@ def _extract_role_metrics(window_data: Dict[str, object]) -> Dict[str, Optional[
     for window in windows:
         if not isinstance(window, dict):
             continue
-        num_clauses = window.get("num_clauses")
-        num_agents = window.get("num_agents")
-        num_patients = window.get("num_patients")
-        role_count = window.get("role_count")
+        num_agents_per_clause = window.get("num_agents_per_clause")
+        num_patients_per_clause = window.get("num_patients_per_clause")
+        role_count_per_clause = window.get("role_count_per_clause")
 
-        if isinstance(num_clauses, (int, float)) and num_clauses > 0:
-            if isinstance(num_agents, (int, float)):
-                agent_rates.append(num_agents / num_clauses)
-            if isinstance(num_patients, (int, float)):
-                patient_rates.append(num_patients / num_clauses)
-            if isinstance(role_count, (int, float)):
-                role_coverages.append(role_count / num_clauses)
+        if isinstance(num_agents_per_clause, (int, float)):
+            agent_rates.append(num_agents_per_clause)
+        if isinstance(num_patients_per_clause, (int, float)):
+            patient_rates.append(num_patients_per_clause)
+        if isinstance(role_count_per_clause, (int, float)):
+            role_coverages.append(role_count_per_clause)
 
     return {
         "agent_rate_per_clause": _safe_mean(agent_rates),
@@ -710,7 +712,7 @@ def run_dashboard(
     correlation_threshold: float = 0.3,
     min_topic_windows: int = 3,
     min_windows: int = 5,
-    use_soft_topic_scores: bool = True,
+    use_soft_topic_scores: bool = False,
     soft_score_threshold: Optional[float] = 0.5,
     soft_top_k: Optional[int] = 3,
     central_top_n: int = 5,
@@ -726,16 +728,9 @@ def run_dashboard(
       data/analytics/dashboard/<category>/<name>/<name>_dashboard.json
       data/analytics/dashboard/<category>/<name>/<name>_topic_correlations.json
       data/analytics/dashboard/<category>/<name>/<name>_central_topic_correlations.json
-    Also writes aggregated tables at:
-      data/analytics/dashboard/dashboard_table.json
-      data/analytics/dashboard/dashboard_topic_correlations.json
-      data/analytics/dashboard/dashboard_central_topic_correlations.json
     """
     output_root = analytics_path("dashboard")
     output_root.mkdir(parents=True, exist_ok=True)
-    aggregate_table_file = output_root / "dashboard_table.json"
-    aggregate_topic_file = output_root / "dashboard_topic_correlations.json"
-    aggregate_central_file = output_root / "dashboard_central_topic_correlations.json"
 
     rows: List[Dict[str, object]] = []
     topic_reports: List[Dict[str, object]] = []
@@ -819,19 +814,6 @@ def run_dashboard(
             topic_reports.append(topic_entry)
         if central_entry:
             topic_reports.append(central_entry)
-
-    with open(aggregate_table_file, "w", encoding="utf-8") as f:
-        json.dump(rows, f, indent=2)
-
-    with open(aggregate_topic_file, "w", encoding="utf-8") as f:
-        json.dump(topic_reports, f, indent=2)
-
-    with open(aggregate_central_file, "w", encoding="utf-8") as f:
-        json.dump(
-            [entry for entry in topic_reports if "central_topics" in entry],
-            f,
-            indent=2,
-        )
 
     return rows
 

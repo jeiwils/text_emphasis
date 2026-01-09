@@ -589,10 +589,14 @@ def collect_topic_mentions(topics_data):
             sentence_index = mention.get("sentence_index")
             if sentence_index is None:
                 continue
+            start_sentence = mention.get("start_sentence", sentence_index)
+            end_sentence = mention.get("end_sentence", sentence_index)
             mentions.append(
                 {
                     "topic_id": topic_id,
                     "sentence_index": sentence_index,
+                    "start_sentence": start_sentence,
+                    "end_sentence": end_sentence,
                 }
             )
     return mentions
@@ -653,6 +657,7 @@ def build_topic_window_metrics(topic_mentions, window_entries):
     for window in window_entries:
         start_sentence = window.get("start_sentence", 0)
         end_sentence = window.get("end_sentence", 0)
+        token_count = window.get("token_count", 0)
         window_mentions = [
             mention
             for mention in topic_mentions
@@ -669,6 +674,16 @@ def build_topic_window_metrics(topic_mentions, window_entries):
             if topic_id is None:
                 continue
             topic_counts[topic_id] = topic_counts.get(topic_id, 0) + 1
+        if isinstance(token_count, (int, float)) and token_count > 0:
+            mention_count_per_token = round(len(window_mentions) / token_count, 6)
+            unique_topic_count_per_token = round(len(topic_counts) / token_count, 6)
+            topic_counts_per_token = {
+                topic_id: round(count / token_count, 6) for topic_id, count in topic_counts.items()
+            }
+        else:
+            mention_count_per_token = 0.0
+            unique_topic_count_per_token = 0.0
+            topic_counts_per_token = {}
         sorted_topics = sorted(
             topic_counts.items(),
             key=lambda item: (-item[1], item[0]),
@@ -679,9 +694,12 @@ def build_topic_window_metrics(topic_mentions, window_entries):
                 "start_sentence": start_sentence,
                 "end_sentence": end_sentence,
                 "topic_mention_count": len(window_mentions),
+                "topic_mention_count_per_token": mention_count_per_token,
                 "unique_topic_count": len(topic_counts),
+                "unique_topic_count_per_token": unique_topic_count_per_token,
                 "top_topic_ids": top_topic_ids,
                 "topic_counts": topic_counts,
+                "topic_counts_per_token": topic_counts_per_token,
             }
         )
     return metrics

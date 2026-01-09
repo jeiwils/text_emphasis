@@ -359,6 +359,19 @@ class WholeTextMetrics:
                 windows[window_idx]["token_weighted_surprisal_variance"] = round(
                     token_weighted_surprisal_variance, 6
                 )
+                windows[window_idx]["mean_log_prob_per_token"] = windows[window_idx][
+                    "token_weighted_mean_log_prob"
+                ]
+                windows[window_idx]["perplexity_per_token"] = windows[window_idx][
+                    "token_weighted_perplexity"
+                ]
+                windows[window_idx]["mean_surprisal_per_token"] = windows[window_idx][
+                    "token_weighted_mean_surprisal"
+                ]
+                windows[window_idx]["surprisal_variance_per_token"] = windows[window_idx][
+                    "token_weighted_surprisal_variance"
+                ]
+                windows[window_idx]["token_count"] = total_tokens
 
         return {
             "meta": {

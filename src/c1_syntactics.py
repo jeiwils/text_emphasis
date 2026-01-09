@@ -153,6 +153,7 @@ class SyntaxAnalyzer:
 
     def compute_dependency_complexity(self, doc, window_size=DEFAULT_WINDOW_SIZE):
         sentence_metrics = []
+        aux_metrics = []
 
         for sent in doc.sents:
             dependents_per_head = {"main_clause": [], "subordinate_clause": [], "coordinate_clause": []}
@@ -174,6 +175,16 @@ class SyntaxAnalyzer:
                 + dependents_per_head["subordinate_clause"]
                 + dependents_per_head["coordinate_clause"]
             )
+            dependents_sums = {
+                "main_clause": sum(dependents_per_head["main_clause"]),
+                "subordinate_clause": sum(dependents_per_head["subordinate_clause"]),
+                "coordinate_clause": sum(dependents_per_head["coordinate_clause"]),
+            }
+            dependents_counts = {
+                "main_clause": len(dependents_per_head["main_clause"]),
+                "subordinate_clause": len(dependents_per_head["subordinate_clause"]),
+                "coordinate_clause": len(dependents_per_head["coordinate_clause"]),
+            }
 
             sentence_metrics.append(
                 {
@@ -194,8 +205,45 @@ class SyntaxAnalyzer:
                     else 0,
                 }
             )
+            aux_metrics.append(
+                {
+                    "dependents_sums": dependents_sums,
+                    "dependents_counts": dependents_counts,
+                    "dependency_distance_sum": sum(dependency_distances),
+                    "dependency_distance_count": len(dependency_distances),
+                    "max_dependents": max(all_dependents, default=0),
+                }
+            )
 
-        return sentence_metrics, aggregate_windows(sentence_metrics, window_size)
+        windowed = aggregate_windows(sentence_metrics, window_size)
+        if windowed:
+            for idx, window_aux in enumerate(sliding_windows(aux_metrics, window_size)):
+                total_sums = {"main_clause": 0, "subordinate_clause": 0, "coordinate_clause": 0}
+                total_counts = {"main_clause": 0, "subordinate_clause": 0, "coordinate_clause": 0}
+                distance_sum = 0
+                distance_count = 0
+                max_dependents = 0
+                for entry in window_aux:
+                    for clause_key, value in entry["dependents_sums"].items():
+                        total_sums[clause_key] += value
+                    for clause_key, value in entry["dependents_counts"].items():
+                        total_counts[clause_key] += value
+                    distance_sum += entry["dependency_distance_sum"]
+                    distance_count += entry["dependency_distance_count"]
+                    max_dependents = max(max_dependents, entry["max_dependents"])
+
+                windowed[idx]["avg_dependents_per_head"] = {
+                    clause_key: round(total_sums[clause_key] / total_counts[clause_key], 2)
+                    if total_counts[clause_key]
+                    else 0
+                    for clause_key in total_sums
+                }
+                windowed[idx]["avg_mean_dependency_distance"] = (
+                    round(distance_sum / distance_count, 2) if distance_count else 0
+                )
+                windowed[idx]["avg_max_dependents_per_head"] = max_dependents
+
+        return sentence_metrics, windowed
 
     def analyze_document(self, doc, window_size=DEFAULT_WINDOW_SIZE):
         """
@@ -254,6 +302,10 @@ class SyntaxAnalyzer:
             if idx < len(window_slices):
                 window_sents = window_slices[idx]
                 total_tokens = sum(sent.get("token_count", 0) for sent in window_sents)
+                window["token_count"] = total_tokens
+                window["avg_tokens_per_sentence"] = round(
+                    total_tokens / len(window_sents), 6
+                ) if window_sents else 0.0
                 clause_counts_total = {"main": 0, "subordinate": 0, "coordinate": 0}
                 for sent in window_sents:
                     for key, value in sent.get("clause_counts", {}).items():
@@ -264,6 +316,20 @@ class SyntaxAnalyzer:
                     }
                 else:
                     window["clause_counts_per_token"] = {k: 0.0 for k in clause_counts_total}
+                total_main = clause_counts_total.get("main", 0)
+                total_sub = clause_counts_total.get("subordinate", 0)
+                total_coord = clause_counts_total.get("coordinate", 0)
+                sub_ratio = total_sub / total_main if total_main else 0.0
+                coord_ratio = total_coord / total_main if total_main else 0.0
+                window["clause_ratios"] = {
+                    "subordination_ratio": round(sub_ratio, 2),
+                    "coordination_ratio": round(coord_ratio, 2),
+                }
+                window["clause_ratios_per_main"] = window["clause_ratios"]
+                window["clause_counts_count"] = clause_counts_total
+                # Keep avg_* aliases aligned to token-weighted window metrics.
+                window["avg_counts_per_token"] = window["clause_counts_per_token"]
+                window["avg_ratios"] = window["clause_ratios"]
 
         return {
             "meta": {

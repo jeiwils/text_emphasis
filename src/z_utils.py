@@ -164,25 +164,40 @@ def aggregate_windows(sent_metrics, window_size):
     for i, window_sents in enumerate(sliding_windows(sent_metrics, window_size)):
         agg = {}
 
-        for key in window_sents[0]:
+        all_keys = set()
+        for sent in window_sents:
+            all_keys.update(sent.keys())
+
+        for key in all_keys:
             if key in {"sentence_text", "sentences"}:
                 # skip raw text emission
                 continue
-            if isinstance(window_sents[0][key], dict):
-                # Average numeric values in nested dict
+            dict_values = [d[key] for d in window_sents if isinstance(d.get(key), dict)]
+            if dict_values:
+                # Average numeric values in nested dicts.
                 agg[key] = {}
-                all_inner_keys = set(k for d in window_sents for k in d[key].keys())
+                all_inner_keys = set(k for d in dict_values for k in d.keys())
                 for k in all_inner_keys:
-                    nums = [d[key][k] for d in window_sents
-                            if k in d[key] and isinstance(d[key][k], (int, float))]
+                    nums = [
+                        d[k]
+                        for d in dict_values
+                        if k in d and isinstance(d[k], (int, float))
+                    ]
                     agg[key][k] = round(mean(nums), 2) if nums else 0
-            elif isinstance(window_sents[0][key], (int, float)):
-                # Average numeric values
-                nums = [d[key] for d in window_sents if isinstance(d[key], (int, float))]
-                agg[key] = round(mean(nums), 2) if nums else 0
+                continue
+
+            nums = [
+                d.get(key)
+                for d in window_sents
+                if isinstance(d.get(key), (int, float))
+            ]
+            if nums:
+                # Average numeric values, ignoring None.
+                agg[key] = round(mean(nums), 2)
             else:
-                # Keep non-numeric fields (e.g., strings)
-                agg[key] = window_sents[0][key]
+                # Keep first non-None non-numeric value.
+                first_value = next((d.get(key) for d in window_sents if d.get(key) is not None), None)
+                agg[key] = first_value
 
         # Add window metadata
         agg["start_sentence"] = i
