@@ -5,7 +5,7 @@ from spacy.tokens import Doc
 
 from x_configs import DEFAULT_WINDOW_SIZE, GENRES, load_spacy_model
 from a_preprocessing_cleaning import preprocess_all_pdfs
-from b_concept_embeddings import generate_embeddings
+from b_concept_embeddings import ConceptExtractor, generate_embeddings
 from c0_log_prob_metrics import WholeTextMetrics
 from c4_topic_modeling import run_topic_modelling
 from c1_syntactics import SyntaxAnalyzer
@@ -104,10 +104,16 @@ def run_concept_embeddings(top_n=100, use_existing=True, authors=None):
         print(f"No normalised texts found at {normalised_root}")
         return
 
+    extractor = ConceptExtractor()
     for genre, author, subdir in iter_genre_author_dirs(normalised_root, GENRES, authors):
         print(f"Processing concept embeddings: {genre}/{author}")
         for file in subdir.glob("*_normalised.json"):
-            generate_embeddings(file, top_n=top_n, use_existing=use_existing)
+            generate_embeddings(
+                file,
+                top_n=top_n,
+                use_existing=use_existing,
+                extractor=extractor,
+            )
 
     print("Concept embeddings complete.")
 
