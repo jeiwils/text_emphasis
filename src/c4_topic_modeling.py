@@ -34,18 +34,18 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from z_utils import (
-    text_path,
     analytics_path,
-    sliding_windows,
     encode_texts,
     hdbscan_cluster_labels,
+    iter_genre_author_dirs,
     l2_normalize_embeddings,
+    sliding_windows,
+    text_path,
 )
 from x_configs import (
     DEFAULT_WINDOW_SIZE,
+    GENRES,
     MODEL_CONFIGS,
-    TOPIC_CLUSTERING,
-    TOPIC_WINDOW_MULTIPLES,
     TOPIC_BOOK_OVERRIDES,
 )
 
@@ -897,18 +897,13 @@ def run_topic_modelling(
     output_root.mkdir(parents=True, exist_ok=True)
     stride = window_stride or (base_window_size * 2)
 
-    for subdir in normalised_root.iterdir():
-        if not subdir.is_dir():
-            continue
-        print(f"Processing category: {subdir.name}")
-        category_window_multiple = TOPIC_WINDOW_MULTIPLES.get(
-            subdir.name, window_multiple
-        )
-        cluster_config = TOPIC_CLUSTERING.get(subdir.name, {})
-        category_min_cluster_size = cluster_config.get("min_cluster_size", min_cluster_size)
-        category_min_samples = cluster_config.get("min_samples", min_samples)
+    for genre, author, subdir in iter_genre_author_dirs(normalised_root, GENRES):
+        print(f"Processing category: {genre}/{author}")
+        category_window_multiple = window_multiple
+        category_min_cluster_size = min_cluster_size
+        category_min_samples = min_samples
 
-        out_subdir = output_root / subdir.name
+        out_subdir = output_root / genre / author
         out_subdir.mkdir(parents=True, exist_ok=True)
 
         for file in subdir.glob("*.jsonl"):
@@ -923,7 +918,7 @@ def run_topic_modelling(
 
             segmented_mentions = load_segmented_topic_mentions(file)
 
-            book_overrides = TOPIC_BOOK_OVERRIDES.get(subdir.name, {}).get(base_name, {})
+            book_overrides = TOPIC_BOOK_OVERRIDES.get(genre, {}).get(base_name, {})
             book_window_multiple = book_overrides.get("window_multiple", category_window_multiple)
             book_window_stride = book_overrides.get("window_stride", stride)
             book_min_cluster_size = book_overrides.get("min_cluster_size", category_min_cluster_size)

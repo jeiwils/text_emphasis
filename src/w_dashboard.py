@@ -120,9 +120,10 @@ def _collect_window_tables(window_data: Dict[str, object]) -> List[Dict[str, flo
 
 
 def _find_topic_file(window_metrics_path: Path) -> Optional[Path]:
-    category_dir = window_metrics_path.parent.parent
     text_dir = window_metrics_path.parent
-    topic_root = analytics_path("topic") / category_dir.name / text_dir.name
+    author_dir = window_metrics_path.parent.parent
+    genre_dir = window_metrics_path.parent.parent.parent
+    topic_root = analytics_path("topic") / genre_dir.name / author_dir.name / text_dir.name
     candidates = [
         topic_root / f"{text_dir.name}_clustered_topics.json",
         topic_root / f"{text_dir.name}_topics.json",
@@ -589,7 +590,7 @@ def _find_window_metrics_files() -> List[Path]:
     root = analytics_path("window")
     if not root.exists():
         return []
-    return sorted(root.glob("*/*/*_window_metrics.json"))
+    return sorted(root.glob("*/*/*/*_window_metrics.json"))
 
 
 def _build_topic_dashboard_entry(
@@ -646,7 +647,7 @@ def _build_topic_dashboard_entry(
         permutations=permutations,
     )
 
-    category = window_metrics_path.parent.parent.name
+    category = f"{window_metrics_path.parent.parent.parent.name}/{window_metrics_path.parent.parent.name}"
     text_name = window_metrics_path.parent.name
 
     return {
@@ -693,7 +694,7 @@ def _build_central_topic_entry(
         permutations=permutations,
     )
 
-    category = window_metrics_path.parent.parent.name
+    category = f"{window_metrics_path.parent.parent.parent.name}/{window_metrics_path.parent.parent.name}"
     text_name = window_metrics_path.parent.name
 
     return {

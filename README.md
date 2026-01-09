@@ -2,25 +2,8 @@
 
 Python 3.10
 
-A pipeline for analyzing textual emphasis with linguistic metrics, topic modeling, embeddings, and visualization. Most metrics operate on sliding windows of sentences so they can be aligned with topics and network structures.
-
-## Module groups
-
-- **Group A - preprocessing/cleaning** (`src/a_preprocessing_cleaning.py`): spaCy tokenization/lemmatization, whitespace cleaning, PDF extraction with per-book configs, optional Whisper ASR; writes cleaned/normalised text variants to `data/texts/processed/{cleaned,cleaned_segmented,normalised,normalised_segmented}_texts/` (JSON/JSONL).
-- **Group B - whole-text embeddings and topics**
-  - `src/b1_concept_embeddings.py`: noun-phrase extraction, sentence-transformer embeddings, HDBSCAN clustering; saves to `data/embeddings/concept_embeddings/`.
-- `src/b2_topic_modeling.py`: sentence-level embeddings, windowed clustering, TF-IDF keywords, topic mentions; saves to `data/analytics/topic_modelling/`.
-- **Group C - corpus + sentence/window analytics**
-  - `src/c0_log_prob_metrics.py`: Hugging Face causal LM log-probability/surprisal/perplexity per sentence and window (no direct I/O; orchestrator writes to corpus JSON via `x_configs.model`).
-  - `src/c1_syntactics.py`: dependency depth, clause counts, complexity, syntactic graphs (`data/graphs/syntactic_graphs/`).
-  - `src/c2_lexico_semantics.py`: lexical density/frequency/cohesion; supports corpus frequency merging.
-  - `src/c3_discourse.py`: discourse markers, entity overlap, pronoun/tense shifts; aggregates per window.
-- **Group D - orchestration**
-  - `src/d_window_metrics.py`: full pipeline runner. Steps: (1) preprocess PDFs to cleaned/normalised text; (2) concept embeddings from normalised text; (3) topic modelling from normalised-segmented JSONL; (4) corpus log-prob metrics from cleaned text; (5) combined window metrics (syntax + lexico-semantic + discourse + info content) to `data/analytics/window_metrics/<category>/<name>/`.
-- **Group E - visualization**
-  - `src/e1_heatmap.py`: heatmaps over windowed metrics.
-  - `src/e2_network.py`: network views across topic/syntax/lexico-semantic outputs.
-- **Shared helpers**: `src/x_configs.py` (spaCy loader defaults, window size, model placeholder) and `src/z_utils.py` (sliding-window aggregation, JSON/path helpers for texts, embeddings, graphs, topics).
+## Overview
+The pipeline analyzes textual emphasis using linguistic metrics, topic modeling, embeddings, and visualization. Windowed metrics are computed over sliding sentence windows (default size 3, stride 1) so syntax/lexico-semantics/discourse/surprisal can be aligned to topic windows and compared across shared sentence indices.
 
 ## Architecture flow
 
@@ -47,54 +30,71 @@ flowchart TD
   windowed -.-> note
 ```
 
-## Why these metrics are included (focus on emphasis)
+## Metric rationale
 
-The study's core aim is to localize and compare *textual emphasis* across a document by checking whether **central topics** align with variation in semantic, lexical, discourse, and log-probability signals. The B and C modules were chosen because they capture complementary signals that can be aligned to shared sentence windows, so we can test whether (for example) surprisal or syntactic complexity rises when key topics are discussed. Concretely, each window aggregates per-sentence metrics and can be compared against a topic window (e.g., a 3-sentence window where the topic model flags a dominant theme) to ask: *do semantic/lexical/discourse/log-probability measures shift when a central topic is active?*
+The study's core aim is to localize and compare textual emphasis across a document by checking whether central topics align with variation in semantic, lexical, discourse, and log-probability signals. The B and C modules were chosen because they capture complementary signals that can be aligned to shared sentence windows, so we can test whether (for example) surprisal or syntactic complexity rises when key topics are discussed. Concretely, each window aggregates per-sentence metrics and can be compared against a topic window (e.g., a 3-sentence window where the topic model flags a dominant theme) to ask: do semantic/lexical/discourse/log-probability measures shift when a central topic is active?
 
-### Group B: conceptual emphasis signals
+Group B: conceptual emphasis signals
+b1_concept_embeddings (noun-phrase embeddings + clustering)
+Metrics taken: extracted noun phrases (top-N by frequency), sentence-transformer embeddings, HDBSCAN cluster labels.
+Why: repeated or clustered concepts are a direct indicator of emphasis.
+Used for: building a concept inventory and locating concept clusters across the text.
+Relation to study: concept clusters define what is emphasized; window-level metrics can be compared against the presence of these clustered concepts.
 
-- **b1_concept_embeddings (noun-phrase embeddings + clustering)**  
-  **Metrics taken:** extracted noun phrases (top-N by frequency), sentence-transformer embeddings, HDBSCAN cluster labels.  
-  **Why:** repeated or clustered concepts are a direct indicator of emphasis.  
-  **Used for:** building a *concept inventory* and locating concept clusters across the text.  
-  **Relation to study:** concept clusters define *what* is emphasized; window-level metrics can be compared against the presence of these clustered concepts.
+b2_topic_modeling (windowed topic clusters + keywords)
+Metrics taken: sentence/window embeddings, HDBSCAN topic labels, TF-IDF keywords, localized topic mentions (sentence indices and character spans).
+Why: topic clusters capture thematic concentration.
+Used for: generating a topic timeline and locating where topics are discussed.
+Relation to study: provides the anchor for alignment; topic-active windows are compared with lexical, discourse, syntactic, and log-probability variation.
 
-- **b2_topic_modeling (windowed topic clusters + keywords)**  
-  **Metrics taken:** sentence/window embeddings, HDBSCAN topic labels, TF-IDF keywords, localized topic mentions (sentence indices and character spans).  
-  **Why:** topic clusters capture thematic concentration.  
-  **Used for:** generating a topic timeline and locating where topics are discussed.  
-  **Relation to study:** provides the anchor for alignment; topic-active windows are compared with lexical, discourse, syntactic, and log-probability variation.
+Group C: linguistic, probabilistic, and discourse emphasis signals
+c0_log_prob_metrics (log-probability, surprisal, perplexity)
+Metrics taken: per-sentence log-prob sums/means, per-sentence perplexity, mean surprisal, surprisal variance, plus windowed aggregates; orchestrator writes the corpus JSONs to data/analytics/corpus_analytics/<category>/<name>/.
+Why: emphasis can coincide with less predictable language or stylistic foregrounding.
+Used for: identifying unexpectedness peaks across sentence windows.
+Relation to study: tests whether windows with central topics show higher surprisal or shifts in predictability compared to surrounding windows.
 
-### Group C: linguistic, probabilistic, and discourse emphasis signals
+c1_syntactics (clause counts, depth, dependency complexity)
+Metrics taken: main/subordinate/coordinate clause counts and ratios, max/mean/median depth, depth skew, dependents-per-head, mean dependency distance, plus windowed aggregates.
+Why: syntactic complexity often increases with emphasis or rhetorical focus.
+Used for: tracking structural intensity across the text.
+Relation to study: checks whether topic-active windows show higher complexity (e.g., more subordination or deeper parses).
 
-- **c0_log_prob_metrics (log-probability, surprisal, perplexity)**  
-  **Metrics taken:** per-sentence log-prob sums/means, per-sentence perplexity, mean surprisal, surprisal variance, plus windowed aggregates; orchestrator writes the corpus JSONs to `data/analytics/corpus_analytics/<category>/<name>/`.  
-  **Why:** emphasis can coincide with less predictable language or stylistic foregrounding.  
-  **Used for:** identifying unexpectedness peaks across sentence windows.  
-  **Relation to study:** tests whether windows with central topics show higher surprisal or shifts in predictability compared to surrounding windows.
+c2_lexico_semantics (lexical density, information content, roles)
+Metrics taken: lexical density (content vs. total tokens), information content from corpus frequencies, MATTR (lexical diversity), average word frequency/normalized frequency, semantic role counts, agent/patient counts, plus windowed aggregates.
+Why: emphasized segments tend to be lexically dense, information-rich, and semantically loaded.
+Used for: quantifying semantic weight and lexical intensity.
+Relation to study: tests whether topic-active windows coincide with higher density, higher information content, or richer role structure.
 
-- **c1_syntactics (clause counts, depth, dependency complexity)**  
-  **Metrics taken:** main/subordinate/coordinate clause counts and ratios, max/mean/median depth, depth skew, dependents-per-head, mean dependency distance, plus windowed aggregates.  
-  **Why:** syntactic complexity often increases with emphasis or rhetorical focus.  
-  **Used for:** tracking structural intensity across the text.  
-  **Relation to study:** checks whether topic-active windows show higher complexity (e.g., more subordination or deeper parses).
+c3_discourse (connectives, overlap, pronouns, tense shifts)
+Metrics taken: explicit connective counts by relation type, entity/content overlap ratios, pronoun ratio, tense shifts, dominant relation, plus windowed aggregates.
+Why: discourse shifts and cohesion patterns often signal emphasis or topic transitions.
+Used for: detecting rhetorical transitions and cohesion changes.
+Relation to study: evaluates whether topic transitions align with discourse-level shifts (e.g., new connectives or reduced overlap).
 
-- **c2_lexico_semantics (lexical density, information content, roles)**  
-  **Metrics taken:** lexical density (content vs. total tokens), information content from corpus frequencies, MATTR (lexical diversity), average word frequency/normalized frequency, semantic role counts, agent/patient counts, plus windowed aggregates.  
-  **Why:** emphasized segments tend to be lexically dense, information-rich, and semantically loaded.  
-  **Used for:** quantifying semantic weight and lexical intensity.  
-  **Relation to study:** tests whether topic-active windows coincide with higher density, higher information content, or richer role structure.
+Together, these metrics support a multi-layer alignment analysis: what is emphasized (concepts/topics), how it stands out (surprisal, density, structure), and where it occurs (windowed alignment across signals).
+Example: if a 3-sentence window is labeled with a dominant topic and shows a spike in mean surprisal plus higher lexical density, that suggests the topic is being emphasized through both semantic concentration and probabilistic unexpectedness.
 
-- **c3_discourse (connectives, overlap, pronouns, tense shifts)**  
-  **Metrics taken:** explicit connective counts by relation type, entity/content overlap ratios, pronoun ratio, tense shifts, dominant relation, plus windowed aggregates.  
-  **Why:** discourse shifts and cohesion patterns often signal emphasis or topic transitions.  
-  **Used for:** detecting rhetorical transitions and cohesion changes.  
-  **Relation to study:** evaluates whether topic transitions align with discourse-level shifts (e.g., new connectives or reduced overlap).
+Dashboard metric set (pruned from window outputs)
+- Discourse: explicit connectives per token, connective counts per token (Temporal/Contingency/Comparison/Expansion), entity/content overlap ratios, pronoun ratio.
+- Lexico-semantics: lexical density, content-function ratio, clauses/agents/patients per token, role counts per token (nsubj/dobj/iobj/pobj) and total.
+- Syntax: clause counts per token (main/subordinate/coordinate), clause ratios (subordination/coordination), dependents per head (main/subordinate/coordinate), mean dependency distance, mean/median/max depth, depth skew, avg tokens per sentence.
+- Unexpectedness: token-weighted mean surprisal, token-weighted surprisal variance.
 
-Together, these metrics support a multi-layer alignment analysis: *what* is emphasized (concepts/topics), *how* it stands out (surprisal, density, structure), and *where* it occurs (windowed alignment across signals).  
-**Example:** if a 3-sentence window is labeled with a dominant topic and shows a spike in mean surprisal plus higher lexical density, that suggests the topic is being emphasized through both semantic concentration and probabilistic unexpectedness.
+## Topic modeling notes
 
+Topic modeling defaults and statistics
+- Embedding normalization: window/sentence embeddings are L2-normalized; mean topic centroids are L2 re-normalized before cosine similarity so scores stay on the unit sphere.
+- Dimensionality reduction: PCA runs before HDBSCAN (default 50 components; per-book overrides in metadata/x_configs).
+- Topic scoring defaults: soft top-k scoring with soft_top_k_topics=3 and soft_score_threshold=0.5; default window stride is 6; TOPIC_WINDOW_MULTIPLES=3 across categories. Dashboard correlations use hard topic labels by default, unless configured to use soft scores.
+- n-grams: topic modeling includes bi/tri-grams in keyword extraction.
+- Top-word overlap policy: optional downweighting/deduping of top words that recur across many clusters to improve exclusivity (documented here once finalized).
 
+Topic metrics and correlation statistics
+- Prevalence: how often a topic appears across sliding windows (topic coverage over the text).
+- Coherence: interpretability of a topic; do top words co-occur together in real usage (e.g., ship/sea/sail/captain)?
+- Exclusivity: distinctiveness of a topic; are top words specific to one topic rather than shared across many?
+- Significance testing: correlations use block bootstrap p-values; outputs are written alongside correlations in data/analytics/dashboard/**/*_topic_correlations.json and data/analytics/dashboard/**/*_central_topic_correlations.json.
 
 ## Data layout
 
@@ -104,28 +104,7 @@ Together, these metrics support a multi-layer alignment analysis: *what* is emph
 - `data/analytics/corpus_analytics/<category>/<name>/*_metrics.json`: corpus log-prob/surprisal outputs from c0 (written via the orchestrator).
 - `data/analytics/window_metrics/<category>/<name>/*_metrics.json`: combined outputs from the orchestrator (syntax, lexico-semantic, discourse, log-prob windows).
 - `data/analytics/topic_modelling/`, `data/embeddings/concept_embeddings/`, `data/graphs/{network_analysis,syntactic_graphs}/`: downstream artifacts from group B/C/E modules.
-- Raw PDFs expected under `data/texts/raw/` (organized by `novels/novellas/short_stories/speech`); other intermediate folders can be added as preprocessing requires.
-
-## Notes
-
-- Set `x_configs.model` to the desired causal LM before running log-prob metrics.
-- Several modules still have TODOs and may assume corpus frequency data exists.
-- Tests are not present yet; `pytest` is included in `requirements.txt` for future coverage.
-
-## Topic modeling defaults and statistics
-
-- **Embedding normalization**: window/sentence embeddings are L2-normalized; mean topic centroids are L2 re-normalized before cosine similarity so scores stay on the unit sphere.
-- **Dimensionality reduction**: PCA runs before HDBSCAN (default 50 components; per-book overrides in metadata/x_configs).
-- **Topic scoring defaults**: soft top-k scoring with `soft_top_k_topics=3` and `soft_score_threshold=0.5`; default window stride is 6; `TOPIC_WINDOW_MULTIPLES=3` across categories.
-- **n-grams**: topic modeling includes bi/tri-grams in keyword extraction.
-- **Top-word overlap policy**: optional downweighting/deduping of top words that recur across many clusters to improve exclusivity (documented here once finalized).
-
-## Topic metrics and correlation statistics
-
-- **Prevalence**: how often a topic appears across sliding windows (topic coverage over the text).
-- **Coherence**: interpretability of a topic; do top words co-occur together in real usage (e.g., ship/sea/sail/captain)?
-- **Exclusivity**: distinctiveness of a topic; are top words specific to one topic rather than shared across many?
-- **Significance testing**: correlations use block bootstrap p-values; outputs are written alongside correlations in `data/analytics/dashboard/**/*_topic_correlations.json` and `data/analytics/dashboard/**/*_central_topic_correlations.json`.
+- Raw PDFs expected under `data/texts/raw/` (organized by genre/author, e.g. `gothic/poe`); other intermediate folders can be added as preprocessing requires.
 
 ## Preliminary findings
 
@@ -177,3 +156,10 @@ Top correlations (|r| >= 0.3, non-positional)
 
 Top correlations (|r| >= 0.3, non-positional)
 - Topic 11 - mean_surprisal down / mean_log_prob up (|r|?0.34); keywords: good night; night; good; annoy; night gretta; night miss. Interpretation: this motif shows mild predictability shifts, but effects are modest.
+
+## Notes
+
+- Set `x_configs.model` to the desired causal LM before running log-prob metrics.
+- Several modules still have TODOs and may assume corpus frequency data exists.
+- Tests are not present yet; `pytest` is included in `requirements.txt` for future coverage.
+- Topic modeling defaults, metrics, and correlation details live in the pipeline modules and configs.

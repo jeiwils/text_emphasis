@@ -20,7 +20,7 @@ import json
 import pdfplumber
 from transformers import pipeline
 
-from x_configs import MODEL_CONFIGS, load_spacy_model
+from x_configs import GENRES, MODEL_CONFIGS, load_spacy_model
 from z_utils import text_path
 
 
@@ -425,11 +425,12 @@ def preprocess_pdf(
     book_name: Optional[str] = None,
     allow_default_config: bool = True,
     use_existing: bool = True,
+    category_override: Optional[str] = None,
 ):
     """Extract, clean, and save a single PDF with optional page and boilerplate filtering."""
     base_name = pdf_path.stem
     book_label = book_name or base_name
-    category = pdf_path.parent.name
+    category = category_override or pdf_path.parent.name
     if config is None:
         active_config = DEFAULT_BOOK_CONFIG if allow_default_config else None
     else:
@@ -576,36 +577,47 @@ def preprocess_audio_file(
 
 
 
-def preprocess_all_pdfs(process_unknown: bool = True, use_existing: bool = True):
+def preprocess_all_pdfs(
+    process_unknown: bool = True,
+    use_existing: bool = True,
+    authors: Optional[List[str]] = None,
+):
     preproc = TextPreprocessor()
     base_raw_dir = text_path("raw")
-
-    subdirs = ["novels", "novellas", "short_stories", "speech"]
-
-    for subdir in subdirs:
-        subdir_path = base_raw_dir / subdir
-        if not subdir_path.exists():
-            print(f"[WARN] Directory not found: {subdir_path}")
+    for genre in GENRES:
+        genre_dir = base_raw_dir / genre
+        if not genre_dir.exists():
+            print(f"[WARN] Directory not found: {genre_dir}")
             continue
+        if authors:
+            author_dirs = [genre_dir / author for author in authors]
+        else:
+            author_dirs = [path for path in genre_dir.iterdir() if path.is_dir()]
 
-        pdf_files = list(subdir_path.glob("*.pdf"))
-        if not pdf_files:
-            print(f"[INFO] No PDFs found in {subdir_path}")
-            continue
+        for author_dir in author_dirs:
+            if not author_dir.exists():
+                print(f"[WARN] Directory not found: {author_dir}")
+                continue
+            pdf_files = list(author_dir.glob("*.pdf"))
+            if not pdf_files:
+                print(f"[INFO] No PDFs found in {author_dir}")
+                continue
 
-        print(f"[INFO] Processing {len(pdf_files)} PDFs in {subdir}...")
+            category_key = f"{genre}/{author_dir.name}"
+            print(f"[INFO] Processing {len(pdf_files)} PDFs in {category_key}...")
 
-        for pdf_file in pdf_files:
-            normalized_name = _normalize_book_key(pdf_file.stem)
-            config = BOOK_CONFIGS.get(normalized_name)
-            preprocess_pdf(
-                pdf_file,
-                preproc,
-                config=config,
-                book_name=normalized_name,
-                allow_default_config=process_unknown,
-                use_existing=use_existing,
-            )
+            for pdf_file in pdf_files:
+                normalized_name = _normalize_book_key(pdf_file.stem)
+                config = BOOK_CONFIGS.get(normalized_name)
+                preprocess_pdf(
+                    pdf_file,
+                    preproc,
+                    config=config,
+                    book_name=normalized_name,
+                    allow_default_config=process_unknown,
+                    use_existing=use_existing,
+                    category_override=category_key,
+                )
 
 
 

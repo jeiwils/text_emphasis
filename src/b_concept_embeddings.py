@@ -8,7 +8,7 @@ import nltk
 import re
 import json
 
-from x_configs import MODEL_CONFIGS, load_spacy_model
+from x_configs import GENRES, MODEL_CONFIGS, load_spacy_model
 from z_utils import (
     embeddings_path,
     encode_texts,
@@ -117,6 +117,9 @@ def generate_embeddings(normalised_text_path: Path, top_n: int = 100, use_existi
     """Extract top-N noun phrases and generate or load embeddings."""
     base_name = normalised_text_path.stem.replace("_normalised", "")
     category = normalised_text_path.parent.name
+    parent_genre = normalised_text_path.parent.parent.name if normalised_text_path.parent.parent else ""
+    if parent_genre in GENRES:
+        category = f"{parent_genre}/{category}"
 
     concept_dir = embeddings_path("concept") / category / base_name
     concept_dir.mkdir(parents=True, exist_ok=True)

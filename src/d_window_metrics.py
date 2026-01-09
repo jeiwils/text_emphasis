@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from spacy.tokens import Doc
 
-from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
+from x_configs import DEFAULT_WINDOW_SIZE, GENRES, load_spacy_model
 from a_preprocessing_cleaning import preprocess_all_pdfs
 from b_concept_embeddings import generate_embeddings
 from c0_log_prob_metrics import WholeTextMetrics
@@ -12,7 +12,7 @@ from c1_syntactics import SyntaxAnalyzer
 from c2_lexico_semantics import LexicoSemanticsAnalyzer
 from c3_discourse import DiscourseAnalyzer
 from w_dashboard import run_dashboard
-from z_utils import text_path, analytics_path
+from z_utils import analytics_path, iter_genre_author_dirs, text_path
 
 
 
@@ -95,7 +95,7 @@ def _prune_window_metrics(
     return pruned
 
 
-def run_concept_embeddings(top_n=100, use_existing=True):
+def run_concept_embeddings(top_n=100, use_existing=True, authors=None):
     """
     Extract noun-phrase concepts and embeddings for all normalised texts.
     """
@@ -104,18 +104,15 @@ def run_concept_embeddings(top_n=100, use_existing=True):
         print(f"No normalised texts found at {normalised_root}")
         return
 
-    for subdir in normalised_root.iterdir():
-        if not subdir.is_dir():
-            continue
-        print(f"Processing concept embeddings: {subdir.name}")
-
+    for genre, author, subdir in iter_genre_author_dirs(normalised_root, GENRES, authors):
+        print(f"Processing concept embeddings: {genre}/{author}")
         for file in subdir.glob("*_normalised.json"):
             generate_embeddings(file, top_n=top_n, use_existing=use_existing)
 
     print("Concept embeddings complete.")
 
 
-def run_corpus_metrics(use_existing=True):
+def run_corpus_metrics(use_existing=True, authors=None):
     """
     Compute and save corpus-level log-prob/surprisal metrics for all cleaned texts.
     """
@@ -128,12 +125,11 @@ def run_corpus_metrics(use_existing=True):
     output_root = analytics_path("corpus")
     output_root.mkdir(parents=True, exist_ok=True)
 
-    for subdir in cleaned_root.iterdir():
-        if not subdir.is_dir():
-            continue
-        print(f"Processing category: {subdir.name}")
+    for genre, author, subdir in iter_genre_author_dirs(cleaned_root, GENRES, authors):
+        category_key = f"{genre}/{author}"
+        print(f"Processing category: {category_key}")
 
-        out_subdir = output_root / subdir.name
+        out_subdir = output_root / genre / author
         out_subdir.mkdir(parents=True, exist_ok=True)
 
         cleaned_files = sorted(subdir.glob("*.json"))
@@ -166,7 +162,7 @@ def run_corpus_metrics(use_existing=True):
                 print(f"Skipping {output_file.name} (exists)")
                 continue
 
-            segmented_path = segmented_root / subdir.name / f"{base_name}_cleaned_segmented.jsonl"
+            segmented_path = segmented_root / genre / author / f"{base_name}_cleaned_segmented.jsonl"
             if segmented_path.exists():
                 segmented_sentences = _load_segmented_jsonl(segmented_path)
                 text = "\n".join(segmented_sentences)
@@ -206,15 +202,15 @@ def _load_segmented_jsonl(path: Path) -> List[str]:
     return [s for s in sentences if s]
 
 
-def _load_text_for_windowing(category: Path, metrics_file: Path) -> Tuple[str, List[str]]:
+def _load_text_for_windowing(category_key: str, metrics_file: Path) -> Tuple[str, List[str]]:
     """
     Derive the cleaned-segmented text path from a metrics filename
     (assumes *_corpus_metrics.json convention).
     Raises FileNotFoundError if the segmented file is absent.
     """
-    segmented_root = text_path("processed", "cleaned_segmented_texts")
+    segmented_root = text_path("processed", "cleaned_segmented_texts", category_key)
     base_name = metrics_file.stem.replace("_corpus_metrics", "")
-    candidate = segmented_root / category.name / f"{base_name}_cleaned_segmented.jsonl"
+    candidate = segmented_root / f"{base_name}_cleaned_segmented.jsonl"
     if candidate.exists():
         sentences = _load_segmented_jsonl(candidate)
         return "\n".join(sentences), sentences
@@ -237,7 +233,7 @@ def _load_corpus_frequencies(text_dir: Path, base_name: str) -> dict:
         return {}
 
 
-def run_windowed_metrics(mattr_window_size=50, use_existing=True):
+def run_windowed_metrics(mattr_window_size=50, use_existing=True, authors=None):
     """
     Compute window-level metrics by combining syntax, lexico-semantic, discourse
     Requires corpus outputs from run_corpus_metrics.
@@ -251,14 +247,13 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True):
     syntax_analyzer = SyntaxAnalyzer(nlp)
     discourse_analyzer = DiscourseAnalyzer(nlp)
 
-    for category_dir in corpus_root.iterdir():
-        if not category_dir.is_dir():
-            continue
-        print(f"Processing category: {category_dir.name}")
-        out_category_dir = output_root / category_dir.name
+    for genre, author, author_dir in iter_genre_author_dirs(corpus_root, GENRES, authors):
+        category_key = f"{genre}/{author}"
+        print(f"Processing category: {category_key}")
+        out_category_dir = output_root / genre / author
         out_category_dir.mkdir(parents=True, exist_ok=True)
 
-        for text_dir in category_dir.iterdir():
+        for text_dir in author_dir.iterdir():
             if not text_dir.is_dir():
                 continue
 
@@ -277,7 +272,7 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True):
 
                 data = json.load(file.open("r", encoding="utf-8"))
                 meta_block = data.get("meta", {}) if isinstance(data, dict) else {}
-                _, segmented_sentences = _load_text_for_windowing(category_dir, file)
+                _, segmented_sentences = _load_text_for_windowing(category_key, file)
                 if not segmented_sentences:
                     raise ValueError(
                         f"No segmented sentences found for {file.name}; expected cleaned segmented JSONL."

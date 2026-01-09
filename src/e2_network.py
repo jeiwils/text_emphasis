@@ -13,12 +13,13 @@ from matplotlib.lines import Line2D
 from sklearn.metrics.pairwise import cosine_similarity
 
 from b_concept_embeddings import generate_embeddings
-from x_configs import DEFAULT_WINDOW_SIZE
+from x_configs import DEFAULT_WINDOW_SIZE, GENRES
 from z_utils import (
-    text_path,
-    graph_path,
     analytics_path,
+    graph_path,
+    iter_genre_author_dirs,
     load_json,
+    text_path,
 )
 
 """
@@ -267,13 +268,12 @@ def run_pipeline_all_texts(use_existing_embeddings: bool = True):
     if not base_normalised_dir.exists():
         raise FileNotFoundError(f"Directory not found: {base_normalised_dir}")
 
-    for subdir in base_normalised_dir.iterdir():
-        if subdir.is_dir():
-            for txt_file in subdir.glob("*_normalised.json"):
-                try:
-                    run_text_pipeline(txt_file, use_existing_embeddings=use_existing_embeddings)
-                except Exception as e:
-                    print(f"[ERROR] Failed on {txt_file}: {e}")
+    for genre, author, subdir in iter_genre_author_dirs(base_normalised_dir, GENRES):
+        for txt_file in subdir.glob("*_normalised.json"):
+            try:
+                run_text_pipeline(txt_file, use_existing_embeddings=use_existing_embeddings)
+            except Exception as e:
+                print(f"[ERROR] Failed on {txt_file}: {e}")
 
 
 def _topic_label(topic: Dict, max_keywords: int = 3) -> str:
@@ -380,15 +380,12 @@ def run_topic_cooccurrence_networks(
 
     net_analyzer = NetworkAnalyzer()
 
-    for category_dir in topic_root.iterdir():
-        if not category_dir.is_dir():
-            continue
-
-        topic_files = list(category_dir.glob("*_topics.json"))
+    for genre, author, author_dir in iter_genre_author_dirs(topic_root, GENRES):
+        topic_files = list(author_dir.rglob("*_clustered_topics.json"))
         if not topic_files:
             continue
 
-        print(f"[INFO] Building topic co-occurrence network for {category_dir.name}")
+        print(f"[INFO] Building topic co-occurrence network for {genre}/{author}")
         G = build_topic_cooccurrence_graph(
             topic_files,
             min_edge_weight=min_edge_weight,
@@ -396,7 +393,7 @@ def run_topic_cooccurrence_networks(
         )
 
         if G.number_of_nodes() == 0:
-            print(f"[WARN] No topic nodes kept after filtering for {category_dir.name}")
+            print(f"[WARN] No topic nodes kept after filtering for {genre}/{author}")
             continue
 
         centrality_df = net_analyzer.compute_centrality_metrics(G, weight_attr="weight")
@@ -405,7 +402,7 @@ def run_topic_cooccurrence_networks(
             node: comm_id for comm_id, comm_nodes in communities.items() for node in comm_nodes
         }
 
-        base_name = f"{category_dir.name}_topics"
+        base_name = f"{genre}_{author}_topics"
         plot_network(
             G,
             centrality_df,

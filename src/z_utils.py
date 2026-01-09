@@ -1,6 +1,6 @@
 
 
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from pathlib import Path
 import json
 import numpy as np
@@ -13,10 +13,19 @@ from sklearn.cluster import HDBSCAN
 
 
 
+def _category_parts(category: Optional[Union[str, Sequence[str]]]) -> List[str]:
+    if category is None:
+        return []
+    if isinstance(category, (list, tuple)):
+        return [str(part) for part in category if part]
+    category_str = str(category)
+    return [part for part in category_str.replace("\\", "/").split("/") if part]
+
+
 def text_path(
     kind: str,
     subfolder: Optional[str] = None,
-    category: Optional[str] = None,
+    category: Optional[Union[str, Sequence[str]]] = None,
     filename: Optional[str] = None,
 ) -> Path:
     """
@@ -33,15 +42,20 @@ def text_path(
     else:
         raise ValueError('kind must be "raw" or "processed"')
 
-    if category:
-        path = path / category
+    category_parts = _category_parts(category)
+    if category_parts:
+        path = path.joinpath(*category_parts)
     if filename:
         path = path / filename
     return path
 
 
 
-def analytics_path(kind: str, category: Optional[str] = None, filename: Optional[str] = None) -> Path:
+def analytics_path(
+    kind: str,
+    category: Optional[Union[str, Sequence[str]]] = None,
+    filename: Optional[str] = None,
+) -> Path:
     """
     Unified helper for analytics outputs under data/analytics.
     kind: "corpus", "window", "topic", or "dashboard".
@@ -56,11 +70,54 @@ def analytics_path(kind: str, category: Optional[str] = None, filename: Optional
     if kind not in folder_map:
         raise ValueError(f"kind must be one of {list(folder_map.keys())}")
     path = folder_map[kind]
-    if category:
-        path = path / category
+    category_parts = _category_parts(category)
+    if category_parts:
+        path = path.joinpath(*category_parts)
     if filename:
         path = path / filename
     return path
+
+
+def iter_category_dirs(root: Path) -> Iterable[Tuple[str, Path]]:
+    """
+    Yield (category_key, dir_path) pairs for leaf category directories.
+    Supports either <root>/<category>/... or <root>/<group>/<author>/... layouts.
+    """
+    if not root.exists():
+        return
+    for entry in root.iterdir():
+        if not entry.is_dir():
+            continue
+        if any(child.is_file() for child in entry.iterdir()):
+            yield entry.name, entry
+            continue
+        for child in entry.iterdir():
+            if child.is_dir():
+                if any(grandchild.is_file() for grandchild in child.iterdir()):
+                    category_key = f"{entry.name}/{child.name}"
+                    yield category_key, child
+
+
+def iter_genre_author_dirs(
+    root: Path,
+    genres: Sequence[str],
+    authors: Optional[Sequence[str]] = None,
+) -> Iterable[Tuple[str, str, Path]]:
+    """
+    Yield (genre, author, dir_path) for hardcoded genre roots.
+    If authors is provided, only those author folders are used.
+    """
+    for genre in genres:
+        genre_dir = root / genre
+        if not genre_dir.exists():
+            continue
+        if authors:
+            author_dirs = [genre_dir / author for author in authors]
+        else:
+            author_dirs = [path for path in genre_dir.iterdir() if path.is_dir()]
+        for author_dir in author_dirs:
+            if author_dir.is_dir():
+                yield genre, author_dir.name, author_dir
 
 
 
