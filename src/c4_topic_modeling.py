@@ -54,7 +54,7 @@ Output (topics file):
       "window_index": 0,
       "start_sentence": 0,
       "end_sentence": 14,
-      "topic_scores": {"0": 0.71, "1": 0.42},
+      "topic_scores": [{"topic_id": 0, "score": 0.71}, {"topic_id": 1, "score": 0.42}],
       "is_noise": false
     }
   ],
@@ -98,7 +98,7 @@ class TopicMention:
     end_char: int
     end_sentence: Optional[int] = None
     window_index: Optional[int] = None
-    topic_scores: Optional[Dict[int, float]] = None
+    topic_scores: Optional[List[Dict[str, float]]] = None
 
 
 @dataclass
@@ -243,24 +243,26 @@ class NeuralTopicModeler:
         for window in window_topics:
             if window.get("is_noise"):
                 continue
-            scores = window.get("topic_scores") or {}
+            scores = window.get("topic_scores") or []
             scored_windows.append(window)
-            if not scores:
-                continue
-            for topic_id, score in scores.items():
-                if topic_id in topic_score_sums:
-                    try:
-                        topic_score_sums[topic_id] += float(score)
-                    except (TypeError, ValueError):
-                        continue
+            for entry in scores:
+                if not isinstance(entry, dict):
+                    continue
+                topic_id = entry.get("topic_id")
+                score = entry.get("score")
+                if topic_id in topic_score_sums and isinstance(score, (int, float)):
+                    topic_score_sums[topic_id] += float(score)
 
         total_windows = max(1, len(scored_windows))
         for window in scored_windows:
             window_idx = window.get("window_index")
             if window_idx is None:
                 continue
-            scores = window.get("topic_scores") or {}
-            for topic_id in scores.keys():
+            scores = window.get("topic_scores") or []
+            for entry in scores:
+                if not isinstance(entry, dict):
+                    continue
+                topic_id = entry.get("topic_id")
                 if topic_id in topic_windows:
                     topic_windows[topic_id].append(int(window_idx))
 
@@ -348,13 +350,13 @@ class NeuralTopicModeler:
         cluster_labels: List[int],
         top_k_topics: Optional[int] = None,
         score_threshold: Optional[float] = None,
-    ) -> List[Dict[int, float]]:
+    ) -> List[List[Dict[str, float]]]:
         """
         Compute cosine similarity between each window embedding and topic centroids.
-        Returns per-window dicts of topic_id -> similarity, optionally filtered.
+        Returns per-window lists of {"topic_id": int, "score": float}, optionally filtered.
         """
         if embeddings.size == 0 or not cluster_labels:
-            return [{} for _ in range(len(embeddings))]
+            return [[] for _ in range(len(embeddings))]
 
         centroid_vectors = []
         for label in cluster_labels:
@@ -371,20 +373,19 @@ class NeuralTopicModeler:
         centroid_matrix = l2_normalize_embeddings(centroid_matrix)
         sim_matrix = cosine_similarity(embeddings, centroid_matrix)
 
-        topic_scores: List[Dict[int, float]] = []
+        topic_scores: List[List[Dict[str, float]]] = []
         for idx, row in enumerate(sim_matrix):
             if labels[idx] == -1:
-                topic_scores.append({})
+                topic_scores.append([])
                 continue
-            scores = {int(label): float(score) for label, score in zip(cluster_labels, row)}
+            scores = [
+                {"topic_id": int(label), "score": float(score)}
+                for label, score in zip(cluster_labels, row)
+            ]
             if score_threshold is not None:
-                scores = {k: v for k, v in scores.items() if v >= score_threshold}
+                scores = [entry for entry in scores if entry["score"] >= score_threshold]
             if top_k_topics is not None and top_k_topics > 0:
-                scores = dict(
-                    sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[
-                        :top_k_topics
-                    ]
-                )
+                scores = sorted(scores, key=lambda kv: kv["score"], reverse=True)[:top_k_topics]
             topic_scores.append(scores)
         return topic_scores
 
@@ -470,7 +471,7 @@ class NeuralTopicModeler:
         )
         window_topics = []
         for idx, window in enumerate(windows):
-            scores = topic_scores[idx] if topic_scores else {}
+            scores = topic_scores[idx] if topic_scores else []
             window.topic_scores = scores
             window_topics.append(
                 {
@@ -489,8 +490,11 @@ class NeuralTopicModeler:
         for idx, window in enumerate(window_topics):
             if window.get("is_noise"):
                 continue
-            scores = window.get("topic_scores") or {}
-            for topic_id in scores.keys():
+            scores = window.get("topic_scores") or []
+            for entry in scores:
+                if not isinstance(entry, dict):
+                    continue
+                topic_id = entry.get("topic_id")
                 if topic_id in topic_window_texts:
                     topic_window_texts[topic_id].append(window_texts[idx])
         coherence_exclusivity = {}
@@ -554,20 +558,22 @@ def _topic_debug_stats(
     for window in window_topics:
         if window.get("is_noise"):
             continue
-        scores = window.get("topic_scores") or {}
+        scores = window.get("topic_scores") or []
         if not scores:
             continue
-        best_topic = max(scores.items(), key=lambda kv: kv[1])[0]
+        best_topic = max(scores, key=lambda kv: kv.get("score", 0.0)).get("topic_id")
+        if best_topic is None:
+            continue
         hard_label_counts[str(best_topic)] = hard_label_counts.get(str(best_topic), 0) + 1
 
     score_entropies = []
     for window in window_topics:
         if window.get("is_noise"):
             continue
-        scores = window.get("topic_scores") or {}
+        scores = window.get("topic_scores") or []
         if not scores:
             continue
-        values = np.array(list(scores.values()), dtype=float)
+        values = np.array([entry.get("score", 0.0) for entry in scores], dtype=float)
         if values.size == 0:
             continue
         values = values - np.max(values)
@@ -672,15 +678,15 @@ def collect_soft_topic_mentions(
     for window in windows:
         if window.get("is_noise"):
             continue
-        scores = window.get("topic_scores") or {}
+        scores = window.get("topic_scores") or []
         items = []
-        for k, v in scores.items():
-            try:
-                topic_id = int(k)
-                score = float(v)
-            except (TypeError, ValueError):
+        for entry in scores:
+            if not isinstance(entry, dict):
                 continue
-            items.append((topic_id, score))
+            topic_id = entry.get("topic_id")
+            score = entry.get("score")
+            if isinstance(topic_id, int) and isinstance(score, (int, float)):
+                items.append((topic_id, float(score)))
         items.sort(key=lambda kv: kv[1], reverse=True)
         if top_k is not None and top_k > 0:
             items = items[:top_k]

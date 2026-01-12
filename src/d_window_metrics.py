@@ -41,13 +41,18 @@ _DASHBOARD_METRICS = {
     "discourse": {
         "explicit_connectives_per_token",
         "connective_counts_per_token",
+        "tense_shift",
         "entity_overlap_ratio",
         "content_overlap_ratio",
         "pronoun_ratio",
     },
     "lexico_semantics": {
         "lexical_density",
+        "lexical_diversity_mattr",
         "content_function_ratio",
+        "avg_word_freq",
+        "normalized_freq",
+        "information_content",
         "num_clauses_per_token",
         "num_agents_per_token",
         "num_patients_per_token",
@@ -344,7 +349,7 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True, authors=None):
                     _prune_window_metrics(
                         window,
                         _DASHBOARD_METRICS["lexico_semantics"],
-                        nested_keys={"role_counts_per_token"},
+                        nested_keys={"role_counts_per_token", "lexical_diversity_mattr"},
                     )
                     for window in lex_metrics.get("windows", [])
                 ]

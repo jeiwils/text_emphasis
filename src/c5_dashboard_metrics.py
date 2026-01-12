@@ -17,18 +17,44 @@ Output (build_dashboard_row):
   "filename": "book.txt",
   "window_size": 3,
   "num_sentences": 120,
-  "entity_overlap_rate": 0.12,
-  "avg_token_surprisal": 2.31,
-  "max_token_surprisal": 3.02,
-  "surprisal_variance": 0.08,
-  "lexical_density": 0.61,
-  "mean_dependency_depth": 1.9,
-  "max_dependency_depth": 3.3,
-  "clause_density": 0.25,
-  "avg_dependents_per_head": 2.1,
-  "agent_rate_per_clause": 0.4,
-  "patient_rate_per_clause": 0.2,
-  "role_coverage": 1.2
+  "metrics": [
+    {
+      "unexpectedness": [
+        {"avg_token_surprisal": 2.31},
+        {"max_token_surprisal": 3.02},
+        {"surprisal_variance": 0.08}
+      ]
+    },
+    {
+      "lexical": [
+        {"lexical_density": 0.61},
+        {"lexical_diversity_mattr": 0.68},
+        {"avg_word_freq": 12.0},
+        {"normalized_freq": 0.76},
+        {"information_content": 1.1}
+      ]
+    },
+    {
+      "structure": [
+        {"mean_dependency_depth": 1.9},
+        {"max_dependency_depth": 3.3},
+        {"clause_density": 0.25},
+        {"avg_dependents_per_head": 2.1},
+        {"clause_ratios": {"subordination_ratio": 0.25, "coordination_ratio": 0.1}},
+        {"avg_mean_dependency_distance": 1.5},
+        {"avg_median_depth": 1.8},
+        {"depth_skew": 0.2}
+      ]
+    },
+    {
+      "discourse": [
+        {"explicit_connectives_per_token": 0.05},
+        {"connective_counts_per_token": {"Temporal": 0.05, "Contingency": 0.0, "Comparison": 0.0, "Expansion": 0.0}},
+        {"tense_shift": 0.1},
+        {"entity_overlap_rate": 0.12}
+      ]
+    }
+  ]
 }
 
 Input (build_topic_correlation_report / build_central_report):
@@ -71,6 +97,7 @@ Output (build_topic_correlation_report):
 
 import json
 import math
+import statistics
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -86,27 +113,20 @@ from c4_topic_modeling import (
 def load_window_metrics(path: Path) -> Dict[str, object]:
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
-    return data if isinstance(data, dict) else {}
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected dict payload in {path}")
+    return data
 
 
-def safe_mean(values: List[Optional[float]]) -> Optional[float]:
-    clean = [v for v in values if isinstance(v, (int, float))]
-    if not clean:
-        return None
-    return sum(clean) / len(clean)
-
-
-def safe_max(values: List[Optional[float]]) -> Optional[float]:
-    clean = [v for v in values if isinstance(v, (int, float))]
-    if not clean:
-        return None
-    return max(clean)
-
-
-def is_number(value: object) -> bool:
-    return isinstance(value, (int, float)) and not (
-        isinstance(value, float) and math.isnan(value)
-    )
+def _require_numbers(values: List[float], *, label: str) -> List[float]:
+    if not values:
+        raise ValueError(f"Expected non-empty numeric values for {label}")
+    for value in values:
+        if not isinstance(value, (int, float)):
+            raise ValueError(f"Expected numeric value in {label}; got {type(value).__name__}")
+        if isinstance(value, float) and math.isnan(value):
+            raise ValueError(f"NaN encountered in {label}")
+    return [float(v) for v in values]
 
 
 def flatten_numeric_metrics(entry: Dict[str, object], prefix: str) -> Dict[str, float]:
@@ -117,10 +137,17 @@ def flatten_numeric_metrics(entry: Dict[str, object], prefix: str) -> Dict[str, 
         metric_key = f"{prefix}.{key}" if prefix else key
         if isinstance(value, dict):
             for sub_key, sub_val in value.items():
-                if is_number(sub_val):
-                    metrics[f"{metric_key}.{sub_key}"] = float(sub_val)
-        elif is_number(value):
+                if not isinstance(sub_val, (int, float)):
+                    raise ValueError(f"Non-numeric value for {metric_key}.{sub_key}")
+                if isinstance(sub_val, float) and math.isnan(sub_val):
+                    raise ValueError(f"NaN value for {metric_key}.{sub_key}")
+                metrics[f"{metric_key}.{sub_key}"] = float(sub_val)
+        elif isinstance(value, (int, float)):
+            if isinstance(value, float) and math.isnan(value):
+                raise ValueError(f"NaN value for {metric_key}")
             metrics[metric_key] = float(value)
+        else:
+            raise ValueError(f"Non-numeric value for {metric_key}")
     return metrics
 
 
@@ -173,7 +200,7 @@ def collect_window_topic_scores(
     window_count: int,
 ) -> List[Dict[int, float]]:
     if not topics_data or not isinstance(topics_data, dict):
-        return [{} for _ in range(window_count)]
+        raise ValueError("Expected topics_data dict for topic scores")
 
     windows = topics_data.get("windows") or []
     scores_by_window: List[Dict[int, float]] = []
@@ -181,15 +208,16 @@ def collect_window_topic_scores(
         if window.get("is_noise"):
             scores_by_window.append({})
             continue
-        scores = window.get("topic_scores") or {}
+        scores = window.get("topic_scores") or []
         items = []
-        for k, v in scores.items():
-            try:
-                topic_id = int(k)
-                score = float(v)
-            except (TypeError, ValueError):
-                continue
-            items.append((topic_id, score))
+        for entry in scores:
+            if not isinstance(entry, dict):
+                raise ValueError("Expected topic_scores entries to be dicts")
+            topic_id = entry.get("topic_id")
+            score = entry.get("score")
+            if not isinstance(topic_id, int) or not isinstance(score, (int, float)):
+                raise ValueError("Invalid topic_scores entry; expected int topic_id and float score")
+            items.append((topic_id, float(score)))
         items.sort(key=lambda kv: kv[1], reverse=True)
         if soft_top_k is not None and soft_top_k > 0:
             items = items[:soft_top_k]
@@ -281,9 +309,12 @@ def central_topics(
         stats_clean: Dict[str, float] = {}
         for metric in metrics:
             val = stats.get(metric)
-            if is_number(val):
-                stats_clean[metric] = float(val)
-                values[metric].append(float(val))
+        if not isinstance(val, (int, float)):
+            continue
+        if isinstance(val, float) and math.isnan(val):
+            continue
+        stats_clean[metric] = float(val)
+        values[metric].append(float(val))
         if stats_clean:
             entries.append((topic_id, keywords if isinstance(keywords, list) else [], stats_clean))
 
@@ -422,8 +453,11 @@ def build_topic_correlation_report(
             without_topic_count += 0 if has_topic else 1
             for metric in metric_names:
                 val = window_row.get(metric)
-                if is_number(val):
-                    values_by_metric[metric].append((present, float(val)))
+                if not isinstance(val, (int, float)):
+                    raise ValueError(f"Non-numeric metric value for {metric}")
+                if isinstance(val, float) and math.isnan(val):
+                    raise ValueError(f"NaN metric value for {metric}")
+                values_by_metric[metric].append((present, float(val)))
 
         metric_correlations: Dict[str, object] = {}
         for metric, pairs in values_by_metric.items():
@@ -445,8 +479,8 @@ def build_topic_correlation_report(
                 "pearson_r": corr,
                 "p_value": p_value,
                 "n": len(values),
-                "mean_with_topic": safe_mean(values_with),
-                "mean_without_topic": safe_mean(values_without),
+                "mean_with_topic": statistics.mean(_require_numbers(values_with, label=f"{metric}.with_topic")),
+                "mean_without_topic": statistics.mean(_require_numbers(values_without, label=f"{metric}.without_topic")),
             }
 
         if metric_correlations:
@@ -534,8 +568,11 @@ def build_central_report(
                 pairs = []
                 for presence, row in presence_rows:
                     value = row.get(metric)
-                    if is_number(value):
-                        pairs.append((presence, float(value)))
+                    if not isinstance(value, (int, float)):
+                        raise ValueError(f"Non-numeric metric value for {metric}")
+                    if isinstance(value, float) and math.isnan(value):
+                        raise ValueError(f"NaN metric value for {metric}")
+                    pairs.append((presence, float(value)))
                 if not pairs:
                     continue
                 presences = [p for p, _ in pairs]
@@ -556,8 +593,8 @@ def build_central_report(
                     "pearson_r": corr,
                     "p_value": p_value,
                     "n": len(values),
-                    "mean_with_topic": safe_mean(values_with),
-                    "mean_without_topic": safe_mean(values_without),
+                    "mean_with_topic": statistics.mean(_require_numbers(values_with, label=f"{metric}.with_topic")),
+                    "mean_without_topic": statistics.mean(_require_numbers(values_without, label=f"{metric}.without_topic")),
                 }
 
             report["central_topic_presence"] = {
@@ -605,9 +642,10 @@ def build_dashboard_row(
     overlap_rates = [
         window.get("entity_overlap_ratio")
         for window in discourse_windows
-        if isinstance(window, dict) and is_number(window.get("entity_overlap_ratio"))
+        if isinstance(window, dict)
     ]
-    row["entity_overlap_rate"] = safe_mean(overlap_rates)
+    overlap_rates = _require_numbers(overlap_rates, label="entity_overlap_ratio")
+    entity_overlap_rate = statistics.mean(overlap_rates)
 
     log_prob = window_data.get("log_prob", {}) if isinstance(window_data, dict) else {}
     sentences = log_prob.get("sentences", []) if isinstance(log_prob, dict) else []
@@ -622,22 +660,62 @@ def build_dashboard_row(
         mean_surprisal = sent_surprisal.get("mean_surprisal")
         variance = sent_surprisal.get("surprisal_variance")
         num_tokens = sent_surprisal.get("num_tokens")
-        if is_number(mean_surprisal) and is_number(num_tokens) and num_tokens > 0:
+        if not isinstance(mean_surprisal, (int, float)):
+            raise ValueError("Non-numeric mean_surprisal")
+        if not isinstance(num_tokens, (int, float)):
+            raise ValueError("Non-numeric num_tokens in sentence_surprisal_metrics")
+        if num_tokens > 0:
+            if isinstance(mean_surprisal, float) and math.isnan(mean_surprisal):
+                raise ValueError("NaN mean_surprisal")
             mean_surprisals.append(float(mean_surprisal))
-        if is_number(variance):
+        if variance is not None:
+            if not isinstance(variance, (int, float)):
+                raise ValueError("Non-numeric surprisal_variance")
+            if isinstance(variance, float) and math.isnan(variance):
+                raise ValueError("NaN surprisal_variance")
             variance_values.append(float(variance))
-    row["avg_token_surprisal"] = safe_mean(mean_surprisals)
-    row["max_token_surprisal"] = safe_max(mean_surprisals)
-    row["surprisal_variance"] = safe_mean(variance_values)
+    avg_token_surprisal = statistics.mean(_require_numbers(mean_surprisals, label="mean_surprisal"))
+    max_token_surprisal = max(_require_numbers(mean_surprisals, label="mean_surprisal"))
+    surprisal_variance = statistics.mean(_require_numbers(variance_values, label="surprisal_variance"))
 
     lexico = window_data.get("lexico_semantics", {}) if isinstance(window_data, dict) else {}
     lexico_windows = lexico.get("windows", []) if isinstance(lexico, dict) else []
-    densities = [
-        window.get("lexical_density")
-        for window in lexico_windows
-        if isinstance(window, dict) and is_number(window.get("lexical_density"))
-    ]
-    row["lexical_density"] = safe_mean(densities)
+    densities = []
+    mattr_scores = []
+    avg_word_freqs = []
+    normalized_freqs = []
+    information_contents = []
+    for window in lexico_windows:
+        if not isinstance(window, dict):
+            continue
+        density = window.get("lexical_density_per_token")
+        if density is None:
+            density = window.get("lexical_density")
+        if density is not None:
+            densities.append(density)
+        mattr = window.get("lexical_diversity_mattr", {})
+        if isinstance(mattr, dict):
+            mattr_score = mattr.get("mattr_score")
+            if mattr_score is not None:
+                mattr_scores.append(mattr_score)
+        avg_word_freq = window.get("avg_word_freq")
+        if avg_word_freq is not None:
+            avg_word_freqs.append(avg_word_freq)
+        normalized_freq = window.get("normalized_freq")
+        if normalized_freq is not None:
+            normalized_freqs.append(normalized_freq)
+        information_content = window.get("information_content")
+        if information_content is not None:
+            information_contents.append(information_content)
+    lexical_density = statistics.mean(_require_numbers(densities, label="lexical_density"))
+    lexical_diversity_mattr = statistics.mean(
+        _require_numbers(mattr_scores, label="lexical_diversity_mattr")
+    )
+    avg_word_freq = statistics.mean(_require_numbers(avg_word_freqs, label="avg_word_freq"))
+    normalized_freq = statistics.mean(_require_numbers(normalized_freqs, label="normalized_freq"))
+    information_content = statistics.mean(
+        _require_numbers(information_contents, label="information_content")
+    )
 
     syntax = window_data.get("syntax", {}) if isinstance(window_data, dict) else {}
     syntax_windows = syntax.get("windows", []) if isinstance(syntax, dict) else []
@@ -645,42 +723,125 @@ def build_dashboard_row(
     max_depths = []
     clauses = []
     dependents = []
+    subordination_ratios = []
+    coordination_ratios = []
+    avg_mean_dependency_distances = []
+    avg_median_depths = []
+    depth_skews = []
     for window in syntax_windows:
         if not isinstance(window, dict):
             continue
         mean_depths.append(window.get("mean_depth"))
         max_depths.append(window.get("max_depth"))
         clause_counts_per_token = window.get("clause_counts_per_token", {})
-        if isinstance(clause_counts_per_token, dict):
-            clause_total = sum(
-                val for val in clause_counts_per_token.values() if is_number(val)
-            )
-            clauses.append(clause_total)
+        if not isinstance(clause_counts_per_token, dict):
+            raise ValueError("Expected clause_counts_per_token dict in syntax windows")
+        clause_total = sum(_require_numbers(list(clause_counts_per_token.values()), label="clause_counts_per_token"))
+        clauses.append(clause_total)
         dep_per_head = window.get("avg_dependents_per_head", {})
-        if isinstance(dep_per_head, dict):
-            dep_vals = [val for val in dep_per_head.values() if is_number(val)]
-            dependents.append(safe_mean(dep_vals))
-    row["mean_dependency_depth"] = safe_mean(mean_depths)
-    row["max_dependency_depth"] = safe_max(max_depths)
-    row["clause_density"] = safe_mean(clauses)
-    row["avg_dependents_per_head"] = safe_mean(dependents)
+        if not isinstance(dep_per_head, dict):
+            raise ValueError("Expected avg_dependents_per_head dict in syntax windows")
+        dep_vals = _require_numbers(list(dep_per_head.values()), label="avg_dependents_per_head")
+        dependents.append(statistics.mean(dep_vals))
+        clause_ratios = window.get("clause_ratios", {})
+        if isinstance(clause_ratios, dict):
+            subordination_ratio = clause_ratios.get("subordination_ratio")
+            if subordination_ratio is not None:
+                subordination_ratios.append(subordination_ratio)
+            coordination_ratio = clause_ratios.get("coordination_ratio")
+            if coordination_ratio is not None:
+                coordination_ratios.append(coordination_ratio)
+        avg_mean_dependency_distance = window.get("avg_mean_dependency_distance")
+        if avg_mean_dependency_distance is not None:
+            avg_mean_dependency_distances.append(avg_mean_dependency_distance)
+        avg_median_depth = window.get("avg_median_depth", window.get("median_depth"))
+        if avg_median_depth is not None:
+            avg_median_depths.append(avg_median_depth)
+        depth_skew = window.get("avg_depth_skew", window.get("depth_skew"))
+        if depth_skew is not None:
+            depth_skews.append(depth_skew)
+    mean_dependency_depth = statistics.mean(_require_numbers(mean_depths, label="mean_depth"))
+    max_dependency_depth = max(_require_numbers(max_depths, label="max_depth"))
+    clause_density = statistics.mean(_require_numbers(clauses, label="clause_counts_per_token"))
+    avg_dependents_per_head = statistics.mean(_require_numbers(dependents, label="avg_dependents_per_head"))
+    clause_ratios = {
+        "subordination_ratio": statistics.mean(
+            _require_numbers(subordination_ratios, label="subordination_ratio")
+        ),
+        "coordination_ratio": statistics.mean(
+            _require_numbers(coordination_ratios, label="coordination_ratio")
+        ),
+    }
+    avg_mean_dependency_distance = statistics.mean(
+        _require_numbers(avg_mean_dependency_distances, label="avg_mean_dependency_distance")
+    )
+    avg_median_depth = statistics.mean(
+        _require_numbers(avg_median_depths, label="avg_median_depth")
+    )
+    depth_skew = statistics.mean(_require_numbers(depth_skews, label="depth_skew"))
 
-    agent_rates = []
-    patient_rates = []
-    role_coverages = []
-    for window in lexico_windows:
+    explicit_connectives_per_token = []
+    connective_counts_per_token: Dict[str, List[float]] = {}
+    tense_shifts = []
+    for window in discourse_windows:
         if not isinstance(window, dict):
             continue
-        num_agents_per_clause = window.get("num_agents_per_clause")
-        num_patients_per_clause = window.get("num_patients_per_clause")
-        role_count_per_clause = window.get("role_count_per_clause")
-        if is_number(num_agents_per_clause):
-            agent_rates.append(float(num_agents_per_clause))
-        if is_number(num_patients_per_clause):
-            patient_rates.append(float(num_patients_per_clause))
-        if is_number(role_count_per_clause):
-            role_coverages.append(float(role_count_per_clause))
-    row["agent_rate_per_clause"] = safe_mean(agent_rates)
-    row["patient_rate_per_clause"] = safe_mean(patient_rates)
-    row["role_coverage"] = safe_mean(role_coverages)
+        explicit_connectives = window.get("explicit_connectives_per_token")
+        if explicit_connectives is not None:
+            explicit_connectives_per_token.append(explicit_connectives)
+        connective_counts = window.get("connective_counts_per_token", {})
+        if isinstance(connective_counts, dict):
+            for key, value in connective_counts.items():
+                if isinstance(value, (int, float)):
+                    connective_counts_per_token.setdefault(key, []).append(value)
+        tense_shift = window.get("tense_shift")
+        if tense_shift is not None:
+            tense_shifts.append(tense_shift)
+    explicit_connectives_per_token = statistics.mean(
+        _require_numbers(explicit_connectives_per_token, label="explicit_connectives_per_token")
+    )
+    connective_counts_per_token = {
+        key: statistics.mean(_require_numbers(values, label=f"connective_counts_per_token.{key}"))
+        for key, values in connective_counts_per_token.items()
+    }
+    tense_shift = statistics.mean(_require_numbers(tense_shifts, label="tense_shift"))
+
+    row["metrics"] = [
+        {
+            "unexpectedness": [
+                {"avg_token_surprisal": avg_token_surprisal},
+                {"max_token_surprisal": max_token_surprisal},
+                {"surprisal_variance": surprisal_variance},
+            ]
+        },
+        {
+            "lexical": [
+                {"lexical_density": lexical_density},
+                {"lexical_diversity_mattr": lexical_diversity_mattr},
+                {"avg_word_freq": avg_word_freq},
+                {"normalized_freq": normalized_freq},
+                {"information_content": information_content},
+            ]
+        },
+        {
+            "structure": [
+                {"mean_dependency_depth": mean_dependency_depth},
+                {"max_dependency_depth": max_dependency_depth},
+                {"clause_density": clause_density},
+                {"avg_dependents_per_head": avg_dependents_per_head},
+                {"clause_ratios": clause_ratios},
+                {"avg_mean_dependency_distance": avg_mean_dependency_distance},
+                {"avg_median_depth": avg_median_depth},
+                {"depth_skew": depth_skew},
+            ]
+        },
+        {
+            "discourse": [
+                {"explicit_connectives_per_token": explicit_connectives_per_token},
+                {"connective_counts_per_token": connective_counts_per_token},
+                {"tense_shift": tense_shift},
+                {"entity_overlap_rate": entity_overlap_rate},
+            ]
+        },
+    ]
     return row
