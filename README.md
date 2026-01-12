@@ -87,11 +87,47 @@ Relation to study: evaluates whether topic transitions align with discourse-leve
 Together, these metrics support a multi-layer alignment analysis: what is emphasized (concepts/topics), how it stands out (surprisal, density, structure), and where it occurs (windowed alignment across signals).
 Example: if a 3-sentence window is labeled with a dominant topic and shows a spike in mean surprisal plus higher lexical density, that suggests the topic is being emphasized through both semantic concentration and probabilistic unexpectedness.
 
-Dashboard metric set (pruned from window outputs)
-- Discourse: explicit connectives per token, connective counts per token (Temporal/Contingency/Comparison/Expansion), entity/content overlap ratios, pronoun ratio.
-- Lexico-semantics: lexical density, content-function ratio, clauses/agents/patients per token, role counts per token (nsubj/dobj/iobj/pobj) and total.
-- Syntax: clause counts per token (main/subordinate/coordinate), clause ratios (subordination/coordination), dependents per head (main/subordinate/coordinate), mean dependency distance, mean/median/max depth, depth skew, avg tokens per sentence.
-- Unexpectedness: token-weighted mean surprisal, token-weighted surprisal variance.
+Dashboard metric definitions (window-level, used in topic correlation outputs)
+All metrics below are computed per sliding window (default 3 sentences, stride 1). Unless noted, window values are computed from window totals (token-weighted) rather than simple means.
+
+Unexpectedness (log_prob)
+- log_prob.token_weighted_mean_surprisal: token-weighted mean of sentence mean_surprisal in the window: sum(mean_surprisal * num_tokens) / total_tokens.
+- log_prob.token_weighted_surprisal_variance: pooled token-level variance across the window: sum((n-1)*var) + sum(n*(mean - overall_mean)^2) divided by total_tokens; 0.0 if total_tokens == 0.
+
+Lexico-semantics
+- lexico_semantics.lexical_density: total content tokens / total tokens in the window (content POS in {NOUN, VERB, ADJ, ADV}; tokens exclude punctuation).
+- lexico_semantics.content_function_ratio: total content tokens / total alpha tokens in the window (same numerator as lexical_density; computed alongside word-frequency stats).
+- lexico_semantics.lexical_diversity_mattr.mattr_score: MATTR over window tokens (lowercased, no punct/space) using fixed mattr_window_size (default 50). If tokens < window size, uses type/token ratio over the full window.
+- lexico_semantics.avg_word_freq: token-weighted mean of per-sentence avg_word_freq, weighted by avg_word_freq_token_count (alpha tokens that contributed). Per-sentence avg_word_freq is the mean corpus frequency of alpha tokens.
+- lexico_semantics.normalized_freq: token-weighted mean of per-sentence normalized_freq (avg_word_freq / global_avg_freq if available; otherwise avg_word_freq), weighted by avg_word_freq_token_count.
+- lexico_semantics.information_content: token-weighted mean of per-sentence information_content, weighted by information_content_token_count. Per-token info content is -log(freq / total_corpus_tokens) for alpha tokens with corpus frequencies.
+- lexico_semantics.num_clauses_per_token: total clause count / total tokens in the window. Clauses are counted per verb head: main (ROOT), subordinate (advcl/ccomp/xcomp), coordinate (conj).
+
+Syntax
+- syntax.token_count: total non-punct tokens in the window (sum of sentence token_count).
+- syntax.clause_counts_per_token.main: total main clause heads / total tokens in the window.
+- syntax.clause_counts_per_token.subordinate: total subordinate clause heads / total tokens in the window.
+- syntax.clause_counts_per_token.coordinate: total coordinate clause heads / total tokens in the window.
+- syntax.clause_ratios.subordination_ratio: total subordinate clause heads / total main clause heads in the window (0 if no main clauses).
+- syntax.clause_ratios.coordination_ratio: total coordinate clause heads / total main clause heads in the window (0 if no main clauses).
+- syntax.avg_dependents_per_head.main_clause: total dependents of main clause heads / total main heads in the window.
+- syntax.avg_dependents_per_head.subordinate_clause: total dependents of subordinate clause heads / total subordinate heads in the window.
+- syntax.avg_dependents_per_head.coordinate_clause: total dependents of coordinate clause heads / total coordinate heads in the window.
+- syntax.avg_mean_dependency_distance: total dependency distance / total dependency links in the window; distance is abs(token.i - child.i).
+- syntax.mean_depth: mean of sentence-level mean dependency depth to root (depth includes punctuation).
+- syntax.median_depth: mean of sentence-level median dependency depth to root.
+- syntax.max_depth: mean of sentence-level max dependency depth to root (this is averaged, not max-pooled).
+- syntax.depth_skew: mean of sentence-level (mean_depth - median_depth).
+
+Discourse
+- discourse.explicit_connectives_per_token: total explicit connective matches / total tokens in the window.
+- discourse.connective_counts_per_token.Temporal: Temporal connective count / total tokens in the window.
+- discourse.connective_counts_per_token.Contingency: Contingency connective count / total tokens in the window.
+- discourse.connective_counts_per_token.Comparison: Comparison connective count / total tokens in the window.
+- discourse.connective_counts_per_token.Expansion: Expansion connective count / total tokens in the window.
+- discourse.entity_overlap_ratio: total noun-lemma overlap with the previous sentence / total noun lemma count in the window (noun lemmas are unique per sentence).
+- discourse.content_overlap_ratio: total content-lemma overlap with the previous sentence / total content lemma count in the window (content POS in {NOUN, PROPN, VERB, ADJ, ADV}).
+- discourse.tense_shift: mean of sentence-level tense shifts in the window; a shift is 1 when the inferred tense differs from the previous sentence, else 0.
 
 ## Topic modeling notes
 

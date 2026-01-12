@@ -88,7 +88,6 @@ Output (build_topic_correlation_report):
     "soft_score_threshold": 0.5,
     "soft_top_k": 3,
     "central_top_n": 5,
-    "variance_only": false,
     "block_size": 5,
     "permutations": 2000
   }
@@ -190,6 +189,34 @@ def collect_window_tables(window_data: Dict[str, object]) -> List[Dict[str, floa
             row.update(flatten_numeric_metrics(entries[idx], name))
         table.append(row)
     return table
+
+
+def _is_length_metric(name: str) -> bool:
+    if name == "syntax.avg_tokens_per_sentence":
+        return False
+    if "avg_tokens_per_sentence" in name:
+        return False
+    if "lexical_diversity_mattr.token_count" in name:
+        return True
+    if "lexical_diversity_mattr.window_token_span" in name:
+        return True
+    if name.endswith(".token_count") or name == "token_count":
+        return True
+    return False
+
+
+def _is_excluded_dashboard_metric(name: str) -> bool:
+    if "discourse.pronoun_ratio" in name:
+        return True
+    if "lexico_semantics.num_agents_" in name:
+        return True
+    if "lexico_semantics.num_patients_" in name:
+        return True
+    if "lexico_semantics.role_count_" in name:
+        return True
+    if "lexico_semantics.role_counts_per_token." in name:
+        return True
+    return False
 
 
 def collect_window_topic_scores(
@@ -309,12 +336,12 @@ def central_topics(
         stats_clean: Dict[str, float] = {}
         for metric in metrics:
             val = stats.get(metric)
-        if not isinstance(val, (int, float)):
-            continue
-        if isinstance(val, float) and math.isnan(val):
-            continue
-        stats_clean[metric] = float(val)
-        values[metric].append(float(val))
+            if not isinstance(val, (int, float)):
+                continue
+            if isinstance(val, float) and math.isnan(val):
+                continue
+            stats_clean[metric] = float(val)
+            values[metric].append(float(val))
         if stats_clean:
             entries.append((topic_id, keywords if isinstance(keywords, list) else [], stats_clean))
 
@@ -352,10 +379,12 @@ def central_topics(
     ranked.sort(key=lambda row: row["score"], reverse=True)
     scores = [row["score"] for row in ranked]
     if scores:
-        mean = float(np.mean(scores))
-        sd = float(np.std(scores, ddof=0))
-        threshold = mean + sd
-        ranked = [row for row in ranked if row["score"] >= threshold]
+        threshold = float(np.percentile(scores, 60))
+        filtered = [row for row in ranked if row["score"] >= threshold]
+        min_count = min(3, len(ranked))
+        if len(filtered) < min_count:
+            filtered = ranked[:min_count]
+        ranked = filtered
     return ranked[:top_n]
 
 
@@ -366,7 +395,6 @@ def build_topic_correlation_report(
     soft_score_threshold: Optional[float] = 0.5,
     soft_top_k: Optional[int] = 3,
     central_top_n: int = 5,
-    variance_only: bool = False,
     topics_key: str = "topics",
     use_soft_scores: Optional[bool] = None,
     block_size: int = 5,
@@ -405,10 +433,9 @@ def build_topic_correlation_report(
         for name in metric_names
         if not any(token in name for token in ("sentence_index", "start_sentence", "end_sentence"))
     ]
-    if variance_only:
-        metric_names = [name for name in metric_names if "variance" in name]
-        if not metric_names:
-            return {}
+    metric_names = [
+        name for name in metric_names if not _is_length_metric(name) and not _is_excluded_dashboard_metric(name)
+    ]
     topics = set()
     for entry in topic_metrics:
         topics.update(entry.get("topic_counts", {}).keys())
@@ -503,7 +530,6 @@ def build_topic_correlation_report(
             "soft_score_threshold": score_threshold,
             "soft_top_k": score_top_k,
             "central_top_n": central_top_n,
-            "variance_only": variance_only,
             "block_size": block_size,
             "permutations": permutations,
         },
@@ -531,7 +557,6 @@ def build_central_report(
         soft_score_threshold=soft_score_threshold,
         soft_top_k=soft_top_k,
         central_top_n=central_top_n,
-        variance_only=False,
         topics_key="central_topics",
         use_soft_scores=True,
         block_size=block_size,
@@ -539,7 +564,7 @@ def build_central_report(
     )
 
     report: Dict[str, object] = weighted_report if weighted_report else {}
-    if central_topic_ids:
+    if len(central_topic_ids) > 1:
         window_entries = window_data.get("syntax", {}).get("windows", [])
         topic_mentions = collect_topic_mentions(topics_data)
         topic_metrics = build_topic_window_metrics(topic_mentions, window_entries)
@@ -550,6 +575,11 @@ def build_central_report(
                 name
                 for name in metric_names
                 if not any(token in name for token in ("sentence_index", "start_sentence", "end_sentence"))
+            ]
+            metric_names = [
+                name
+                for name in metric_names
+                if not _is_length_metric(name) and not _is_excluded_dashboard_metric(name)
             ]
             presence_rows = []
             with_central = 0

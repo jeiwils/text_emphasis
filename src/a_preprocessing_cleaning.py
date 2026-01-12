@@ -216,101 +216,184 @@ class TextPreprocessor:
 
 
 
-
-
 BOOK_CONFIGS = {
-    # "siddhartha": {
-    #     "pages": list(range(1, 54)),
-    #     "start_marker": "In the shade of the house",
-    #     "end_marker": "****",  # Anything after this on page 53 will be removed
-    #     "patterns": [
-    #         r"Part\s+(One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten)",
-    #         r"\n\s*[A-Z][A-Za-z\s]{1,40}\s*\n",  # Likely detects centralized headers/titles
-    #     ],
-    # },
+    # --- Joyce (Dubliners PDFs) ---
+
+    "araby": {
+        "pages": list(range(1, 6)),  # 1–5
+        "use_text_flow": True,
+        "start_marker": "North Richmond Street, being blind,",
+        "end_marker": "my eyes burned with anguish and anger.",
+        "patterns": [
+            r"^\s*\d{1,3}\s*$",  # page numbers
+        ],
+    },
+
+    "eveline": {
+        "pages": list(range(1, 4)),  # 1–3
+        "use_text_flow": True,       # REQUIRED for this PDF to extract in the right order
+        "start_marker": "She sat at the window watching the evening invade the avenue.",
+        # The sentence is line-broken in the PDF text layer, so use a marker that doesn't cross a newline:
+        "end_marker": "or farewell or recognition.",
+        "patterns": [
+            r"^\s*\d{1,3}\s*$",  # defensive: page numbers / stray numeric lines
+        ],
+    },
 
     "the_dead": {
-        "pages": list(range(1, 27)),
+        "pages": list(range(1, 27)),  # 1–26
+        "use_text_flow": True,
         "start_marker": "Lily, the caretaker's daughter",
-        "end_marker": None,
+        "end_marker": "the living and the dead.",
         "patterns": [
-            r"^\s*\d{1,3}\s*$",  # Remove numeric page numbers
+            r"^\s*\d{1,3}\s*$",  # page numbers
         ],
     },
 
-    "the_metamorphosis": {
-        "pages": list(range(2, 71)),
-        "start_marker": "One morning, when Gregor Samsa woke",
-        "end_marker": "stretch out her young body.",
+    # --- Hawthorne ---
+
+    "young_goodman_brown": {
+        "pages": list(range(1, 11)),  # 1–10
+        "use_text_flow": True,
+        "start_marker": "YOUNG GOODMAN BROWN came forth at sunset",
+        "end_marker": "hour was gloom.",
+        "patterns": None,
+    },
+
+    "the_ministers_black_veil": {
+        "pages": list(range(1, 8)),  # 1–7
+        "use_text_flow": True,       # REQUIRED for this PDF (default extraction is badly ordered)
+        "start_marker": "THE SEXTON stood in the porch of Milford meeting-house,",
+        "end_marker": "he hid his face from men.",
         "patterns": [
-            r"E-BooksDirectory\.com",
-            r"\b[IVXLC]+\b(?!\w)",  # Roman numerals for chapters
+            # Running headers like "3 NATHANIEL HAWTHORNE"
+            r"^\s*\d+\s+NATHANIEL\s+HAWTHORNE\s*$",
         ],
     },
 
-    "the_case_of_charles_dexter_ward": {
-        "pages": list(range(3, 97)),
-        "start_marker": "From a private hospital for the insane near Providence,",
-        "end_marker": "thin coating of fine bluish-grey dust.",
+    "rappaccinis_daughter": {
+        "pages": list(range(1, 21)),  # 1–20
+        "use_text_flow": True,
+        "start_marker": "A YOUNG man, named Giovanni Guasconti,",
+        "end_marker": "upshot of your experiment?\"",
+        "patterns": None,
+    },
+
+    # --- Maupassant ---
+
+    "boule_de_suif": {
+        "pages": list(range(1, 36)),  # 1–35
+        "use_text_flow": True,
+        "start_marker": "For several days in succession",
+        "end_marker": "between two verses of the song.",
         "patterns": [
-            r"chapter\s+\w+",
-            r"\bCHAPTER\s+[IVXLC]+\b",
-            r"page\s+\d+",
-            r"PART\s+[IVXLC]+\s*.*?(?=CHAPTER)",  # PART I ... CHAPTER
+            # (mostly redundant because end_marker trims before these, but safe)
+            r"Downloaded from\s+www\.libraryofshortstories\.com",
+            r"This work is in the public domain.*",
         ],
     },
 
-    "a_clockwork_orange": {
-        "pages": list(range(10, 178)),
-        "start_marker": None,
-        "end_marker": None,
+    "a_piece_of_string": {
+        "pages": list(range(1, 8)),  # 1–7
+        "use_text_flow": True,
+        "start_marker": "ALONG ALL THE ROADS around Goderville",
+        "end_marker": "M'sieu the Mayor.\"",
+        "patterns": None,
+    },
+
+    "the_necklace": {
+        "pages": list(range(1, 7)),  # 1–6
+        "use_text_flow": True,
+        "start_marker": "She was one of those pretty and charming girls",
+        "end_marker": "francs!",
         "patterns": [
-            r"PART\s+(ONE|TWO|THREE|FOUR)",
-            r"chapter\s+\w+",
-            r"(?m)^\s*[IVXLC]+\s*$",  # Roman numerals on their own line
+            r"^\s*\d{1,3}\s*$",  # defensive: standalone page numbers if present
         ],
     },
 
-    "coraline": {
-        "pages": list(range(11, 119)),
-        "start_marker": None,
-        "end_marker": None,
+    # --- Borges ---
+
+    "the_garden_of_forking_paths": {
+        "pages": list(range(1, 7)),  # 1–6
+        "use_text_flow": True,
+        "start_marker": "On page 22 of Liddell Hart’s History of World War I",
+        "end_marker": "contrition and weariness.",
         "patterns": [
-            r"(?m)^\s*[IVXLC]+\.\s*$",  # Roman numerals with period on their own line
+            # Defensive cleanup in case end_marker fails:
+            r"^\s*\[\d+\]\s*$",     # footnote marker lines like "[1]"
+            r"\(Editor.?s note\.\)", # "(Editor’s note.)" / "(Editor's note.)"
+            r"^\s*Response\s*$",     # trailing "Response" line
         ],
     },
 
-    "animal_farm": {
-        "pages": list(range(5, 108)),
-        "start_marker": None,
-        "end_marker": "was impossible to say which was which.",
+    # NOTE: filename is Borges-The-Library-of-Babel.pdf => key borges_the_library_of_babel
+    "borges_the_library_of_babel": {
+        # Exclude page 8 (publisher / collection page)
+        "pages": list(range(1, 8)),  # 1–7
+        "use_text_flow": True,
+        "start_marker": "The universe (which others call the Library)",
+        "end_marker": "have no \"back.\"",
         "patterns": [
-            r"\bCHAPTER\s+[IVXLC]+\b",
-            r"page\s+\d+",
-            r"Animal Farm, by George Orwell",
-            r"https://ebooks\.adelaide\.edu\.au/o/orwell/george/o79a/chapter\d+\.html",
-            r"Last updated\s+[A-Za-z]+,\s+[A-Za-z]+\s+\d{1,2},\s+\d{4},\s+at\s+\d{1,2}:\d{2}",
+            # Running headers / page artifacts
+            r"^\s*THE\s+LIBRARY\s+OF\s+BABEL\s+\d+\s*$",
+            r"^\s*[0-9A-Za-z]*\s*JORGE\s+LUIS\s+BORGES\s*$",
+            r"^\s*\d{1,3}\s*$",
+            # Editorial note inside the text layer
+            r"\[Ed\. note\.\]",
         ],
     },
 
-    "american_psycho": {
-        "pages": list(range(6, 458)),
-        "start_marker": None,
-        "end_marker": None,
+    "the_aleph": {
+        "pages": list(range(1, 12)),  # 1–11
+        "use_text_flow": True,
+        "start_marker": "On the burning February morning Beatriz Viterbo died,",
+        "end_marker": "the face of Beatriz.",
+        "patterns": None,
+    },
+
+    # --- Poe (updated PDFs) ---
+
+    "the_telltale_heart": {
+        "pages": list(range(1, 5)),  # 1–4
+        "use_text_flow": True,
+        "start_marker": "iT’s TRue! yes, i have been ill,",
+        "end_marker": "Why does it not stop!?”",
         "patterns": [
-            r"(?m)^[A-Z][a-zA-Z\s']{1,40}$",  # Matches chapter headings like 'Morning'
+            r"^\s*\d{1,3}\s*$",                  # page numbers 64–67
+            r"^\s*E\s+d\s+g\s+a\s+r.*P\s+o\s+e.*$",  # spaced author header
+            r"^\s*p\s*$",                        # the stray 'p' line
         ],
     },
 
-    "the_handmaids_tale": {
-        "pages": list(range(8, 270)),
-        "start_marker": None,
-        "end_marker": None,
+    "the_cask_of_amontillado": {
+        "pages": list(range(1, 6)),  # 1–5
+        "use_text_flow": True,
+        "start_marker": "foRTunaTo had huRT me a",
+        "end_marker": "May he rest in peace!",
         "patterns": [
-            r"(?m)^\s*[IVXLC]+\s*\n[A-Z\s]{2,50}(?=\n)",  # Roman numeral + caps section name
+            r"^\s*\d{1,3}\s*$",                  # page numbers 68–72
+            r"^\s*E\s+d\s+g\s+a\s+r.*P\s+o\s+e.*$",  # spaced author header
+            r"^\s*p\s*$",                        # the stray 'p' line
+        ],
+    },
+
+    "the_fall_of_the_house_of_usher": {
+        # Skip the cover + copyright pages; story starts on PDF page 3
+        "pages": list(range(3, 26)),  # 3–25
+        "use_text_flow": True,
+        "start_marker": "During the whole of a dull, dark, and soundless day in the",
+        "end_marker": "the “House of Usher.”",
+        "patterns": [
+            # Running headers
+            r"^\s*THE\s+FALL\s+OF\s+THE\s+HOUSE\s+OF\s+USHER\s+\d+\s*$",
+            r"^\s*EDGAR\s+ALLAN\s+POE\s+\d+\s*$",
+            r"^\s*\d{1,3}\s*$",  # stray numeric-only lines
+            # Footnote block (cross-line match)
+            r"\*\s*Watson[\s\S]{0,200}?vol\.\s*v\.",
         ],
     },
 }
+
 
 
 DEFAULT_BOOK_CONFIG = {

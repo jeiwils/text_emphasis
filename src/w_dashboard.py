@@ -1,5 +1,5 @@
 """
-Dashboard orchestrator: summarize key metrics into a compact table.
+Dashboard orchestrator: build topic correlation outputs for window metrics.
 
 Metrics grouped by:
 - Unexpectedness: avg_token_surprisal, max_token_surprisal, surprisal_variance
@@ -18,13 +18,11 @@ from typing import Dict, List, Optional
 
 from c5_dashboard_metrics import (
     build_central_report,
-    build_dashboard_row,
     build_topic_correlation_report,
     central_topics,
     load_window_metrics,
 )
 from z_utils import analytics_path
-
 
 def _find_topic_file(window_metrics_path: Path) -> Optional[Path]:
     text_dir = window_metrics_path.parent
@@ -40,13 +38,11 @@ def _find_topic_file(window_metrics_path: Path) -> Optional[Path]:
             return candidate
     return None
 
-
 def _find_window_metrics_files() -> List[Path]:
     root = analytics_path("window")
     if not root.exists():
         return []
     return sorted(root.glob("*/*/*/*_window_metrics.json"))
-
 
 def _build_topic_dashboard_entry(
     window_metrics_path: Path,
@@ -54,7 +50,6 @@ def _build_topic_dashboard_entry(
     soft_score_threshold: Optional[float],
     soft_top_k: Optional[int],
     central_top_n: int,
-    variance_only: bool,
     block_size: int,
     permutations: int,
 ) -> Optional[Dict[str, object]]:
@@ -70,7 +65,6 @@ def _build_topic_dashboard_entry(
         soft_score_threshold=soft_score_threshold,
         soft_top_k=soft_top_k,
         central_top_n=central_top_n,
-        variance_only=variance_only,
         topics_key="topics",
         block_size=block_size,
         permutations=permutations,
@@ -100,7 +94,6 @@ def _build_topic_dashboard_entry(
         "central_topics": central_topics(topics_data, top_n=central_top_n),
         "central_report": central_report,
     }
-
 
 def _build_central_topic_entry(
     window_metrics_path: Path,
@@ -139,29 +132,24 @@ def _build_central_topic_entry(
         "central_report": central_report,
     }
 
-
 def run_dashboard(
-    use_existing: bool = True,
+    use_existing: bool = False,
     *,
     soft_score_threshold: Optional[float] = 0.5,
     soft_top_k: Optional[int] = 3,
     central_top_n: int = 5,
-    variance_only: bool = False,
     block_size: int = 5,
     permutations: int = 2000,
 ) -> List[Dict[str, object]]:
     """
-    Build the dashboard table from window metrics and write JSON outputs.
+    Build topic correlation outputs from window metrics and write JSON outputs.
 
     Outputs (per text):
-      data/analytics/dashboard/<category>/<name>/<name>_dashboard.json
       data/analytics/dashboard/<category>/<name>/<name>_topic_correlations.json
       data/analytics/dashboard/<category>/<name>/<name>_central_topic_correlations.json
     """
     output_root = analytics_path("dashboard")
     output_root.mkdir(parents=True, exist_ok=True)
-
-    rows: List[Dict[str, object]] = []
 
     window_metric_files = _find_window_metrics_files()
 
@@ -170,22 +158,6 @@ def run_dashboard(
         text_name = file.parent.name
         out_dir = output_root / category / text_name
         out_dir.mkdir(parents=True, exist_ok=True)
-
-        row_file = out_dir / f"{text_name}_dashboard.json"
-        if use_existing and row_file.exists():
-            try:
-                with open(row_file, "r", encoding="utf-8") as f:
-                    row = json.load(f)
-            except json.JSONDecodeError:
-                row = None
-        else:
-            window_data = load_window_metrics(file)
-            row = build_dashboard_row(window_data, filename_fallback=file.name)
-            with open(row_file, "w", encoding="utf-8") as f:
-                json.dump(row, f, indent=2)
-
-        if isinstance(row, dict):
-            rows.append(row)
 
         topic_file = out_dir / f"{text_name}_topic_correlations.json"
         central_file = out_dir / f"{text_name}_central_topic_correlations.json"
@@ -202,7 +174,6 @@ def run_dashboard(
                 soft_score_threshold=soft_score_threshold,
                 soft_top_k=soft_top_k,
                 central_top_n=central_top_n,
-                variance_only=variance_only,
                 block_size=block_size,
                 permutations=permutations,
             )
@@ -230,8 +201,7 @@ def run_dashboard(
                 with open(central_file, "w", encoding="utf-8") as f:
                     json.dump(central_entry, f, indent=2)
 
-    return rows
-
+    return []
 
 if __name__ == "__main__":
     run_dashboard()
