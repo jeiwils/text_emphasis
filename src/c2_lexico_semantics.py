@@ -1,11 +1,3 @@
-import re
-import statistics
-
-import numpy as np
-
-from x_configs import DEFAULT_WINDOW_SIZE
-from z_utils import sliding_windows, aggregate_windows
-
 """
 Lexical and semantic content metrics (computation only).
 
@@ -57,9 +49,6 @@ Lexical and semantic content metrics (computation only).
       "num_agents": 2, 
       "num_patients": 1, 
       "role_count": 6,
-           
-                     # attached source window payloads from individual analyzers
-                     # what are these????
       "lexical_density_window": {
         ...},
       "information_content_window": {
@@ -80,7 +69,13 @@ Lexical and semantic content metrics (computation only).
 
 """
 
+import re
+import statistics
 
+import numpy as np
+
+from x_configs import DEFAULT_WINDOW_SIZE
+from z_utils import sliding_windows, aggregate_windows
 
 def _tokenize_words(text: str, lowercase: bool = True):
     """Lightweight tokenizer for lexical diversity (MATTR)."""

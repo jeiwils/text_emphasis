@@ -1,16 +1,4 @@
-
-
-
-"""
-
-TO DO:
-- get these functinons from other scripts - maybe get a standard preprocessing script that I use, upload to github
-- get configs for the_black_cat, the_telltale_heart
-- "chapter" removing from animal farm 
-
-
-
-"""
+"""Preprocessing utilities for cleaning and segmenting source texts."""
 
 from pathlib import Path
 from typing import List, Optional, Dict
@@ -24,8 +12,6 @@ from x_configs import GENRES, MODEL_CONFIGS, load_spacy_model
 from z_utils import text_path
 
 
-
-
 class TextPreprocessor:
     def __init__(self, language: str = "en_core_web_sm"):
         """Initialize the preprocessor with specified language model."""
@@ -34,17 +20,11 @@ class TextPreprocessor:
         self._asr_model_name = None
         self._asr_chunk_length_s = None
         self._asr_device = None
-    
 
-
-    
     def tokenize_text(self, text: str) -> List[str]:
         """Tokenize text into words."""
         doc = self.nlp(text)
         return [token.text for token in doc]
-    
-
-
 
     def clean_text(self, text: str) -> str:
         """Clean text while preserving punctuation and capitalization."""
@@ -133,10 +113,10 @@ class TextPreprocessor:
         text = fix_letter_spacing_headers(text)
         text = normalize_shouting(text)
         text = fix_split_words(text)
+        text = text.replace("\xad", "")
+        text = re.sub(r"(?<=\w)-\s+(?=\w)", "-", text)
         text = re.sub(r'\s+', ' ', text).strip()
         return text  # No lowercasing, no punctuation removal
-
-    
 
     def segment_sentences_with_offsets(self, text: str) -> List[Dict[str, object]]:
         """
@@ -349,7 +329,11 @@ def _normalize_book_key(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
 
-def extract_pdf_pages(pdf_path: Path, pages: Optional[List[int]] = None) -> str:
+def extract_pdf_pages(
+    pdf_path: Path,
+    pages: Optional[List[int]] = None,
+    use_text_flow: bool = False,
+) -> str:
     """
     Extract text from specific PDF pages.
     If `pages` is None, extracts all pages.
@@ -376,7 +360,7 @@ def extract_pdf_pages(pdf_path: Path, pages: Optional[List[int]] = None) -> str:
         for idx in normalized_indices:
             try:
                 page = pdf.pages[idx]
-                page_text = page.extract_text()
+                page_text = page.extract_text(use_text_flow=use_text_flow)
                 if page_text:
                     text += page_text + "\n"
                 processed_pages += 1
@@ -474,7 +458,8 @@ def preprocess_pdf(
 
     # Extract selected pages
     pages = active_config.get("pages")
-    raw_text = extract_pdf_pages(pdf_path, pages)
+    use_text_flow = bool(active_config.get("use_text_flow", False))
+    raw_text = extract_pdf_pages(pdf_path, pages, use_text_flow=use_text_flow)
 
     # Remove boilerplate, trim start/end markers, apply regex patterns
     cleaned_text = remove_boilerplate(

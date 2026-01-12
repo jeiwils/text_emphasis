@@ -23,9 +23,10 @@ class ConceptExtractor:
         self,
         model_name: str = MODEL_CONFIGS["sentence_embedding"],
         language: str = "en_core_web_sm",
+        encoder: SentenceTransformer | None = None,
     ):
         """Initialize with specified models."""
-        self.encoder = SentenceTransformer(model_name)
+        self.encoder = encoder or SentenceTransformer(model_name)
         self.nlp = load_spacy_model(language)
         try:
             self.stop_words = set(stopwords.words("english"))

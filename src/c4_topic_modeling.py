@@ -1,5 +1,4 @@
 """
-
 Neural topic modeling for long-form text.
 
 Input:
@@ -10,15 +9,6 @@ Output:
   - topic_id (int)
   - keywords (top TF-IDF terms for the cluster)
   - mentions (sentence spans w/ character offsets for localisation)
-
-
-15 window
-3 stride? won't that make sentences that don't overlap weaker signal? 
-
-multiple themes can be present in a single window, not necessarily one dominant topic
-
-topic-window similarity matrix - join topics 
-
 """
 
 import json
@@ -125,8 +115,9 @@ class NeuralTopicModeler:
         self,
         model_name: str = MODEL_CONFIGS["sentence_embedding"],
         stop_words: str = "english",
+        encoder: SentenceTransformer | None = None,
     ):
-        self.encoder = SentenceTransformer(model_name)
+        self.encoder = encoder or SentenceTransformer(model_name)
         self.stop_words = stop_words
 
     def build_windows(
@@ -196,18 +187,24 @@ class NeuralTopicModeler:
         topic_ids: List[int],
     ) -> Dict[int, Dict[str, float]]:
         topic_windows: Dict[int, List[int]] = {topic_id: [] for topic_id in topic_ids}
-        total_windows = sum(1 for window in window_topics if not window.get("is_noise"))
-        total_windows = max(1, total_windows)
+        scored_windows = []
         for window in window_topics:
             if window.get("is_noise"):
                 continue
+            scores = window.get("topic_scores") or {}
+            if not scores:
+                continue
+            scored_windows.append(window)
+
+        total_windows = max(1, len(scored_windows))
+        for window in scored_windows:
             window_idx = window.get("window_index")
             if window_idx is None:
                 continue
             scores = window.get("topic_scores") or {}
-            for topic_id in topic_ids:
-                if topic_id in scores:
-                    topic_windows[topic_id].append(int(window_idx))
+            best_topic = max(scores.items(), key=lambda kv: kv[1])[0]
+            if best_topic in topic_windows:
+                topic_windows[best_topic].append(int(window_idx))
 
         stats: Dict[int, Dict[str, float]] = {}
         for topic_id, indices in topic_windows.items():
@@ -539,6 +536,7 @@ def _topic_debug_stats(
         "score_stability_median": float(1 - np.median(score_entropies)) if score_entropies else None,
     }
 
+
 def _iter_sentence_span(mention: TopicMention):
     start = mention.sentence_index
     end = mention.end_sentence if mention.end_sentence is not None else mention.sentence_index
@@ -556,9 +554,6 @@ def count_mentions_per_sentence(topic_results: List[TopicResult]) -> Dict[int, i
             for idx in _iter_sentence_span(mention):
                 counts[idx] = counts.get(idx, 0) + 1
     return counts
-
-
-
 
 
 def collect_topic_mentions(topics_data):
@@ -883,6 +878,7 @@ def run_topic_modelling(
     soft_top_k_topics: Optional[int] = 3,
     use_pca: bool = True,
     pca_components: int = 50,
+    encoder: SentenceTransformer | None = None,
 ):
     """
     Batch topic modelling across all normalised, segmented text files.
@@ -891,7 +887,7 @@ def run_topic_modelling(
     so topic windows align to the sentence-level metrics that use window size 3.
     Output shape: data/analytics/topic_modelling/<category>/<name>/<name>_topics.json
     """
-    modeler = NeuralTopicModeler()
+    modeler = NeuralTopicModeler(encoder=encoder)
     normalised_root = text_path("processed", "normalised_segmented_texts")
     output_root = analytics_path("topic")
     output_root.mkdir(parents=True, exist_ok=True)

@@ -1,20 +1,10 @@
+"""Heatmap plotting utilities for topic metric reports."""
+
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-
-"""
-
-other ideas for plots?
-what are those pair plots, with grids, different vars? 
-
-
-"""
-
-
-
 def plot_topic_metric_heatmap(
     report: Dict[str, object],
     output_path,

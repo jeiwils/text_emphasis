@@ -1,24 +1,4 @@
-import json
-from pathlib import Path
-from typing import List, Optional, Tuple
-from spacy.tokens import Doc
-
-from x_configs import DEFAULT_WINDOW_SIZE, GENRES, load_spacy_model
-from a_preprocessing_cleaning import preprocess_all_pdfs
-from b_concept_embeddings import ConceptExtractor, generate_embeddings
-from c0_log_prob_metrics import WholeTextMetrics
-from c4_topic_modeling import run_topic_modelling
-from c1_syntactics import SyntaxAnalyzer
-from c2_lexico_semantics import LexicoSemanticsAnalyzer
-from c3_discourse import DiscourseAnalyzer
-from w_dashboard import run_dashboard
-from z_utils import analytics_path, iter_genre_author_dirs, text_path
-
-
-
 """
-
-
 Orchestrator for running all b- and c-layer metrics and saving outputs.
 
 Flow:
@@ -36,8 +16,26 @@ Flow:
    from cleaned-segmented texts,
    and writes combined window metrics to `data/analytics/window_metrics/<category>/<name>/<name>_window_metrics.json`
    with nested blocks: meta, syntax (meta/sentences/windows + heavy), lexico_semantics (same shape),
-   discourse (same shape), information_content_metrics (c0 windows)
+   discourse (same shape), log_prob (c0 windows)
 """
+
+import json
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+from spacy.tokens import Doc
+from sentence_transformers import SentenceTransformer
+
+from x_configs import DEFAULT_WINDOW_SIZE, GENRES, MODEL_CONFIGS, load_spacy_model
+from a_preprocessing_cleaning import preprocess_all_pdfs
+from b_concept_embeddings import ConceptExtractor, generate_embeddings
+from c0_log_prob_metrics import WholeTextMetrics
+from c4_topic_modeling import run_topic_modelling
+from c1_syntactics import SyntaxAnalyzer
+from c2_lexico_semantics import LexicoSemanticsAnalyzer
+from c3_discourse import DiscourseAnalyzer
+from w_dashboard import run_dashboard
+from z_utils import analytics_path, iter_genre_author_dirs, text_path
 
 _DASHBOARD_METRICS = {
     "discourse": {
@@ -95,7 +93,7 @@ def _prune_window_metrics(
     return pruned
 
 
-def run_concept_embeddings(top_n=100, use_existing=True, authors=None):
+def run_concept_embeddings(top_n=100, use_existing=True, authors=None, encoder=None):
     """
     Extract noun-phrase concepts and embeddings for all normalised texts.
     """
@@ -104,7 +102,7 @@ def run_concept_embeddings(top_n=100, use_existing=True, authors=None):
         print(f"No normalised texts found at {normalised_root}")
         return
 
-    extractor = ConceptExtractor()
+    extractor = ConceptExtractor(encoder=encoder)
     for genre, author, subdir in iter_genre_author_dirs(normalised_root, GENRES, authors):
         print(f"Processing concept embeddings: {genre}/{author}")
         for file in subdir.glob("*_normalised.json"):
@@ -377,7 +375,6 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True, authors=None):
                         "sentences": lex_metrics.get("sentences", []),
                         "windows": lex_windows,
                     },
-                    "information_content_metrics": log_prob_windows,
                     "log_prob": {
                         "meta": log_prob_meta,
                         "sentences": log_prob_sentences,
@@ -410,12 +407,14 @@ def run_all_metrics(mattr_window_size=50, use_existing=True, process_unknown=Tru
     """
     window_size = DEFAULT_WINDOW_SIZE
     run_preprocessing(process_unknown=process_unknown, use_existing=use_existing)
-    run_concept_embeddings(use_existing=use_existing)
+    shared_encoder = SentenceTransformer(MODEL_CONFIGS["sentence_embedding"])
+    run_concept_embeddings(use_existing=use_existing, encoder=shared_encoder)
     run_topic_modelling(
         use_existing=use_existing,
         base_window_size=window_size,
         window_multiple=5,
         window_stride=window_size,
+        encoder=shared_encoder,
     )
     run_corpus_metrics(use_existing=use_existing)
     run_windowed_metrics(mattr_window_size=mattr_window_size, use_existing=use_existing)

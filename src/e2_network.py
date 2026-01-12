@@ -1,3 +1,5 @@
+"""Network analysis for concept embeddings and topic co-occurrence."""
+
 from collections import Counter
 from itertools import combinations
 import json
@@ -21,18 +23,6 @@ from z_utils import (
     load_json,
     text_path,
 )
-
-"""
-
-TO DO:
-- make sure topic modelling networks are calculated across the same windows that the topic modeller produces them in... aggregated
-
-
-
-"""
-
-
-
 
 class NetworkAnalyzer:
     def build_network(

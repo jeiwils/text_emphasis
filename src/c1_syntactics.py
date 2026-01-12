@@ -1,12 +1,3 @@
-import statistics
-from pathlib import Path
-from typing import Optional
-
-import matplotlib.pyplot as plt
-
-from x_configs import DEFAULT_WINDOW_SIZE
-from z_utils import aggregate_windows, graph_path, load_json, sliding_windows
-
 """
 Sentence-level grammar metrics (clauses, syntactic depth, dependency complexity).
 
@@ -75,6 +66,15 @@ Sentence-level grammar metrics (clauses, syntactic depth, dependency complexity)
 
 
 """
+
+import statistics
+from pathlib import Path
+from typing import Optional
+
+import matplotlib.pyplot as plt
+
+from x_configs import DEFAULT_WINDOW_SIZE
+from z_utils import aggregate_windows, graph_path, load_json, sliding_windows
 
 
 class SyntaxAnalyzer:

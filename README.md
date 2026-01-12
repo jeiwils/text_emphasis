@@ -98,7 +98,6 @@ Dashboard metric set (pruned from window outputs)
 Topic modeling defaults and statistics
 - Embedding normalization: window/sentence embeddings are L2-normalized; mean topic centroids are L2 re-normalized before cosine similarity so scores stay on the unit sphere.
 - Dimensionality reduction: PCA runs before HDBSCAN (default 50 components; per-book overrides in metadata/x_configs).
-- Topic scoring defaults: soft top-k scoring with soft_top_k_topics=3 and soft_score_threshold=0.5; default window stride is 6; TOPIC_WINDOW_MULTIPLES=3 across categories. Dashboard correlations use hard topic labels by default, unless configured to use soft scores.
 - n-grams: topic modeling includes bi/tri-grams in keyword extraction.
 - Top-word overlap policy: optional downweighting/deduping of top words that recur across many clusters to improve exclusivity (documented here once finalized).
 

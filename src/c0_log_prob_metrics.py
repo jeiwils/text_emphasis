@@ -1,18 +1,4 @@
-import math
-import statistics
-from collections import Counter
-import numpy as np
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
-from z_utils import aggregate_windows, sliding_windows
-
 """
-
-
-TO DO:
-- rename to corpus metrics?
-- check issue with tokeniser 'Token indices sequence length is longer than the specified maximum sequence length for this model (79490 > 1024). Running this sequence through the model will result in indexing errors'
 Text-wide log-probability and surprisal metrics (no IO).
 
 {
@@ -61,9 +47,18 @@ Text-wide log-probability and surprisal metrics (no IO).
     ...
   ]
 }
-
-
 """
+
+import math
+import statistics
+from collections import Counter
+
+import numpy as np
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
+from z_utils import aggregate_windows, sliding_windows
 
 
 class WholeTextMetrics:
