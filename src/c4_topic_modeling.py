@@ -1,14 +1,65 @@
 """
 Neural topic modeling for long-form text.
 
-Input:
-- pre-segmented sentences with char offsets (normalised_segmented JSONL)
+Input (run_topic_modelling / load_segmented_topic_mentions):
+JSONL lines with:
+{
+  "sentence_id": 0,
+  "text": "Sentence text.",
+  "start_char": 0,
+  "end_char": 23
+}
 
-Output:
-- list of TopicResult objects:
-  - topic_id (int)
-  - keywords (top TF-IDF terms for the cluster)
-  - mentions (sentence spans w/ character offsets for localisation)
+Output (topics file):
+{
+  "meta": {
+    "filename": "book_normalised_segmented.jsonl",
+    "base_window_size": 3,
+    "window_multiple": 5,
+    "model_window_size": 15,
+    "window_stride": 6,
+    "num_sentences": 120,
+    "min_cluster_size": 5,
+    "min_samples": null,
+    "soft_score_threshold": 0.5,
+    "soft_top_k_topics": 3,
+    "use_pca": true,
+    "pca_components": 50
+  },
+  "topics": [
+    {
+      "topic_id": 0,
+      "keywords": ["term1", "term2", "..."],
+      "stats": {
+        "prevalence": 0.12,
+        "persistence": 2.3,
+        "coherence": 0.45,
+        "exclusivity": 0.21
+      },
+      "mentions": [
+        {
+          "sentence_index": 10,
+          "start_sentence": 10,
+          "end_sentence": 12,
+          "window_index": 4,
+          "start_char": 500,
+          "end_char": 620,
+          "text": "Window text ..."
+        }
+      ]
+    }
+  ],
+  "windows": [
+    {
+      "window_index": 0,
+      "start_sentence": 0,
+      "end_sentence": 14,
+      "topic_scores": {"0": 0.71, "1": 0.42},
+      "is_noise": false
+    }
+  ],
+  "mentions_per_sentence": {"0": 1, "1": 0, "...": 2}
+}
 """
 
 import json
@@ -187,14 +238,21 @@ class NeuralTopicModeler:
         topic_ids: List[int],
     ) -> Dict[int, Dict[str, float]]:
         topic_windows: Dict[int, List[int]] = {topic_id: [] for topic_id in topic_ids}
+        topic_score_sums: Dict[int, float] = {topic_id: 0.0 for topic_id in topic_ids}
         scored_windows = []
         for window in window_topics:
             if window.get("is_noise"):
                 continue
             scores = window.get("topic_scores") or {}
+            scored_windows.append(window)
             if not scores:
                 continue
-            scored_windows.append(window)
+            for topic_id, score in scores.items():
+                if topic_id in topic_score_sums:
+                    try:
+                        topic_score_sums[topic_id] += float(score)
+                    except (TypeError, ValueError):
+                        continue
 
         total_windows = max(1, len(scored_windows))
         for window in scored_windows:
@@ -202,14 +260,14 @@ class NeuralTopicModeler:
             if window_idx is None:
                 continue
             scores = window.get("topic_scores") or {}
-            best_topic = max(scores.items(), key=lambda kv: kv[1])[0]
-            if best_topic in topic_windows:
-                topic_windows[best_topic].append(int(window_idx))
+            for topic_id in scores.keys():
+                if topic_id in topic_windows:
+                    topic_windows[topic_id].append(int(window_idx))
 
         stats: Dict[int, Dict[str, float]] = {}
         for topic_id, indices in topic_windows.items():
             indices.sort()
-            prevalence = len(indices) / total_windows if total_windows else 0.0
+            prevalence = topic_score_sums.get(topic_id, 0.0) / total_windows if total_windows else 0.0
             if not indices:
                 stats[topic_id] = {"prevalence": 0.0, "persistence": 0.0}
                 continue

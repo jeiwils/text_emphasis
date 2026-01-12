@@ -1,88 +1,113 @@
 """
 Lexical and semantic content metrics (computation only).
 
+Input (LexicoSemanticsAnalyzer.analyze_document):
+{
+  "doc": "spaCy Doc with sentence boundaries",
+  "window_size": 3,
+  "mattr_window_size": 50,
+  "global_avg_freq": 12.4
+}
 
+Output:
 {
   "meta": {"window_size": 3, "num_sentences": 120},
-
   "sentences": [
     {
       "sentence_id": 0,
-      "token_count": 12, 
-      "content_count": 8, 
+      "token_count": 12,
+      "content_count": 8,
       "lexical_density": 0.62,
-      "information_content": 1.2, 
-      "information_content_values": [...],
-      "role_count": 2, 
-      "role_counts": {
-        "nsubj": 1, 
-        ...
-        },
-      "avg_word_freq": 14.2, 
-      "normalized_freq": 0.8, 
+      "information_content": 1.2,
+      "information_content_token_count": 8,
+      "information_content_values": [1.1, 1.3, ...],
+      "role_count": 2,
+      "role_counts": {"nsubj": 1, "dobj": 1, "iobj": 0, "pobj": 0},
+      "role_count_per_token": 0.166667,
+      "role_counts_per_token": {"nsubj": 0.083333, "dobj": 0.083333, "iobj": 0.0, "pobj": 0.0},
+      "avg_word_freq": 14.2,
+      "normalized_freq": 0.8,
       "content_function_ratio": 0.63,
-      "num_clauses": 2, 
-      "num_agents": 1, 
+      "avg_word_freq_token_count": 10,
+      "num_clauses": 2,
+      "num_agents": 1,
       "num_patients": 1,
+      "num_clauses_per_token": 0.166667,
+      "num_agents_per_token": 0.083333,
+      "num_patients_per_token": 0.083333,
       "semantic_structures": {
-        "clause_level_counts": {
-            "main": 1, 
-            ...
-            }, 
-        "num_clauses": 2, 
-            ...
-            }
-    },
-    ...
+        "clause_level_counts": {"main": 1, "subordinate": 1, "coordinate": 0},
+        "num_clauses": 2,
+        "num_agents": 1,
+        "num_patients": 1
+      }
+    }
   ],
-
-  "windows": [   # averaged numeric fields over the window
+  "windows": [
     {
       "start_sentence": 0,
       "end_sentence": 2,
-      "lexical_density": 0.61, 
-      "information_content": 1.1, 
+      "token_count": 36,
+      "content_count": 22,
+      "lexical_density": 0.611111,
+      "information_content": 1.1,
       "avg_word_freq": 12.0,
-      "normalized_freq": 0.76, 
-      "content_function_ratio": 0.6,
-      "num_clauses": 5, 
-      "num_agents": 2, 
-      "num_patients": 1, 
+      "normalized_freq": 0.76,
+      "content_function_ratio": 0.611111,
+      "num_clauses": 5,
+      "num_agents": 2,
+      "num_patients": 1,
       "role_count": 6,
-      "lexical_density_window": {
-        ...},
-      "information_content_window": {
-        ...},
-      "semantic_roles_window": {
-        ...},
-      "avg_word_freq_window": {
-        ...},
+      "role_count_per_token": 0.166667,
+      "num_clauses_per_token": 0.138889,
+      "num_agents_per_token": 0.055556,
+      "num_patients_per_token": 0.027778,
+      "num_agents_per_clause": 0.4,
+      "num_patients_per_clause": 0.2,
+      "role_count_per_clause": 1.2,
+      "role_counts_per_token": {"nsubj": 0.083333, "dobj": 0.083333, "iobj": 0.0, "pobj": 0.0},
+      "lexical_density_window": {"lexical_density": 0.611111, "token_count": 36, "content_count": 22},
+      "information_content_window": {"information_content": 1.1, "token_count": 18},
+      "semantic_roles_window": {"role_count": 6, "role_count_per_token": 0.166667, "token_count": 36},
+      "avg_word_freq_window": {"avg_word_freq": 12.0, "normalized_freq": 0.76, "token_count": 30},
       "semantic_structures_window": {
-        ...},
-      "mattr_window": {
-        ...}
-    },
-    ...
+        "clause_level_counts": {"main": 3, "subordinate": 2, "coordinate": 0},
+        "num_clauses": 5,
+        "num_agents": 2,
+        "num_patients": 1
+      },
+      "lexical_diversity_mattr": {"mattr_score": 0.68, "token_count": 180, "window_token_span": 50}
+    }
   ]
 }
-
-
 """
 
-import re
 import statistics
 
 import numpy as np
 
-from x_configs import DEFAULT_WINDOW_SIZE
+from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
 from z_utils import sliding_windows, aggregate_windows
 
-def _tokenize_words(text: str, lowercase: bool = True):
-    """Lightweight tokenizer for lexical diversity (MATTR)."""
-    tokens = re.findall(r"[A-Za-z0-9']+", text)
-    if lowercase:
-        tokens = [t.lower() for t in tokens]
-    return tokens
+def _tokenize_words_from_tokens(tokens, lowercase: bool = True):
+    """Tokenize using spaCy tokens for lexical diversity (MATTR)."""
+    words = []
+    for token in tokens:
+        if token.is_space or token.is_punct:
+            continue
+        text = token.text
+        if lowercase:
+            text = text.lower()
+        if text:
+            words.append(text)
+    return words
+
+
+def _tokenize_words(text: str, lowercase: bool = True, nlp=None):
+    """Tokenize with spaCy so MATTR matches pipeline tokenization."""
+    nlp = nlp or load_spacy_model()
+    doc = nlp(text)
+    return _tokenize_words_from_tokens(doc, lowercase=lowercase)
 
 
 def _moving_average_type_token_ratio(tokens, window_size: int = 50) -> float:
@@ -105,9 +130,9 @@ def _moving_average_type_token_ratio(tokens, window_size: int = 50) -> float:
     return round(statistics.mean(ttr_values), 3)
 
 
-def compute_mattr_metrics(text: str, window_size: int = 50, lowercase: bool = True):
+def compute_mattr_metrics(text: str, window_size: int = 50, lowercase: bool = True, nlp=None):
     """Compute MATTR over the whole text for inclusion in window metrics."""
-    words = _tokenize_words(text, lowercase=lowercase)
+    words = _tokenize_words(text, lowercase=lowercase, nlp=nlp)
     mattr = _moving_average_type_token_ratio(words, window_size=window_size)
     return {
         "mattr_score": mattr,
@@ -161,8 +186,8 @@ class LexicoSemanticsAnalyzer:
             return []
         metrics = []
         for i, window in enumerate(sliding_windows(sentences, window_size)):
-            window_text = " ".join(sent.text for sent in window)
-            tokens = _tokenize_words(window_text, lowercase=lowercase)
+            window_tokens = [t for sent in window for t in sent]
+            tokens = _tokenize_words_from_tokens(window_tokens, lowercase=lowercase)
             mattr = _moving_average_type_token_ratio(tokens, window_size=mattr_window_size) if tokens else 0.0
             metrics.append({
                 "mattr_score": mattr,
@@ -338,9 +363,9 @@ class LexicoSemanticsAnalyzer:
 
                 windowed_metrics.append({
                     "clause_level_counts": clause_counts_window,
-                    "total_clauses": total_clauses,
-                    "total_agents": total_agents,
-                    "total_patients": total_patients
+                    "num_clauses": total_clauses,
+                    "num_agents": total_agents,
+                    "num_patients": total_patients
                 })
 
         return clause_metrics_per_sentence, windowed_metrics
@@ -506,25 +531,13 @@ class LexicoSemanticsAnalyzer:
                 )
                 windows[window_idx]["information_content_token_count"] = info_tokens
                 windows[window_idx]["avg_word_freq_token_count"] = avg_word_tokens
-                windows[window_idx]["token_weighted_lexical_density"] = round(
-                    token_weighted_lexical_density, 6
-                )
                 windows[window_idx]["information_content"] = round(
-                    token_weighted_information_content, 6
-                )
-                windows[window_idx]["token_weighted_information_content"] = round(
                     token_weighted_information_content, 6
                 )
                 windows[window_idx]["avg_word_freq"] = round(
                     token_weighted_avg_word_freq, 6
                 )
-                windows[window_idx]["token_weighted_avg_word_freq"] = round(
-                    token_weighted_avg_word_freq, 6
-                )
                 windows[window_idx]["normalized_freq"] = round(
-                    token_weighted_normalized_freq, 6
-                )
-                windows[window_idx]["token_weighted_normalized_freq"] = round(
                     token_weighted_normalized_freq, 6
                 )
                 windows[window_idx]["content_function_ratio"] = round(
@@ -555,31 +568,19 @@ class LexicoSemanticsAnalyzer:
                     windows[window_idx]["num_agents_per_clause"] = 0.0
                     windows[window_idx]["num_patients_per_clause"] = 0.0
                     windows[window_idx]["role_count_per_clause"] = 0.0
-                windows[window_idx]["lexical_density_per_token"] = windows[window_idx]["lexical_density"]
-                windows[window_idx]["information_content_per_token"] = windows[window_idx]["information_content"]
-                windows[window_idx]["avg_word_freq_per_token"] = windows[window_idx]["avg_word_freq"]
-                windows[window_idx]["normalized_freq_per_token"] = windows[window_idx]["normalized_freq"]
-                windows[window_idx]["content_function_ratio_per_token"] = windows[window_idx]["content_function_ratio"]
-                windows[window_idx]["num_clauses_count"] = windows[window_idx]["num_clauses"]
-                windows[window_idx]["num_agents_count"] = windows[window_idx]["num_agents"]
-                windows[window_idx]["num_patients_count"] = windows[window_idx]["num_patients"]
-
-
         # Attach window-level metrics from individual analyzers for richer payloads
         for idx, win in enumerate(windows):
             if idx < len(lexical_density_win):
                 lex_win = lexical_density_win[idx]
                 if isinstance(lex_win, dict):
-                    lex_win["lexical_density"] = win.get("lexical_density_per_token", win.get("lexical_density"))
+                    lex_win["lexical_density"] = win.get("lexical_density")
                     lex_win["token_count"] = win.get("token_count", lex_win.get("token_count"))
                     lex_win["content_count"] = win.get("content_count", lex_win.get("content_count"))
                 win["lexical_density_window"] = lex_win
             if idx < len(info_content_win):
                 ic_win = info_content_win[idx]
                 if isinstance(ic_win, dict):
-                    ic_win["information_content"] = win.get(
-                        "information_content_per_token", win.get("information_content")
-                    )
+                    ic_win["information_content"] = win.get("information_content")
                     ic_win["token_count"] = win.get(
                         "information_content_token_count", ic_win.get("token_count")
                     )
@@ -599,15 +600,9 @@ class LexicoSemanticsAnalyzer:
             if idx < len(avg_word_freq_win):
                 freq_win = avg_word_freq_win[idx]
                 if isinstance(freq_win, dict):
-                    freq_win["avg_word_freq"] = win.get(
-                        "avg_word_freq_per_token", win.get("avg_word_freq")
-                    )
-                    freq_win["normalized_freq"] = win.get(
-                        "normalized_freq_per_token", win.get("normalized_freq")
-                    )
-                    freq_win["content_function_ratio"] = win.get(
-                        "content_function_ratio_per_token", win.get("content_function_ratio")
-                    )
+                    freq_win["avg_word_freq"] = win.get("avg_word_freq")
+                    freq_win["normalized_freq"] = win.get("normalized_freq")
+                    freq_win["content_function_ratio"] = win.get("content_function_ratio")
                     freq_win["token_count"] = win.get(
                         "avg_word_freq_token_count", freq_win.get("token_count")
                     )
@@ -615,7 +610,7 @@ class LexicoSemanticsAnalyzer:
             if idx < len(semantic_structures_win):
                 win["semantic_structures_window"] = semantic_structures_win[idx]
             if idx < len(mattr_windows):
-                win["mattr_window"] = mattr_windows[idx]
+                win["lexical_diversity_mattr"] = mattr_windows[idx]
 
         return {
             "meta": {

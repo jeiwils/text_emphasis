@@ -1,3 +1,26 @@
+"""
+Concept embeddings from normalized text (noun phrase extraction + embeddings).
+
+Input (generate_embeddings):
+{
+  "normalised_text_path": "data/texts/processed/normalised_texts/<category>/<name>_normalised.json",
+  "file_contents": {"text": "<normalized text string>"},
+  "top_n": 100
+}
+
+Output (return values):
+{
+  "normalised_text": "<string>",
+  "phrases": ["noun phrase 1", "noun phrase 2", "..."],
+  "embeddings": "numpy ndarray of shape (len(phrases), embedding_dim)"
+}
+
+Output files (written under data/embeddings/concept_embeddings/<category>/<name>/):
+- "<name>_phrases.pkl": List[str]
+- "<name>_embeddings.pkl": numpy ndarray (raw)
+- "<name>_embeddings_l2.pkl": numpy ndarray (L2-normalized)
+"""
+
 from typing import List, Dict, Tuple
 from collections import Counter
 from pathlib import Path

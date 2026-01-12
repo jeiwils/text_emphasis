@@ -1,54 +1,66 @@
 """
 Discourse-level metrics and cohesion across sentences (heuristic, no training).
 
+Input (DiscourseAnalyzer.analyze_text):
+{
+  "text": "<raw text string>",
+  "window_size": 3
+}
 
-Output shape (no IO):
+Output:
 {
   "meta": {"window_size": 3, "num_sentences": 80},
-
   "sentences": [
     {
-      "sentence_index": 0, 
+      "sentence_index": 0,
       "num_tokens": 12,
-      "explicit_connectives": 1, 
-      "connective_counts": {
-        "Temporal": 1, 
-        ...
-        },
-      "entity_overlap": 0, 
+      "pronoun_count": 1,
+      "explicit_connectives": 1,
+      "explicit_connectives_per_token": 0.083333,
+      "connective_counts": {"Temporal": 1, "Contingency": 0, "Comparison": 0, "Expansion": 0},
+      "connective_counts_per_token": {"Temporal": 0.083333, "Contingency": 0.0, "Comparison": 0.0, "Expansion": 0.0},
+      "entity_overlap": 0,
       "entity_overlap_ratio": 0.0,
-      "content_overlap": 0, 
+      "entity_overlap_per_token": 0.0,
+      "content_overlap": 0,
       "content_overlap_ratio": 0.0,
-      "pronoun_ratio": 0.08, 
+      "content_overlap_per_token": 0.0,
+      "pronoun_ratio": 0.083,
       "tense_shift": 0,
-      "dominant_relation": "Temporal", 
-      "verb_tense": "past"
-    },
-    ...
+      "dominant_relation": "Temporal",
+      "verb_tense": "past",
+      "noun_lemma_count": 5,
+      "content_lemma_count": 9
+    }
   ],
-
-  "windows": [ # averaged over the window
+  "windows": [
     {
       "start_sentence": 0,
       "end_sentence": 2,
-      "num_tokens": 11, 
-      "explicit_connectives": 0.3, 
-      "connective_counts": {
-        "Temporal": 0.3, 
-        ...
-        },
-      "entity_overlap": 0.3, 
-      "entity_overlap_ratio": 0.1,
-      "content_overlap": 0.6, 
-      "content_overlap_ratio": 0.2,
-      "pronoun_ratio": 0.05, 
-      "tense_shift": 0.3
-    },
-    ...
+      "num_tokens": 36,
+      "pronoun_count": 3,
+      "explicit_connectives": 2,
+      "connective_counts": {"Temporal": 2, "Contingency": 0, "Comparison": 0, "Expansion": 0},
+      "entity_overlap": 1,
+      "content_overlap": 2,
+      "noun_lemma_count": 12,
+      "content_lemma_count": 18,
+      "explicit_connectives_per_token": 0.055556,
+      "connective_counts_per_token": {"Temporal": 0.055556, "Contingency": 0.0, "Comparison": 0.0, "Expansion": 0.0},
+      "entity_overlap_per_token": 0.027778,
+      "content_overlap_per_token": 0.055556,
+      "pronoun_ratio": 0.083,
+      "entity_overlap_ratio": 0.083,
+      "content_overlap_ratio": 0.111,
+      "pronoun_ratio_per_token": 0.083,
+      "explicit_connectives_count": 2,
+      "entity_overlap_count": 1,
+      "content_overlap_count": 2,
+      "entity_overlap_ratio_per_noun_lemma": 0.083,
+      "content_overlap_ratio_per_content_lemma": 0.111
+    }
   ]
 }
-
-
 """
 
 import statistics

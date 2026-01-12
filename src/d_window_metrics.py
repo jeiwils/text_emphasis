@@ -53,6 +53,9 @@ _DASHBOARD_METRICS = {
         "num_patients_per_token",
         "role_count_per_token",
         "role_counts_per_token",
+        "num_agents_per_clause",
+        "num_patients_per_clause",
+        "role_count_per_clause",
     },
     "syntax": {
         "clause_counts_per_token",

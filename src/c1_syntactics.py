@@ -1,70 +1,59 @@
 """
-Sentence-level grammar metrics (clauses, syntactic depth, dependency complexity).
+Sentence-level grammar metrics (clauses, depth, dependency complexity).
 
+Input (SyntaxAnalyzer.analyze_document):
+{
+  "doc": "spaCy Doc with sentence boundaries",
+  "window_size": 3
+}
 
+Output:
 {
   "meta": {"window_size": 3, "num_sentences": 120},
-
   "sentences": [
     {
       "sentence_id": 0,
-      "clause_counts": {
-        "main": 1, 
-        ...
-        },
-      "clause_ratios": {
-        "subordination_ratio": 0.0, 
-        ...
-        },
-      "max_depth": 4, 
-      "mean_depth": 2.1, 
-      "median_depth": 2.0, 
+      "clause_counts": {"main": 1, "subordinate": 0, "coordinate": 0},
+      "clause_counts_per_token": {"main": 0.083333, "subordinate": 0.0, "coordinate": 0.0},
+      "clause_ratios": {"subordination_ratio": 0.0, "coordination_ratio": 0.0},
+      "max_depth": 4,
+      "mean_depth": 2.1,
+      "median_depth": 2.0,
       "depth_skew": 0.1,
       "avg_dependents_per_head": {
-        "main_clause": 2.1, 
-        ...
-        },
-      "avg_max_dependents_per_head": 5, 
-      "avg_mean_dependency_distance": 1.4
-    },
-    ...
+        "main_clause": 2.1,
+        "subordinate_clause": 0.0,
+        "coordinate_clause": 0.0
+      },
+      "avg_max_dependents_per_head": 5,
+      "avg_mean_dependency_distance": 1.4,
+      "token_count": 12
+    }
   ],
-
   "windows": [
     {
       "start_sentence": 0,
       "end_sentence": 2,
-      "clause_counts": { # averaged over the window
-        ...
-        }, 
-      "clause_ratios": { # averaged over the window
-        ...
-        },  
-      "max_depth": 3.3, 
-      "mean_depth": 1.9, 
-      "median_depth": 1.8, 
+      "token_count": 36,
+      "avg_tokens_per_sentence": 12.0,
+      "clause_counts_per_token": {"main": 0.083333, "subordinate": 0.0, "coordinate": 0.0},
+      "clause_ratios": {"subordination_ratio": 0.0, "coordination_ratio": 0.0},
+      "avg_counts_per_token": {"main": 0.083333, "subordinate": 0.0, "coordinate": 0.0},
+      "avg_ratios": {"subordination_ratio": 0.0, "coordination_ratio": 0.0},
+      "max_depth": 3.3,
+      "mean_depth": 1.9,
+      "median_depth": 1.8,
       "depth_skew": 0.2,
       "avg_dependents_per_head": {
-        ...
-        }, 
+        "main_clause": 2.2,
+        "subordinate_clause": 0.0,
+        "coordinate_clause": 0.0
+      },
       "avg_max_dependents_per_head": 4.3,
-      "avg_mean_dependency_distance": 1.5,
-      "avg_counts": {
-        ...
-        }, 
-      "avg_ratios": {
-        ...
-        }, 
-      "avg_max_depth": 3.3, 
-      "avg_mean_depth": 1.9,
-      "avg_median_depth": 1.8, 
-      "avg_depth_skew": 0.2
-    },
-    ...
+      "avg_mean_dependency_distance": 1.5
+    }
   ]
 }
-
-
 """
 
 import statistics
@@ -136,9 +125,9 @@ class SyntaxAnalyzer:
                 sentence_depths.append(
                     {
                         "max_depth": max(sent_depths),
-                        "mean_depth": round(statistics.mean(sent_depths), 2),
-                        "median_depth": round(statistics.median(sent_depths), 2),
-                        "depth_skew": round(statistics.mean(sent_depths) - statistics.median(sent_depths), 2),
+                        "mean_depth": round(statistics.mean(sent_depths), 6),
+                        "median_depth": round(statistics.median(sent_depths), 6),
+                        "depth_skew": round(statistics.mean(sent_depths) - statistics.median(sent_depths), 6),
                     }
                 )
 
@@ -189,18 +178,18 @@ class SyntaxAnalyzer:
             sentence_metrics.append(
                 {
                     "avg_dependents_per_head": {
-                        "main_clause": round(statistics.mean(dependents_per_head["main_clause"]), 2)
+                        "main_clause": round(statistics.mean(dependents_per_head["main_clause"]), 6)
                         if dependents_per_head["main_clause"]
                         else 0,
-                        "subordinate_clause": round(statistics.mean(dependents_per_head["subordinate_clause"]), 2)
+                        "subordinate_clause": round(statistics.mean(dependents_per_head["subordinate_clause"]), 6)
                         if dependents_per_head["subordinate_clause"]
                         else 0,
-                        "coordinate_clause": round(statistics.mean(dependents_per_head["coordinate_clause"]), 2)
+                        "coordinate_clause": round(statistics.mean(dependents_per_head["coordinate_clause"]), 6)
                         if dependents_per_head["coordinate_clause"]
                         else 0,
                     },
                     "avg_max_dependents_per_head": max(all_dependents, default=0),
-                    "avg_mean_dependency_distance": round(statistics.mean(dependency_distances), 2)
+                    "avg_mean_dependency_distance": round(statistics.mean(dependency_distances), 6)
                     if dependency_distances
                     else 0,
                 }
@@ -233,13 +222,13 @@ class SyntaxAnalyzer:
                     max_dependents = max(max_dependents, entry["max_dependents"])
 
                 windowed[idx]["avg_dependents_per_head"] = {
-                    clause_key: round(total_sums[clause_key] / total_counts[clause_key], 2)
+                    clause_key: round(total_sums[clause_key] / total_counts[clause_key], 6)
                     if total_counts[clause_key]
                     else 0
                     for clause_key in total_sums
                 }
                 windowed[idx]["avg_mean_dependency_distance"] = (
-                    round(distance_sum / distance_count, 2) if distance_count else 0
+                    round(distance_sum / distance_count, 6) if distance_count else 0
                 )
                 windowed[idx]["avg_max_dependents_per_head"] = max_dependents
 

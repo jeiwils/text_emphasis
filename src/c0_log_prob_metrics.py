@@ -1,50 +1,65 @@
 """
 Text-wide log-probability and surprisal metrics (no IO).
 
+Input (build_metrics_for_text):
+{
+  "text": "<raw text string>",
+  "filename": "book1.txt",
+  "window_size": 3,
+  "sentence_spans": [[0, 42], [43, 88], ...]  # optional; list of [start_char, end_char]
+}
+
+Output:
 {
   "meta": {
     "filename": "book1.txt",
     "window_size": 3,
     "num_sentences": 120,
     "model": "gpt2",
-    "avg_log_prob": -2.31,  # or null if no tokens scored
+    "avg_log_prob": -2.31
   },
-
   "sentences": [
     {
       "sentence_id": 0,
       "sentence_log_probs": [-3.1, -2.7, ...],
       "sentence_log_prob_metrics": {
-        "sum_log_prob": -23.1, 
-        "mean_log_prob": -2.3, 
-        "perplexity": 9.97, 
+        "sum_log_prob": -23.1,
+        "mean_log_prob": -2.3,
+        "perplexity": 9.97,
         "num_tokens": 10
-        },
+      },
       "sentence_surprisal_metrics": {
-        "mean_surprisal": 2.31, 
-        "surprisal_variance": 0.12, 
+        "mean_surprisal": 2.31,
+        "surprisal_variance": 0.12,
         "num_tokens": 10
-    },
-    ...
+      }
+    }
   ],
-
   "windows": [
     {
       "start_sentence": 0,
       "end_sentence": 2,
       "sentence_log_prob_metrics": {
-        "sum_log_prob": -69.3, 
-        "mean_log_prob": -2.31, 
-        "perplexity": 10.08, 
+        "sum_log_prob": -69.3,
+        "mean_log_prob": -2.31,
+        "perplexity": 10.08,
         "num_tokens": 30
-        },
+      },
       "sentence_surprisal_metrics": {
-        "mean_surprisal": 2.28, 
-        "surprisal_variance": 0.08, 
+        "mean_surprisal": 2.28,
+        "surprisal_variance": 0.08,
         "num_tokens": 30
-        }
-    },
-    ...
+      },
+      "token_weighted_mean_log_prob": -2.31,
+      "token_weighted_perplexity": 10.08,
+      "token_weighted_mean_surprisal": 2.28,
+      "token_weighted_surprisal_variance": 0.08,
+      "mean_log_prob_per_token": -2.31,
+      "perplexity_per_token": 10.08,
+      "mean_surprisal_per_token": 2.28,
+      "surprisal_variance_per_token": 0.08,
+      "token_count": 30
+    }
   ]
 }
 """
@@ -361,6 +376,17 @@ class WholeTextMetrics:
                 windows[window_idx]["token_weighted_surprisal_variance"] = round(
                     token_weighted_surprisal_variance, 6
                 )
+                windows[window_idx]["sentence_log_prob_metrics"] = {
+                    "sum_log_prob": round(sum_log_prob, 6),
+                    "mean_log_prob": round(token_weighted_mean_log_prob, 6),
+                    "perplexity": round(token_weighted_perplexity, 6),
+                    "num_tokens": total_tokens,
+                }
+                windows[window_idx]["sentence_surprisal_metrics"] = {
+                    "mean_surprisal": round(token_weighted_mean_surprisal, 6),
+                    "surprisal_variance": round(token_weighted_surprisal_variance, 6),
+                    "num_tokens": total_tokens,
+                }
                 windows[window_idx]["mean_log_prob_per_token"] = windows[window_idx][
                     "token_weighted_mean_log_prob"
                 ]
