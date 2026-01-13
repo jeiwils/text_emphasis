@@ -145,8 +145,8 @@ def run_dashboard(
     Build topic correlation outputs from window metrics and write JSON outputs.
 
     Outputs (per text):
-      data/analytics/dashboard/<category>/<name>/<name>_topic_correlations.json
-      data/analytics/dashboard/<category>/<name>/<name>_central_topic_correlations.json
+      data/analytics/dashboard/<genre>/<author>/<text>/<text>_topic_correlations.json
+      data/analytics/dashboard/<genre>/<author>/<text>/<text>_central_topic_correlations.json
     """
     output_root = analytics_path("dashboard")
     output_root.mkdir(parents=True, exist_ok=True)
@@ -154,9 +154,10 @@ def run_dashboard(
     window_metric_files = _find_window_metrics_files()
 
     for file in window_metric_files:
-        category = file.parent.parent.name
+        genre = file.parent.parent.parent.name
+        author = file.parent.parent.name
         text_name = file.parent.name
-        out_dir = output_root / category / text_name
+        out_dir = output_root / genre / author / text_name
         out_dir.mkdir(parents=True, exist_ok=True)
 
         topic_file = out_dir / f"{text_name}_topic_correlations.json"

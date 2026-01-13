@@ -27,7 +27,12 @@ from spacy.tokens import Doc
 from sentence_transformers import SentenceTransformer
 
 from x_configs import DEFAULT_WINDOW_SIZE, GENRES, MODEL_CONFIGS, load_spacy_model
-from a_preprocessing_cleaning import preprocess_all_pdfs
+from a_preprocessing_cleaning import (
+    WEB_CONFIGS,
+    TextPreprocessor,
+    preprocess_all_pdfs,
+    preprocess_web_story,
+)
 from b_concept_embeddings import ConceptExtractor, generate_embeddings
 from c0_log_prob_metrics import WholeTextMetrics
 from c4_topic_modeling import run_topic_modelling
@@ -406,6 +411,14 @@ def run_preprocessing(process_unknown=True, use_existing=True):
     """
     Run PDF preprocessing to produce cleaned/normalised corpora.
     """
+    preproc = TextPreprocessor()
+    for story_key, config in WEB_CONFIGS.items():
+        preprocess_web_story(
+            story_key,
+            preproc,
+            config,
+            use_existing=use_existing,
+        )
     preprocess_all_pdfs(process_unknown=process_unknown, use_existing=use_existing)
 
 

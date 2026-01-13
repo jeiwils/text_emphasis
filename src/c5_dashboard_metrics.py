@@ -76,6 +76,8 @@ Output (build_topic_correlation_report):
         "syntax.mean_depth": {
           "pearson_r": 0.32,
           "p_value": 0.04,
+          "pearson_r_binary": 0.28,
+          "p_value_binary": 0.05,
           "n": 40,
           "mean_with_topic": 2.1,
           "mean_without_topic": 1.8
@@ -224,17 +226,25 @@ def collect_window_topic_scores(
     *,
     soft_score_threshold: Optional[float],
     soft_top_k: Optional[int],
-    window_count: int,
+    window_entries: List[Dict[str, object]],
 ) -> List[Dict[int, float]]:
     if not topics_data or not isinstance(topics_data, dict):
         raise ValueError("Expected topics_data dict for topic scores")
 
     windows = topics_data.get("windows") or []
-    scores_by_window: List[Dict[int, float]] = []
-    for window in windows[:window_count]:
+    if not window_entries:
+        return []
+
+    topic_windows = []
+    for window in windows:
         if window.get("is_noise"):
-            scores_by_window.append({})
             continue
+        try:
+            start_sentence = int(window.get("start_sentence", 0))
+            end_sentence = int(window.get("end_sentence", start_sentence))
+        except (TypeError, ValueError):
+            continue
+
         scores = window.get("topic_scores") or []
         items = []
         for entry in scores:
@@ -250,10 +260,36 @@ def collect_window_topic_scores(
             items = items[:soft_top_k]
         if soft_score_threshold is not None:
             items = [(topic_id, score) for topic_id, score in items if score >= soft_score_threshold]
-        scores_by_window.append({topic_id: score for topic_id, score in items})
+        if items:
+            topic_windows.append((start_sentence, end_sentence, items))
 
-    if len(scores_by_window) < window_count:
-        scores_by_window.extend([{} for _ in range(window_count - len(scores_by_window))])
+    scores_by_window: List[Dict[int, float]] = []
+    for window in window_entries:
+        try:
+            metric_start = int(window.get("start_sentence", 0))
+            metric_end = int(window.get("end_sentence", metric_start))
+        except (TypeError, ValueError):
+            scores_by_window.append({})
+            continue
+
+        score_sums: Dict[int, float] = {}
+        weight_sums: Dict[int, float] = {}
+        for start_sentence, end_sentence, items in topic_windows:
+            if end_sentence < metric_start or start_sentence > metric_end:
+                continue
+            overlap = min(metric_end, end_sentence) - max(metric_start, start_sentence) + 1
+            if overlap <= 0:
+                continue
+            for topic_id, score in items:
+                score_sums[topic_id] = score_sums.get(topic_id, 0.0) + score * overlap
+                weight_sums[topic_id] = weight_sums.get(topic_id, 0.0) + overlap
+
+        window_scores = {
+            topic_id: score_sums[topic_id] / weight_sums[topic_id]
+            for topic_id in score_sums
+            if weight_sums.get(topic_id)
+        }
+        scores_by_window.append(window_scores)
 
     return scores_by_window
 
@@ -454,7 +490,7 @@ def build_topic_correlation_report(
             topics_data,
             soft_score_threshold=score_threshold,
             soft_top_k=score_top_k,
-            window_count=len(window_table),
+            window_entries=window_entries,
         )
         if use_soft_scores
         else [{} for _ in range(len(window_table))]
@@ -502,12 +538,37 @@ def build_topic_correlation_report(
                 permutations=permutations,
                 rng=rng,
             )
+            binary_presences = [1.0 if p > 0 else 0.0 for p in presences]
+            corr_binary = pearson_correlation(binary_presences, values)
+            p_value_binary = (
+                block_permutation_p_value(
+                    binary_presences,
+                    values,
+                    block_size=block_size,
+                    permutations=permutations,
+                    rng=rng,
+                )
+                if corr_binary is not None
+                else None
+            )
+            mean_with = (
+                statistics.mean(_require_numbers(values_with, label=f"{metric}.with_topic"))
+                if values_with
+                else None
+            )
+            mean_without = (
+                statistics.mean(_require_numbers(values_without, label=f"{metric}.without_topic"))
+                if values_without
+                else None
+            )
             metric_correlations[metric] = {
                 "pearson_r": corr,
                 "p_value": p_value,
+                "pearson_r_binary": corr_binary,
+                "p_value_binary": p_value_binary,
                 "n": len(values),
-                "mean_with_topic": statistics.mean(_require_numbers(values_with, label=f"{metric}.with_topic")),
-                "mean_without_topic": statistics.mean(_require_numbers(values_without, label=f"{metric}.without_topic")),
+                "mean_with_topic": mean_with,
+                "mean_without_topic": mean_without,
             }
 
         if metric_correlations:
