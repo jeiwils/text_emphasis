@@ -10,9 +10,9 @@ The pipeline analyzes textual emphasis using linguistic metrics, topic modeling,
 - `python -m w_dashboard` builds per-text topic correlation outputs and per-genre central topic presence correlations.
 
 Note: `python -m w_dashboard` requires window metrics produced by `python -m d_window_metrics` and writes:
-- `data/analytics/dashboard/<category>/<name>/<name>_dashboard.json`
-- `data/analytics/dashboard/<category>/<name>/<name>_topic_correlations.json`
-- `data/analytics/dashboard/<category>/<name>/<name>_central_topic_correlations.json`
+- `data/results/dashboard/<category>/<name>/<name>_dashboard.json`
+- `data/results/dashboard/<category>/<name>/<name>_topic_correlations.json`
+- `data/results/dashboard/<category>/<name>/<name>_central_topic_correlations.json`
 
 ## Central topics (top 60th percentile; capped to top_n)
 - Centrality selection:
@@ -48,10 +48,9 @@ Note: `python -m w_dashboard` requires window metrics produced by `python -m d_w
 - Structure (window-level, used in correlations):
   - clause_counts_per_token by clause type; clause_ratios by clause type.
   - avg_dependents_per_head by clause type.
-  - avg_mean_dependency_distance, mean_depth, median_depth, max_depth, depth_skew, punctuation_per_token.
+  - avg_mean_dependency_distance, median_depth, max_depth, depth_skew, punctuation_per_token.
 - Structure (text-level dashboard row):
-  - mean_dependency_depth: mean across windows of mean_depth.
-  - max_dependency_depth: max across windows of max_depth (window max_depth is the mean of sentence max_depth).
+- max_dependency_depth: max across windows of max_depth (window max_depth is the max of sentence max_depth).
   - clause_density: mean across windows of sum(clause_counts_per_token).
   - avg_dependents_per_head: mean across windows of the per-window mean across clause types.
   - clause_ratios: mean across windows.
@@ -87,8 +86,7 @@ Note: `python -m w_dashboard` requires window metrics produced by `python -m d_w
   - windowed metrics use cleaned segmented sentences for alignment;
   - concept embeddings use full normalised text.
 - Correlations:
-  - metric list is flattened per-window metrics, then filters length metrics and excludes lexico_semantics.lexical_density,
-    discourse.pronoun_ratio, and agent/patient/role counts.
+  - metric list is flattened per-window metrics (sentence indices stripped).
 - Significance:
   - Pearson r omitted when n < 2 or either variable is constant;
   - block permutation with contiguous blocks (default block_size=5, permutations=2000), two-sided on |r|;
@@ -99,5 +97,5 @@ Note: `python -m w_dashboard` requires window metrics produced by `python -m d_w
   - rows with n <= 3 are skipped.
 - Inputs and outputs:
   - Raw PDFs expected under `data/texts/raw/` (organized by genre/author).
-  - Processed texts live under `data/texts/processed/`; analytics outputs under `data/analytics/`.
+  - Processed texts live under `data/texts/processed/`; analytics outputs under `data/analytics/` (corpus_analytics, topic_modelling, window_metrics, embeddings); results under `data/results/` (dashboard, figures).
 - Set `x_configs.model` to the desired causal LM before running log-prob metrics.

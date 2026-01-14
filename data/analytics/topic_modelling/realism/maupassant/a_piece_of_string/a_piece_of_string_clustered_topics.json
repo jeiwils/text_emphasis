@@ -6,8 +6,8 @@
     "model_window_size": 15,
     "window_stride": 3,
     "num_sentences": 176,
-    "min_cluster_size": 5,
-    "min_samples": null,
+    "min_cluster_size": 3,
+    "min_samples": 2,
     "soft_score_threshold": 0.5,
     "soft_top_k_topics": 3,
     "use_pca": true,
@@ -17,267 +17,38 @@
     {
       "topic_id": 2,
       "keywords": [
-        "try",
-        "party",
-        "mirror",
-        "neck",
-        "yes",
-        "ask",
-        "success",
-        "near"
-      ],
-      "stats": {
-        "prevalence": 0.7273547864974813,
-        "persistence": 9.4,
-        "coherence": 0.28131168032095105,
-        "exclusivity": 0.9375
-      },
-      "mentions": [
-        {
-          "sentence_index": 30,
-          "end_sentence": 44,
-          "window_index": 10,
-          "start_char": 3071,
-          "end_char": 3830,
-          "text": "every one want to go it be very exclusive and they be not give many invitation to clerk the whole ministry will be there she star at he angrily and say impatiently and what do you expect i to wear if i go he have not think of that he stammer why the dress you go to the theatre in it seem very nice to i he stop stun distressed to see his wife cry two large tear run slowly from the corner of her eye towards the corner of her mouth he stutter what be the matter what be the matter with great effort she overcome her grief and reply in a calm voice as she wipe her wet cheek nothing only i have no dress and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde"
-        },
-        {
-          "sentence_index": 33,
-          "end_sentence": 47,
-          "window_index": 11,
-          "start_char": 3276,
-          "end_char": 4204,
-          "text": "he have not think of that he stammer why the dress you go to the theatre in it seem very nice to i he stop stun distressed to see his wife cry two large tear run slowly from the corner of her eye towards the corner of her mouth he stutter what be the matter what be the matter with great effort she overcome her grief and reply in a calm voice as she wipe her wet cheek nothing only i have no dress and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc"
-        },
-        {
-          "sentence_index": 36,
-          "end_sentence": 50,
-          "window_index": 12,
-          "start_char": 3375,
-          "end_char": 4519,
-          "text": "he stop stun distressed to see his wife cry two large tear run slowly from the corner of her eye towards the corner of her mouth he stutter what be the matter what be the matter with great effort she overcome her grief and reply in a calm voice as she wipe her wet cheek nothing only i have no dress and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress"
-        },
-        {
-          "sentence_index": 39,
-          "end_sentence": 53,
-          "window_index": 13,
-          "start_char": 3534,
-          "end_char": 4622,
-          "text": "what be the matter with great effort she overcome her grief and reply in a calm voice as she wipe her wet cheek nothing only i have no dress and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress  the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however"
-        },
-        {
-          "sentence_index": 42,
-          "end_sentence": 56,
-          "window_index": 14,
-          "start_char": 3675,
-          "end_char": 4790,
-          "text": "and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress  the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear"
-        },
-        {
-          "sentence_index": 45,
-          "end_sentence": 59,
-          "window_index": 15,
-          "start_char": 3831,
-          "end_char": 4925,
-          "text": "how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress  the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year"
-        },
-        {
-          "sentence_index": 48,
-          "end_sentence": 62,
-          "window_index": 16,
-          "start_char": 4205,
-          "end_char": 5092,
-          "text": "he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress  the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year for ten franc you could get two or three magnificent rose she be not convince no there be nothing more humiliating than look poor in the middle of a lot of rich woman"
-        },
-        {
-          "sentence_index": 51,
-          "end_sentence": 65,
-          "window_index": 17,
-          "start_char": 4520,
-          "end_char": 5201,
-          "text": " the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year for ten franc you could get two or three magnificent rose she be not convince no there be nothing more humiliating than look poor in the middle of a lot of rich woman how stupid you be her husband cry go and see your friend madame forestier and ask she to lend you some jewel"
-        },
-        {
-          "sentence_index": 54,
-          "end_sentence": 68,
-          "window_index": 18,
-          "start_char": 4623,
-          "end_char": 5268,
-          "text": "one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year for ten franc you could get two or three magnificent rose she be not convince no there be nothing more humiliating than look poor in the middle of a lot of rich woman how stupid you be her husband cry go and see your friend madame forestier and ask she to lend you some jewel you know she well enough for that she utter a cry of joy of course"
-        },
-        {
-          "sentence_index": 57,
-          "end_sentence": 71,
-          "window_index": 19,
-          "start_char": 4791,
-          "end_char": 5491,
-          "text": "i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year for ten franc you could get two or three magnificent rose she be not convince no there be nothing more humiliating than look poor in the middle of a lot of rich woman how stupid you be her husband cry go and see your friend madame forestier and ask she to lend you some jewel you know she well enough for that she utter a cry of joy of course i have not think of that the next day she go to her friend 's house and tell she of her distress madame forestier go to her mirror wardrobe take out a large box bring it back open it and say to madame loisel choose my dear"
-        },
-        {
-          "sentence_index": 60,
-          "end_sentence": 74,
-          "window_index": 20,
-          "start_char": 4926,
-          "end_char": 5751,
-          "text": "for ten franc you could get two or three magnificent rose she be not convince no there be nothing more humiliating than look poor in the middle of a lot of rich woman how stupid you be her husband cry go and see your friend madame forestier and ask she to lend you some jewel you know she well enough for that she utter a cry of joy of course i have not think of that the next day she go to her friend 's house and tell she of her distress madame forestier go to her mirror wardrobe take out a large box bring it back open it and say to madame loisel choose my dear first she see some bracelet then a pearl necklace then a gold venetian cross set with precious stone of exquisite craftsmanship she try on the jewelry in the mirror hesitate could not bear to part with they to give they back she keep ask you have nothing else"
-        },
-        {
-          "sentence_index": 63,
-          "end_sentence": 77,
-          "window_index": 21,
-          "start_char": 5093,
-          "end_char": 5913,
-          "text": "how stupid you be her husband cry go and see your friend madame forestier and ask she to lend you some jewel you know she well enough for that she utter a cry of joy of course i have not think of that the next day she go to her friend 's house and tell she of her distress madame forestier go to her mirror wardrobe take out a large box bring it back open it and say to madame loisel choose my dear first she see some bracelet then a pearl necklace then a gold venetian cross set with precious stone of exquisite craftsmanship she try on the jewelry in the mirror hesitate could not bear to part with they to give they back she keep ask you have nothing else why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire"
-        },
-        {
-          "sentence_index": 66,
-          "end_sentence": 80,
-          "window_index": 22,
-          "start_char": 5202,
-          "end_char": 6113,
-          "text": "you know she well enough for that she utter a cry of joy of course i have not think of that the next day she go to her friend 's house and tell she of her distress madame forestier go to her mirror wardrobe take out a large box bring it back open it and say to madame loisel choose my dear first she see some bracelet then a pearl necklace then a gold venetian cross set with precious stone of exquisite craftsmanship she try on the jewelry in the mirror hesitate could not bear to part with they to give they back she keep ask you have nothing else why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this"
-        },
-        {
-          "sentence_index": 69,
-          "end_sentence": 83,
-          "window_index": 23,
-          "start_char": 5269,
-          "end_char": 6228,
-          "text": "i have not think of that the next day she go to her friend 's house and tell she of her distress madame forestier go to her mirror wardrobe take out a large box bring it back open it and say to madame loisel choose my dear first she see some bracelet then a pearl necklace then a gold venetian cross set with precious stone of exquisite craftsmanship she try on the jewelry in the mirror hesitate could not bear to part with they to give they back she keep ask you have nothing else why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure "
-        },
-        {
-          "sentence_index": 72,
-          "end_sentence": 86,
-          "window_index": 24,
-          "start_char": 5492,
-          "end_char": 6361,
-          "text": "first she see some bracelet then a pearl necklace then a gold venetian cross set with precious stone of exquisite craftsmanship she try on the jewelry in the mirror hesitate could not bear to part with they to give they back she keep ask you have nothing else why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure  the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy"
-        },
-        {
-          "sentence_index": 75,
-          "end_sentence": 89,
-          "window_index": 25,
-          "start_char": 5752,
-          "end_char": 6490,
-          "text": "why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure  the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she"
-        },
-        {
-          "sentence_index": 78,
-          "end_sentence": 92,
-          "window_index": 26,
-          "start_char": 5914,
-          "end_char": 6956,
-          "text": "her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure  the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time"
-        },
-        {
-          "sentence_index": 81,
-          "end_sentence": 95,
-          "window_index": 27,
-          "start_char": 6114,
-          "end_char": 7280,
-          "text": "why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure  the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back"
-        },
-        {
-          "sentence_index": 84,
-          "end_sentence": 98,
-          "window_index": 28,
-          "start_char": 6229,
-          "end_char": 7403,
-          "text": "the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair"
-        },
-        {
-          "sentence_index": 87,
-          "end_sentence": 101,
-          "window_index": 29,
-          "start_char": 6362,
-          "end_char": 7757,
-          "text": "all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day"
-        },
-        {
-          "sentence_index": 90,
-          "end_sentence": 104,
-          "window_index": 30,
-          "start_char": 6491,
-          "end_char": 7952,
-          "text": "she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock"
-        },
-        {
-          "sentence_index": 93,
-          "end_sentence": 107,
-          "window_index": 31,
-          "start_char": 6957,
-          "end_char": 8139,
-          "text": "he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck"
-        },
-        {
-          "sentence_index": 96,
-          "end_sentence": 110,
-          "window_index": 32,
-          "start_char": 7281,
-          "end_char": 8238,
-          "text": "wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck what be the matter ask her husband already half undressed she turn towards he panicstricken i have"
-        },
-        {
-          "sentence_index": 99,
-          "end_sentence": 113,
-          "window_index": 33,
-          "start_char": 7404,
-          "end_char": 8312,
-          "text": "when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck what be the matter ask her husband already half undressed she turn towards he panicstricken i have i have i no long have madame forestier 's necklace he stand up distraught"
-        },
-        {
-          "sentence_index": 102,
-          "end_sentence": 116,
-          "window_index": 34,
-          "start_char": 7758,
-          "end_char": 8322,
-          "text": "they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck what be the matter ask her husband already half undressed she turn towards he panicstricken i have i have i no long have madame forestier 's necklace he stand up distraught what how "
-        },
-        {
-          "sentence_index": 105,
-          "end_sentence": 119,
-          "window_index": 35,
-          "start_char": 7953,
-          "end_char": 8453,
-          "text": "in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck what be the matter ask her husband already half undressed she turn towards he panicstricken i have i have i no long have madame forestier 's necklace he stand up distraught what how  that be impossible they look in the fold of her dress in the fold of her cloak in her pocket everywhere but they could not find it"
-        },
-        {
-          "sentence_index": 108,
-          "end_sentence": 122,
-          "window_index": 36,
-          "start_char": 8140,
-          "end_char": 8560,
-          "text": "what be the matter ask her husband already half undressed she turn towards he panicstricken i have i have i no long have madame forestier 's necklace he stand up distraught what how  that be impossible they look in the fold of her dress in the fold of her cloak in her pocket everywhere but they could not find it be you sure you still have it on when you leave the ball he ask yes i touch it in the hall at the ministry"
-        },
-        {
-          "sentence_index": 114,
-          "end_sentence": 128,
-          "window_index": 38,
-          "start_char": 8313,
-          "end_char": 8697,
-          "text": "what how  that be impossible they look in the fold of her dress in the fold of her cloak in her pocket everywhere but they could not find it be you sure you still have it on when you leave the ball he ask yes i touch it in the hall at the ministry but if you have lose it in the street we would have hear it fall it must be in the cab yes that be probably it do you take his number no"
-        }
-      ]
-    },
-    {
-      "topic_id": 0,
-      "keywords": [
         "thousand",
         "jeweler",
         "thousand franc",
         "return",
-        "note",
-        "louis",
-        "anguish",
-        "sell"
+        "franc",
+        "thirtysix",
+        "consult",
+        "rest"
       ],
       "stats": {
-        "prevalence": 0.5223600065454523,
-        "persistence": 6.0,
-        "coherence": 0.7513510767332438,
-        "exclusivity": 1.0
+        "prevalence": 0.29330329367747676,
+        "persistence": 6.666666666666667,
+        "coherence": 0.622987587589649,
+        "exclusivity": 0.96875
       },
       "mentions": [
+        {
+          "sentence_index": 123,
+          "end_sentence": 137,
+          "window_index": 41,
+          "start_char": 8561,
+          "end_char": 9057,
+          "text": "but if you have lose it in the street we would have hear it fall it must be in the cab yes that be probably it do you take his number no and you do not you notice it no they star at each other stun at last loisel put his clothe on again i be go back he say over the whole route we walk see if i can find it he leave she remain in her ball dress all evening without the strength to go to bed sit on a chair with no fire her mind blank her husband return at about seven o'clock he have find nothing"
+        },
+        {
+          "sentence_index": 126,
+          "end_sentence": 140,
+          "window_index": 42,
+          "start_char": 8652,
+          "end_char": 9334,
+          "text": "that be probably it do you take his number no and you do not you notice it no they star at each other stun at last loisel put his clothe on again i be go back he say over the whole route we walk see if i can find it he leave she remain in her ball dress all evening without the strength to go to bed sit on a chair with no fire her mind blank her husband return at about seven o'clock he have find nothing he go to the police to the newspaper to offer a reward to the cab company everywhere the tiny glimmer of hope lead he she wait all day in the same state of blank despair from before this frightful disaster loisel return in the evening a hollow pale figure he have find nothing"
+        },
         {
           "sentence_index": 129,
           "end_sentence": 143,
@@ -371,46 +142,22 @@
     {
       "topic_id": 1,
       "keywords": [
-        "dream",
-        "come home",
+        "invitation",
         "mme",
-        "home",
-        "table",
-        "dinner",
-        "regret",
-        "envy"
+        "think lovely",
+        "evening monday",
+        "delighted husband hop",
+        "delighted husband",
+        "monday january",
+        "monday"
       ],
       "stats": {
-        "prevalence": 0.5712289797498825,
-        "persistence": 8.0,
-        "coherence": 0.7555859612616868,
-        "exclusivity": 1.0
+        "prevalence": 0.2146351417669883,
+        "persistence": 5.0,
+        "coherence": 0.7482258331403789,
+        "exclusivity": 0.96875
       },
       "mentions": [
-        {
-          "sentence_index": 0,
-          "end_sentence": 14,
-          "window_index": 0,
-          "start_char": 0,
-          "end_char": 2056,
-          "text": "guy de maupassant the necklace she be one of those pretty and charming girl bear as if by an error of fate into a family of clerk she have no dowry no expectation no mean of becoming know understood love or wed by a man of wealth and distinction and so she let herself be married to a minor official at the ministry of education she dress plainly because she have never be able to afford anything well but she be as unhappy as if she have once be wealthy woman do not belong to a caste or class their beauty grace and natural charm take the place of birth and family natural delicacy instinctive elegance and a quick wit determine their place in society and make the daughter of commoner the equal of the very fine lady she suffer endlessly feel she be entitle to all the delicacy and luxury of life she suffer because of the poorness of her house as she look at the dirty wall the wornout chair and the ugly curtain all these thing that another woman of her class would not even have notice torment she and make she resentful the sight of the little brenton girl who do her housework fill she with terrible regret and hopeless fantasy she dream of silent antechamber hang with oriental tapestry light from above by torch in bronze holder while two tall footman in kneelength breech nap in huge armchair sleepy from the stove 's oppressive warmth she dream of vast live room furnish in rare old silk elegant furniture load with priceless ornament and invite small room perfume make for afternoon chat with close friend famous seek after man who all woman envy and desire when she sit down to dinner at a round table cover with a threedayold cloth opposite her husband who lift the lid off the soup shout excitedly ah beef stew what could be well she dream of fine dinner of shin silverware of tapestry which people the wall with figure from another time and strange bird in fairy forest she dream of delicious dish serve on wonderful plate of whisper gallantry listen to with an inscrutable smile as one eat the pink flesh of a trout or the wing of a quail"
-        },
-        {
-          "sentence_index": 6,
-          "end_sentence": 20,
-          "window_index": 2,
-          "start_char": 720,
-          "end_char": 2443,
-          "text": "she suffer endlessly feel she be entitle to all the delicacy and luxury of life she suffer because of the poorness of her house as she look at the dirty wall the wornout chair and the ugly curtain all these thing that another woman of her class would not even have notice torment she and make she resentful the sight of the little brenton girl who do her housework fill she with terrible regret and hopeless fantasy she dream of silent antechamber hang with oriental tapestry light from above by torch in bronze holder while two tall footman in kneelength breech nap in huge armchair sleepy from the stove 's oppressive warmth she dream of vast live room furnish in rare old silk elegant furniture load with priceless ornament and invite small room perfume make for afternoon chat with close friend famous seek after man who all woman envy and desire when she sit down to dinner at a round table cover with a threedayold cloth opposite her husband who lift the lid off the soup shout excitedly ah beef stew what could be well she dream of fine dinner of shin silverware of tapestry which people the wall with figure from another time and strange bird in fairy forest she dream of delicious dish serve on wonderful plate of whisper gallantry listen to with an inscrutable smile as one eat the pink flesh of a trout or the wing of a quail she have no dress no jewel nothing and these be the only thing she love she feel she be make for they alone she want so much to charm to be envy to be desire and seek after she have a rich friend a former schoolmate at the convent whom she no long want to visit because she suffer so much when she come home for whole day afterwards she would weep with sorrow regret despair and misery "
-        },
-        {
-          "sentence_index": 9,
-          "end_sentence": 23,
-          "window_index": 3,
-          "start_char": 1027,
-          "end_char": 2677,
-          "text": "the sight of the little brenton girl who do her housework fill she with terrible regret and hopeless fantasy she dream of silent antechamber hang with oriental tapestry light from above by torch in bronze holder while two tall footman in kneelength breech nap in huge armchair sleepy from the stove 's oppressive warmth she dream of vast live room furnish in rare old silk elegant furniture load with priceless ornament and invite small room perfume make for afternoon chat with close friend famous seek after man who all woman envy and desire when she sit down to dinner at a round table cover with a threedayold cloth opposite her husband who lift the lid off the soup shout excitedly ah beef stew what could be well she dream of fine dinner of shin silverware of tapestry which people the wall with figure from another time and strange bird in fairy forest she dream of delicious dish serve on wonderful plate of whisper gallantry listen to with an inscrutable smile as one eat the pink flesh of a trout or the wing of a quail she have no dress no jewel nothing and these be the only thing she love she feel she be make for they alone she want so much to charm to be envy to be desire and seek after she have a rich friend a former schoolmate at the convent whom she no long want to visit because she suffer so much when she come home for whole day afterwards she would weep with sorrow regret despair and misery  one evening her husband come home with an air of triumph hold a large envelope in his hand look he say here be something for you she tear open the paper and draw out a card on which be print the word the minister of education and mme"
-        },
         {
           "sentence_index": 12,
           "end_sentence": 26,
@@ -450,6 +197,425 @@
           "start_char": 2678,
           "end_char": 3533,
           "text": "georges rampouneau request the pleasure of m. and mme loisel 's company at the ministry on the evening of monday january 18th instead of be delighted as her husband have hop she throw the invitation on the table resentfully and mutter what do you want i to do with that but my dear i think you would be please you never go out and it will be such a lovely occasion i have awful trouble get it every one want to go it be very exclusive and they be not give many invitation to clerk the whole ministry will be there she star at he angrily and say impatiently and what do you expect i to wear if i go he have not think of that he stammer why the dress you go to the theatre in it seem very nice to i he stop stun distressed to see his wife cry two large tear run slowly from the corner of her eye towards the corner of her mouth he stutter what be the matter"
+        },
+        {
+          "sentence_index": 27,
+          "end_sentence": 41,
+          "window_index": 9,
+          "start_char": 2948,
+          "end_char": 3674,
+          "text": "but my dear i think you would be please you never go out and it will be such a lovely occasion i have awful trouble get it every one want to go it be very exclusive and they be not give many invitation to clerk the whole ministry will be there she star at he angrily and say impatiently and what do you expect i to wear if i go he have not think of that he stammer why the dress you go to the theatre in it seem very nice to i he stop stun distressed to see his wife cry two large tear run slowly from the corner of her eye towards the corner of her mouth he stutter what be the matter what be the matter with great effort she overcome her grief and reply in a calm voice as she wipe her wet cheek nothing only i have no dress"
+        },
+        {
+          "sentence_index": 30,
+          "end_sentence": 44,
+          "window_index": 10,
+          "start_char": 3071,
+          "end_char": 3830,
+          "text": "every one want to go it be very exclusive and they be not give many invitation to clerk the whole ministry will be there she star at he angrily and say impatiently and what do you expect i to wear if i go he have not think of that he stammer why the dress you go to the theatre in it seem very nice to i he stop stun distressed to see his wife cry two large tear run slowly from the corner of her eye towards the corner of her mouth he stutter what be the matter what be the matter with great effort she overcome her grief and reply in a calm voice as she wipe her wet cheek nothing only i have no dress and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde"
+        }
+      ]
+    },
+    {
+      "topic_id": 4,
+      "keywords": [
+        "cost",
+        "near",
+        "think moment",
+        "buy gun",
+        "buy gun treat",
+        "buy",
+        "think moment compute",
+        "simple think"
+      ],
+      "stats": {
+        "prevalence": 0.18040823477965134,
+        "persistence": 12.0,
+        "coherence": 0.7218485300625412,
+        "exclusivity": 0.984375
+      },
+      "mentions": [
+        {
+          "sentence_index": 33,
+          "end_sentence": 47,
+          "window_index": 11,
+          "start_char": 3276,
+          "end_char": 4204,
+          "text": "he have not think of that he stammer why the dress you go to the theatre in it seem very nice to i he stop stun distressed to see his wife cry two large tear run slowly from the corner of her eye towards the corner of her mouth he stutter what be the matter what be the matter with great effort she overcome her grief and reply in a calm voice as she wipe her wet cheek nothing only i have no dress and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc"
+        },
+        {
+          "sentence_index": 36,
+          "end_sentence": 50,
+          "window_index": 12,
+          "start_char": 3375,
+          "end_char": 4519,
+          "text": "he stop stun distressed to see his wife cry two large tear run slowly from the corner of her eye towards the corner of her mouth he stutter what be the matter what be the matter with great effort she overcome her grief and reply in a calm voice as she wipe her wet cheek nothing only i have no dress and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress"
+        },
+        {
+          "sentence_index": 39,
+          "end_sentence": 53,
+          "window_index": 13,
+          "start_char": 3534,
+          "end_char": 4622,
+          "text": "what be the matter with great effort she overcome her grief and reply in a calm voice as she wipe her wet cheek nothing only i have no dress and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress  the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however"
+        },
+        {
+          "sentence_index": 42,
+          "end_sentence": 56,
+          "window_index": 14,
+          "start_char": 3675,
+          "end_char": 4790,
+          "text": "and so i can not go to this party give your invitation to a friend whose wife have well clothe than i do he be distraught but try again let us see mathilde how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress  the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear"
+        },
+        {
+          "sentence_index": 45,
+          "end_sentence": 59,
+          "window_index": 15,
+          "start_char": 3831,
+          "end_char": 4925,
+          "text": "how much would a suitable dress cost one which you could use again on other occasion something very simple she think for a moment compute the cost and also wonder what amount she could ask for without an immediate refusal and an alarmed exclamation from the thrifty clerk at last she answer hesitantly i do not know exactly but i think i could do it with four hundred franc he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress  the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year"
+        },
+        {
+          "sentence_index": 48,
+          "end_sentence": 62,
+          "window_index": 16,
+          "start_char": 4205,
+          "end_char": 5092,
+          "text": "he turn a little pale because he have be save that exact amount to buy a gun and treat himself to a hunting trip the follow summer in the country near nanterre with a few friend who went larkshoote there on sundays however he say very well i can give you four hundred franc but try and get a really beautiful dress  the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year for ten franc you could get two or three magnificent rose she be not convince no there be nothing more humiliating than look poor in the middle of a lot of rich woman"
+        }
+      ]
+    },
+    {
+      "topic_id": 7,
+      "keywords": [
+        "success",
+        "anteroom",
+        "admiration awakened",
+        "admiration",
+        "anteroom gentleman wife",
+        "anteroom gentleman",
+        "awakened desire sense",
+        "admiration awakened desire"
+      ],
+      "stats": {
+        "prevalence": 0.31673250175439394,
+        "persistence": 7.333333333333333,
+        "coherence": 0.9432250260904096,
+        "exclusivity": 0.984375
+      },
+      "mentions": [
+        {
+          "sentence_index": 75,
+          "end_sentence": 89,
+          "window_index": 25,
+          "start_char": 5752,
+          "end_char": 6490,
+          "text": "why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure  the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she"
+        },
+        {
+          "sentence_index": 78,
+          "end_sentence": 92,
+          "window_index": 26,
+          "start_char": 5914,
+          "end_char": 6956,
+          "text": "her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure  the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time"
+        },
+        {
+          "sentence_index": 81,
+          "end_sentence": 95,
+          "window_index": 27,
+          "start_char": 6114,
+          "end_char": 7280,
+          "text": "why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure  the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back"
+        },
+        {
+          "sentence_index": 84,
+          "end_sentence": 98,
+          "window_index": 28,
+          "start_char": 6229,
+          "end_char": 7403,
+          "text": "the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair"
+        },
+        {
+          "sentence_index": 87,
+          "end_sentence": 101,
+          "window_index": 29,
+          "start_char": 6362,
+          "end_char": 7757,
+          "text": "all the man star at she ask her name try to be introduce all the cabinet official want to waltz with she the minister notice she she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day"
+        },
+        {
+          "sentence_index": 90,
+          "end_sentence": 104,
+          "window_index": 30,
+          "start_char": 6491,
+          "end_char": 7952,
+          "text": "she dance wildly with passion drunk on pleasure forget everything in the triumph of her beauty in the glory of her success in a sort of cloud of happiness make up of all this respect all this admiration all these awakened desire of that sense of triumph that be so sweet to a woman 's heart she leave at about four o'clock in the morning her husband have be doze since midnight in a little deserted anteroom with three other gentleman whose wife be have a good time he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock"
+        }
+      ]
+    },
+    {
+      "topic_id": 8,
+      "keywords": [
+        "suddenly utter",
+        "suddenly utter long",
+        "shoulder final",
+        "shoulder final look",
+        "clothe shoulder final",
+        "clothe shoulder",
+        "utter long",
+        "necklace round"
+      ],
+      "stats": {
+        "prevalence": 0.37168334080622745,
+        "persistence": 5.6,
+        "coherence": 1.0,
+        "exclusivity": 1.0
+      },
+      "mentions": [
+        {
+          "sentence_index": 93,
+          "end_sentence": 107,
+          "window_index": 31,
+          "start_char": 6957,
+          "end_char": 8139,
+          "text": "he throw over her shoulder the clothe he have bring for she to go outside in the modest clothe of an ordinary life whose poverty contrast sharply with the elegance of the ball dress she feel this and want to run away so she would not be notice by the other woman who be wrap themselves in expensive fur loisel hold she back wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck"
+        },
+        {
+          "sentence_index": 96,
+          "end_sentence": 110,
+          "window_index": 32,
+          "start_char": 7281,
+          "end_char": 8238,
+          "text": "wait a moment you will catch a cold outside i will go and find a cab but she would not listen to he and run down the stair when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck what be the matter ask her husband already half undressed she turn towards he panicstricken i have"
+        },
+        {
+          "sentence_index": 99,
+          "end_sentence": 113,
+          "window_index": 33,
+          "start_char": 7404,
+          "end_char": 8312,
+          "text": "when they be finally in the street they could not find a cab and begin to look for one shout at the cabman they see pass in the distance they walk down toward the seine in despair shiver with cold at last they find on the quay one of those old night cab that one see in paris only after dark as if they be ashamed to show their shabbiness during the day they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck what be the matter ask her husband already half undressed she turn towards he panicstricken i have i have i no long have madame forestier 's necklace he stand up distraught"
+        },
+        {
+          "sentence_index": 102,
+          "end_sentence": 116,
+          "window_index": 34,
+          "start_char": 7758,
+          "end_char": 8322,
+          "text": "they be drop off at their door in the rue des martyrs and sadly walk up the step to their apartment it be all over for she and he be remember that he have to be back at his office at ten o'clock in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck what be the matter ask her husband already half undressed she turn towards he panicstricken i have i have i no long have madame forestier 's necklace he stand up distraught what how "
+        },
+        {
+          "sentence_index": 105,
+          "end_sentence": 119,
+          "window_index": 35,
+          "start_char": 7953,
+          "end_char": 8453,
+          "text": "in front of the mirror she take off the clothe around her shoulder take a final look at herself in all her glory but suddenly she utter a cry she no long have the necklace round her neck what be the matter ask her husband already half undressed she turn towards he panicstricken i have i have i no long have madame forestier 's necklace he stand up distraught what how  that be impossible they look in the fold of her dress in the fold of her cloak in her pocket everywhere but they could not find it"
+        },
+        {
+          "sentence_index": 108,
+          "end_sentence": 122,
+          "window_index": 36,
+          "start_char": 8140,
+          "end_char": 8560,
+          "text": "what be the matter ask her husband already half undressed she turn towards he panicstricken i have i have i no long have madame forestier 's necklace he stand up distraught what how  that be impossible they look in the fold of her dress in the fold of her cloak in her pocket everywhere but they could not find it be you sure you still have it on when you leave the ball he ask yes i touch it in the hall at the ministry"
+        }
+      ]
+    },
+    {
+      "topic_id": 0,
+      "keywords": [
+        "dream",
+        "room",
+        "dinner",
+        "tapestry",
+        "girl",
+        "class",
+        "delicacy",
+        "envy"
+      ],
+      "stats": {
+        "prevalence": 0.17612891930800217,
+        "persistence": 4.0,
+        "coherence": 0.7634798518643644,
+        "exclusivity": 0.9375
+      },
+      "mentions": [
+        {
+          "sentence_index": 0,
+          "end_sentence": 14,
+          "window_index": 0,
+          "start_char": 0,
+          "end_char": 2056,
+          "text": "guy de maupassant the necklace she be one of those pretty and charming girl bear as if by an error of fate into a family of clerk she have no dowry no expectation no mean of becoming know understood love or wed by a man of wealth and distinction and so she let herself be married to a minor official at the ministry of education she dress plainly because she have never be able to afford anything well but she be as unhappy as if she have once be wealthy woman do not belong to a caste or class their beauty grace and natural charm take the place of birth and family natural delicacy instinctive elegance and a quick wit determine their place in society and make the daughter of commoner the equal of the very fine lady she suffer endlessly feel she be entitle to all the delicacy and luxury of life she suffer because of the poorness of her house as she look at the dirty wall the wornout chair and the ugly curtain all these thing that another woman of her class would not even have notice torment she and make she resentful the sight of the little brenton girl who do her housework fill she with terrible regret and hopeless fantasy she dream of silent antechamber hang with oriental tapestry light from above by torch in bronze holder while two tall footman in kneelength breech nap in huge armchair sleepy from the stove 's oppressive warmth she dream of vast live room furnish in rare old silk elegant furniture load with priceless ornament and invite small room perfume make for afternoon chat with close friend famous seek after man who all woman envy and desire when she sit down to dinner at a round table cover with a threedayold cloth opposite her husband who lift the lid off the soup shout excitedly ah beef stew what could be well she dream of fine dinner of shin silverware of tapestry which people the wall with figure from another time and strange bird in fairy forest she dream of delicious dish serve on wonderful plate of whisper gallantry listen to with an inscrutable smile as one eat the pink flesh of a trout or the wing of a quail"
+        },
+        {
+          "sentence_index": 3,
+          "end_sentence": 17,
+          "window_index": 1,
+          "start_char": 329,
+          "end_char": 2229,
+          "text": "she dress plainly because she have never be able to afford anything well but she be as unhappy as if she have once be wealthy woman do not belong to a caste or class their beauty grace and natural charm take the place of birth and family natural delicacy instinctive elegance and a quick wit determine their place in society and make the daughter of commoner the equal of the very fine lady she suffer endlessly feel she be entitle to all the delicacy and luxury of life she suffer because of the poorness of her house as she look at the dirty wall the wornout chair and the ugly curtain all these thing that another woman of her class would not even have notice torment she and make she resentful the sight of the little brenton girl who do her housework fill she with terrible regret and hopeless fantasy she dream of silent antechamber hang with oriental tapestry light from above by torch in bronze holder while two tall footman in kneelength breech nap in huge armchair sleepy from the stove 's oppressive warmth she dream of vast live room furnish in rare old silk elegant furniture load with priceless ornament and invite small room perfume make for afternoon chat with close friend famous seek after man who all woman envy and desire when she sit down to dinner at a round table cover with a threedayold cloth opposite her husband who lift the lid off the soup shout excitedly ah beef stew what could be well she dream of fine dinner of shin silverware of tapestry which people the wall with figure from another time and strange bird in fairy forest she dream of delicious dish serve on wonderful plate of whisper gallantry listen to with an inscrutable smile as one eat the pink flesh of a trout or the wing of a quail she have no dress no jewel nothing and these be the only thing she love she feel she be make for they alone she want so much to charm to be envy to be desire and seek after"
+        },
+        {
+          "sentence_index": 6,
+          "end_sentence": 20,
+          "window_index": 2,
+          "start_char": 720,
+          "end_char": 2443,
+          "text": "she suffer endlessly feel she be entitle to all the delicacy and luxury of life she suffer because of the poorness of her house as she look at the dirty wall the wornout chair and the ugly curtain all these thing that another woman of her class would not even have notice torment she and make she resentful the sight of the little brenton girl who do her housework fill she with terrible regret and hopeless fantasy she dream of silent antechamber hang with oriental tapestry light from above by torch in bronze holder while two tall footman in kneelength breech nap in huge armchair sleepy from the stove 's oppressive warmth she dream of vast live room furnish in rare old silk elegant furniture load with priceless ornament and invite small room perfume make for afternoon chat with close friend famous seek after man who all woman envy and desire when she sit down to dinner at a round table cover with a threedayold cloth opposite her husband who lift the lid off the soup shout excitedly ah beef stew what could be well she dream of fine dinner of shin silverware of tapestry which people the wall with figure from another time and strange bird in fairy forest she dream of delicious dish serve on wonderful plate of whisper gallantry listen to with an inscrutable smile as one eat the pink flesh of a trout or the wing of a quail she have no dress no jewel nothing and these be the only thing she love she feel she be make for they alone she want so much to charm to be envy to be desire and seek after she have a rich friend a former schoolmate at the convent whom she no long want to visit because she suffer so much when she come home for whole day afterwards she would weep with sorrow regret despair and misery "
+        },
+        {
+          "sentence_index": 9,
+          "end_sentence": 23,
+          "window_index": 3,
+          "start_char": 1027,
+          "end_char": 2677,
+          "text": "the sight of the little brenton girl who do her housework fill she with terrible regret and hopeless fantasy she dream of silent antechamber hang with oriental tapestry light from above by torch in bronze holder while two tall footman in kneelength breech nap in huge armchair sleepy from the stove 's oppressive warmth she dream of vast live room furnish in rare old silk elegant furniture load with priceless ornament and invite small room perfume make for afternoon chat with close friend famous seek after man who all woman envy and desire when she sit down to dinner at a round table cover with a threedayold cloth opposite her husband who lift the lid off the soup shout excitedly ah beef stew what could be well she dream of fine dinner of shin silverware of tapestry which people the wall with figure from another time and strange bird in fairy forest she dream of delicious dish serve on wonderful plate of whisper gallantry listen to with an inscrutable smile as one eat the pink flesh of a trout or the wing of a quail she have no dress no jewel nothing and these be the only thing she love she feel she be make for they alone she want so much to charm to be envy to be desire and seek after she have a rich friend a former schoolmate at the convent whom she no long want to visit because she suffer so much when she come home for whole day afterwards she would weep with sorrow regret despair and misery  one evening her husband come home with an air of triumph hold a large envelope in his hand look he say here be something for you she tear open the paper and draw out a card on which be print the word the minister of education and mme"
+        }
+      ]
+    },
+    {
+      "topic_id": 6,
+      "keywords": [
+        "hesitate",
+        "bracelet pearl necklace",
+        "craftsmanship try",
+        "bracelet",
+        "set precious",
+        "set",
+        "bracelet pearl",
+        "craftsmanship try jewelry"
+      ],
+      "stats": {
+        "prevalence": 0.3314030055816357,
+        "persistence": 5.0,
+        "coherence": 0.9446866188312801,
+        "exclusivity": 0.984375
+      },
+      "mentions": [
+        {
+          "sentence_index": 63,
+          "end_sentence": 77,
+          "window_index": 21,
+          "start_char": 5093,
+          "end_char": 5913,
+          "text": "how stupid you be her husband cry go and see your friend madame forestier and ask she to lend you some jewel you know she well enough for that she utter a cry of joy of course i have not think of that the next day she go to her friend 's house and tell she of her distress madame forestier go to her mirror wardrobe take out a large box bring it back open it and say to madame loisel choose my dear first she see some bracelet then a pearl necklace then a gold venetian cross set with precious stone of exquisite craftsmanship she try on the jewelry in the mirror hesitate could not bear to part with they to give they back she keep ask you have nothing else why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire"
+        },
+        {
+          "sentence_index": 66,
+          "end_sentence": 80,
+          "window_index": 22,
+          "start_char": 5202,
+          "end_char": 6113,
+          "text": "you know she well enough for that she utter a cry of joy of course i have not think of that the next day she go to her friend 's house and tell she of her distress madame forestier go to her mirror wardrobe take out a large box bring it back open it and say to madame loisel choose my dear first she see some bracelet then a pearl necklace then a gold venetian cross set with precious stone of exquisite craftsmanship she try on the jewelry in the mirror hesitate could not bear to part with they to give they back she keep ask you have nothing else why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this"
+        },
+        {
+          "sentence_index": 69,
+          "end_sentence": 83,
+          "window_index": 23,
+          "start_char": 5269,
+          "end_char": 6228,
+          "text": "i have not think of that the next day she go to her friend 's house and tell she of her distress madame forestier go to her mirror wardrobe take out a large box bring it back open it and say to madame loisel choose my dear first she see some bracelet then a pearl necklace then a gold venetian cross set with precious stone of exquisite craftsmanship she try on the jewelry in the mirror hesitate could not bear to part with they to give they back she keep ask you have nothing else why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure "
+        },
+        {
+          "sentence_index": 72,
+          "end_sentence": 86,
+          "window_index": 24,
+          "start_char": 5492,
+          "end_char": 6361,
+          "text": "first she see some bracelet then a pearl necklace then a gold venetian cross set with precious stone of exquisite craftsmanship she try on the jewelry in the mirror hesitate could not bear to part with they to give they back she keep ask you have nothing else why yes but i do not know what you like suddenly she discover in a black satin box a superb diamond necklace and her heart begin to beat with uncontrolled desire her hand tremble as she take it she fasten it around her neck over her highnecke dress and stand lose in ecstasy as she look at herself then she ask anxiously hesitate would you lend i this just this why yes of course she throw her arm around her friend 's neck embrace she rapturously then flee with her treasure  the day of the party arrive madame loisel be a success she be pretty than all the other woman elegant gracious smile and full of joy"
+        }
+      ]
+    },
+    {
+      "topic_id": 3,
+      "keywords": [
+        "ministry lose",
+        "ministry lose street",
+        "hall ministry lose",
+        "fold",
+        "street hear fall",
+        "street hear",
+        "hear fall",
+        "ask yes touch"
+      ],
+      "stats": {
+        "prevalence": 0.09317649327791654,
+        "persistence": 3.0,
+        "coherence": 0.5321380726832398,
+        "exclusivity": 0.921875
+      },
+      "mentions": [
+        {
+          "sentence_index": 114,
+          "end_sentence": 128,
+          "window_index": 38,
+          "start_char": 8313,
+          "end_char": 8697,
+          "text": "what how  that be impossible they look in the fold of her dress in the fold of her cloak in her pocket everywhere but they could not find it be you sure you still have it on when you leave the ball he ask yes i touch it in the hall at the ministry but if you have lose it in the street we would have hear it fall it must be in the cab yes that be probably it do you take his number no"
+        },
+        {
+          "sentence_index": 117,
+          "end_sentence": 131,
+          "window_index": 39,
+          "start_char": 8323,
+          "end_char": 8758,
+          "text": "that be impossible they look in the fold of her dress in the fold of her cloak in her pocket everywhere but they could not find it be you sure you still have it on when you leave the ball he ask yes i touch it in the hall at the ministry but if you have lose it in the street we would have hear it fall it must be in the cab yes that be probably it do you take his number no and you do not you notice it no they star at each other stun"
+        },
+        {
+          "sentence_index": 120,
+          "end_sentence": 134,
+          "window_index": 40,
+          "start_char": 8454,
+          "end_char": 8876,
+          "text": "be you sure you still have it on when you leave the ball he ask yes i touch it in the hall at the ministry but if you have lose it in the street we would have hear it fall it must be in the cab yes that be probably it do you take his number no and you do not you notice it no they star at each other stun at last loisel put his clothe on again i be go back he say over the whole route we walk see if i can find it he leave"
+        }
+      ]
+    },
+    {
+      "topic_id": 5,
+      "keywords": [
+        "woman stupid",
+        "rich woman stupid",
+        "woman stupid husband",
+        "wear",
+        "say fashionable",
+        "wear flower",
+        "lend jewel",
+        "look cheap party"
+      ],
+      "stats": {
+        "prevalence": 0.18076970256291902,
+        "persistence": 4.333333333333333,
+        "coherence": 0.6287103834816772,
+        "exclusivity": 0.90625
+      },
+      "mentions": [
+        {
+          "sentence_index": 51,
+          "end_sentence": 65,
+          "window_index": 17,
+          "start_char": 4520,
+          "end_char": 5201,
+          "text": " the day of the party draw near and madame loisel seem sad restless anxious her dress be ready however one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year for ten franc you could get two or three magnificent rose she be not convince no there be nothing more humiliating than look poor in the middle of a lot of rich woman how stupid you be her husband cry go and see your friend madame forestier and ask she to lend you some jewel"
+        },
+        {
+          "sentence_index": 54,
+          "end_sentence": 68,
+          "window_index": 18,
+          "start_char": 4623,
+          "end_char": 5268,
+          "text": "one evening her husband say to she what be the matter you have be act strange these last three day she reply i be upset that i have no jewel not a single stone to wear i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year for ten franc you could get two or three magnificent rose she be not convince no there be nothing more humiliating than look poor in the middle of a lot of rich woman how stupid you be her husband cry go and see your friend madame forestier and ask she to lend you some jewel you know she well enough for that she utter a cry of joy of course"
+        },
+        {
+          "sentence_index": 57,
+          "end_sentence": 71,
+          "window_index": 19,
+          "start_char": 4791,
+          "end_char": 5491,
+          "text": "i will look cheap i would almost rather not go to the party you could wear flower he say they be very fashionable at this time of year for ten franc you could get two or three magnificent rose she be not convince no there be nothing more humiliating than look poor in the middle of a lot of rich woman how stupid you be her husband cry go and see your friend madame forestier and ask she to lend you some jewel you know she well enough for that she utter a cry of joy of course i have not think of that the next day she go to her friend 's house and tell she of her distress madame forestier go to her mirror wardrobe take out a large box bring it back open it and say to madame loisel choose my dear"
         }
       ]
     }
@@ -461,16 +627,16 @@
       "end_sentence": 14,
       "topic_scores": [
         {
-          "topic_id": 1,
-          "score": 0.7878503203392029
-        },
-        {
-          "topic_id": 2,
-          "score": 0.6858996152877808
-        },
-        {
           "topic_id": 0,
-          "score": 0.5504797697067261
+          "score": 0.9066425561904907
+        },
+        {
+          "topic_id": 7,
+          "score": 0.6493273973464966
+        },
+        {
+          "topic_id": 6,
+          "score": 0.6079978942871094
         }
       ],
       "is_noise": false
@@ -479,8 +645,21 @@
       "window_index": 1,
       "start_sentence": 3,
       "end_sentence": 17,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 0,
+          "score": 0.9416905641555786
+        },
+        {
+          "topic_id": 7,
+          "score": 0.6967344284057617
+        },
+        {
+          "topic_id": 6,
+          "score": 0.6209427714347839
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 2,
@@ -488,12 +667,16 @@
       "end_sentence": 20,
       "topic_scores": [
         {
-          "topic_id": 1,
-          "score": 0.8169409036636353
+          "topic_id": 0,
+          "score": 0.9416571855545044
         },
         {
-          "topic_id": 2,
-          "score": 0.6919808387756348
+          "topic_id": 7,
+          "score": 0.6868717074394226
+        },
+        {
+          "topic_id": 6,
+          "score": 0.6444684267044067
         }
       ],
       "is_noise": false
@@ -504,12 +687,16 @@
       "end_sentence": 23,
       "topic_scores": [
         {
-          "topic_id": 1,
-          "score": 0.8060673475265503
+          "topic_id": 0,
+          "score": 0.9084023833274841
         },
         {
-          "topic_id": 2,
-          "score": 0.6440420746803284
+          "topic_id": 6,
+          "score": 0.6222904920578003
+        },
+        {
+          "topic_id": 7,
+          "score": 0.6123080849647522
         }
       ],
       "is_noise": false
@@ -520,16 +707,16 @@
       "end_sentence": 26,
       "topic_scores": [
         {
-          "topic_id": 1,
-          "score": 0.906787097454071
-        },
-        {
-          "topic_id": 2,
-          "score": 0.6990606784820557
-        },
-        {
           "topic_id": 0,
-          "score": 0.5503807663917542
+          "score": 0.7979298233985901
+        },
+        {
+          "topic_id": 1,
+          "score": 0.7701520919799805
+        },
+        {
+          "topic_id": 7,
+          "score": 0.686988353729248
         }
       ],
       "is_noise": false
@@ -541,15 +728,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.9152767062187195
-        },
-        {
-          "topic_id": 2,
-          "score": 0.7699440717697144
+          "score": 0.8982760906219482
         },
         {
           "topic_id": 0,
-          "score": 0.5677599906921387
+          "score": 0.6888842582702637
+        },
+        {
+          "topic_id": 7,
+          "score": 0.6791260838508606
         }
       ],
       "is_noise": false
@@ -561,11 +748,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.9011027812957764
+          "score": 0.9265637397766113
         },
         {
-          "topic_id": 2,
-          "score": 0.7157987356185913
+          "topic_id": 7,
+          "score": 0.6532183885574341
+        },
+        {
+          "topic_id": 0,
+          "score": 0.6256955862045288
         }
       ],
       "is_noise": false
@@ -577,11 +768,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.8412387371063232
+          "score": 0.9503849148750305
         },
         {
-          "topic_id": 2,
-          "score": 0.6661170721054077
+          "topic_id": 7,
+          "score": 0.6088995933532715
+        },
+        {
+          "topic_id": 5,
+          "score": 0.5927438139915466
         }
       ],
       "is_noise": false
@@ -593,11 +788,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.7750970721244812
+          "score": 0.9040366411209106
         },
         {
-          "topic_id": 2,
-          "score": 0.6546283960342407
+          "topic_id": 7,
+          "score": 0.614497184753418
+        },
+        {
+          "topic_id": 4,
+          "score": 0.5724396705627441
         }
       ],
       "is_noise": false
@@ -606,8 +805,21 @@
       "window_index": 9,
       "start_sentence": 27,
       "end_sentence": 41,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 1,
+          "score": 0.851493239402771
+        },
+        {
+          "topic_id": 4,
+          "score": 0.5853768587112427
+        },
+        {
+          "topic_id": 5,
+          "score": 0.5773584842681885
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 10,
@@ -616,11 +828,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.6645826101303101
+          "score": 0.8461097478866577
         },
         {
-          "topic_id": 2,
-          "score": 0.6491501927375793
+          "topic_id": 4,
+          "score": 0.6400834321975708
+        },
+        {
+          "topic_id": 5,
+          "score": 0.5872505307197571
         }
       ],
       "is_noise": false
@@ -631,12 +847,16 @@
       "end_sentence": 47,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.719811201095581
+          "topic_id": 4,
+          "score": 0.8978719115257263
         },
         {
           "topic_id": 1,
-          "score": 0.5783350467681885
+          "score": 0.6405191421508789
+        },
+        {
+          "topic_id": 5,
+          "score": 0.5961103439331055
         }
       ],
       "is_noise": false
@@ -647,16 +867,16 @@
       "end_sentence": 50,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7223789095878601
+          "topic_id": 4,
+          "score": 0.9354017376899719
         },
         {
           "topic_id": 1,
-          "score": 0.5700199604034424
+          "score": 0.5872414112091064
         },
         {
-          "topic_id": 0,
-          "score": 0.5280025601387024
+          "topic_id": 5,
+          "score": 0.5715405941009521
         }
       ],
       "is_noise": false
@@ -667,16 +887,16 @@
       "end_sentence": 53,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.8072158098220825
+          "topic_id": 4,
+          "score": 0.9525671005249023
+        },
+        {
+          "topic_id": 5,
+          "score": 0.6588497161865234
         },
         {
           "topic_id": 1,
-          "score": 0.6529209613800049
-        },
-        {
-          "topic_id": 0,
-          "score": 0.6217573881149292
+          "score": 0.6422666311264038
         }
       ],
       "is_noise": false
@@ -687,16 +907,16 @@
       "end_sentence": 56,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.8157603740692139
+          "topic_id": 4,
+          "score": 0.950755774974823
+        },
+        {
+          "topic_id": 5,
+          "score": 0.7496220469474792
         },
         {
           "topic_id": 1,
-          "score": 0.6764466166496277
-        },
-        {
-          "topic_id": 0,
-          "score": 0.6598047018051147
+          "score": 0.6716042757034302
         }
       ],
       "is_noise": false
@@ -707,16 +927,16 @@
       "end_sentence": 59,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7436192035675049
+          "topic_id": 4,
+          "score": 0.9079402685165405
+        },
+        {
+          "topic_id": 5,
+          "score": 0.7443488836288452
         },
         {
           "topic_id": 1,
-          "score": 0.5877968072891235
-        },
-        {
-          "topic_id": 0,
-          "score": 0.5700061917304993
+          "score": 0.5737690925598145
         }
       ],
       "is_noise": false
@@ -727,16 +947,16 @@
       "end_sentence": 62,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7537866234779358
+          "topic_id": 4,
+          "score": 0.8598241806030273
+        },
+        {
+          "topic_id": 5,
+          "score": 0.7370463609695435
         },
         {
           "topic_id": 1,
-          "score": 0.6157307624816895
-        },
-        {
-          "topic_id": 0,
-          "score": 0.5448704957962036
+          "score": 0.6159725189208984
         }
       ],
       "is_noise": false
@@ -747,16 +967,16 @@
       "end_sentence": 65,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.8486796617507935
+          "topic_id": 5,
+          "score": 0.959060788154602
         },
         {
-          "topic_id": 1,
-          "score": 0.6847983002662659
+          "topic_id": 4,
+          "score": 0.7444562911987305
         },
         {
-          "topic_id": 0,
-          "score": 0.6187910437583923
+          "topic_id": 6,
+          "score": 0.7340030670166016
         }
       ],
       "is_noise": false
@@ -767,12 +987,16 @@
       "end_sentence": 68,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7243684530258179
+          "topic_id": 5,
+          "score": 0.9364761114120483
         },
         {
-          "topic_id": 1,
-          "score": 0.5949843525886536
+          "topic_id": 6,
+          "score": 0.6581456065177917
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6356304287910461
         }
       ],
       "is_noise": false
@@ -783,12 +1007,16 @@
       "end_sentence": 71,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7459735870361328
+          "topic_id": 5,
+          "score": 0.924754798412323
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6988805532455444
         },
         {
           "topic_id": 1,
-          "score": 0.5738935470581055
+          "score": 0.5971639156341553
         }
       ],
       "is_noise": false
@@ -797,21 +1025,8 @@
       "window_index": 20,
       "start_sentence": 60,
       "end_sentence": 74,
-      "topic_scores": [
-        {
-          "topic_id": 2,
-          "score": 0.7878549098968506
-        },
-        {
-          "topic_id": 0,
-          "score": 0.6074132919311523
-        },
-        {
-          "topic_id": 1,
-          "score": 0.6065217852592468
-        }
-      ],
-      "is_noise": false
+      "topic_scores": [],
+      "is_noise": true
     },
     {
       "window_index": 21,
@@ -819,16 +1034,16 @@
       "end_sentence": 77,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7995995283126831
+          "topic_id": 6,
+          "score": 0.9248796105384827
         },
         {
-          "topic_id": 0,
-          "score": 0.6605706214904785
+          "topic_id": 5,
+          "score": 0.764862060546875
         },
         {
-          "topic_id": 1,
-          "score": 0.6311254501342773
+          "topic_id": 8,
+          "score": 0.6786912679672241
         }
       ],
       "is_noise": false
@@ -839,16 +1054,16 @@
       "end_sentence": 80,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.8337804079055786
+          "topic_id": 6,
+          "score": 0.9773287773132324
         },
         {
-          "topic_id": 1,
-          "score": 0.6812781095504761
+          "topic_id": 7,
+          "score": 0.7063510417938232
         },
         {
-          "topic_id": 0,
-          "score": 0.66447913646698
+          "topic_id": 8,
+          "score": 0.7051719427108765
         }
       ],
       "is_noise": false
@@ -859,16 +1074,16 @@
       "end_sentence": 83,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.833552896976471
+          "topic_id": 6,
+          "score": 0.9730785489082336
         },
         {
-          "topic_id": 0,
-          "score": 0.6928082704544067
+          "topic_id": 7,
+          "score": 0.7397325038909912
         },
         {
-          "topic_id": 1,
-          "score": 0.6649721264839172
+          "topic_id": 8,
+          "score": 0.7232275009155273
         }
       ],
       "is_noise": false
@@ -879,16 +1094,16 @@
       "end_sentence": 86,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7855867743492126
+          "topic_id": 6,
+          "score": 0.9255576729774475
         },
         {
-          "topic_id": 1,
-          "score": 0.6309797167778015
+          "topic_id": 7,
+          "score": 0.7389955520629883
         },
         {
           "topic_id": 0,
-          "score": 0.6054885983467102
+          "score": 0.632631778717041
         }
       ],
       "is_noise": false
@@ -899,12 +1114,16 @@
       "end_sentence": 89,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.758857011795044
+          "topic_id": 7,
+          "score": 0.8491930961608887
         },
         {
-          "topic_id": 1,
-          "score": 0.6068440675735474
+          "topic_id": 6,
+          "score": 0.7783998847007751
+        },
+        {
+          "topic_id": 8,
+          "score": 0.6110590100288391
         }
       ],
       "is_noise": false
@@ -915,16 +1134,16 @@
       "end_sentence": 92,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.821410059928894
+          "topic_id": 7,
+          "score": 0.9371527433395386
+        },
+        {
+          "topic_id": 6,
+          "score": 0.7296808958053589
         },
         {
           "topic_id": 1,
-          "score": 0.747301459312439
-        },
-        {
-          "topic_id": 0,
-          "score": 0.532390296459198
+          "score": 0.6854739189147949
         }
       ],
       "is_noise": false
@@ -935,16 +1154,16 @@
       "end_sentence": 95,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7828371524810791
-        },
-        {
-          "topic_id": 1,
-          "score": 0.7082136869430542
+          "topic_id": 7,
+          "score": 0.9350500106811523
         },
         {
           "topic_id": 0,
-          "score": 0.5445209741592407
+          "score": 0.667084813117981
+        },
+        {
+          "topic_id": 6,
+          "score": 0.6665438413619995
         }
       ],
       "is_noise": false
@@ -955,16 +1174,16 @@
       "end_sentence": 98,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.8178059458732605
+          "topic_id": 7,
+          "score": 0.9552901387214661
         },
         {
-          "topic_id": 1,
-          "score": 0.7391397953033447
+          "topic_id": 8,
+          "score": 0.6866699457168579
         },
         {
           "topic_id": 0,
-          "score": 0.5674527287483215
+          "score": 0.6782739162445068
         }
       ],
       "is_noise": false
@@ -975,16 +1194,16 @@
       "end_sentence": 101,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.8015932440757751
+          "topic_id": 7,
+          "score": 0.9354259371757507
         },
         {
-          "topic_id": 1,
-          "score": 0.7380039691925049
+          "topic_id": 8,
+          "score": 0.7315757274627686
         },
         {
           "topic_id": 0,
-          "score": 0.5487130880355835
+          "score": 0.691264271736145
         }
       ],
       "is_noise": false
@@ -995,16 +1214,16 @@
       "end_sentence": 104,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7899149656295776
+          "topic_id": 7,
+          "score": 0.9007415771484375
         },
         {
-          "topic_id": 1,
-          "score": 0.7000516057014465
+          "topic_id": 8,
+          "score": 0.7420843839645386
         },
         {
           "topic_id": 0,
-          "score": 0.5235491991043091
+          "score": 0.678546667098999
         }
       ],
       "is_noise": false
@@ -1015,16 +1234,16 @@
       "end_sentence": 107,
       "topic_scores": [
         {
+          "topic_id": 8,
+          "score": 0.8865706920623779
+        },
+        {
+          "topic_id": 7,
+          "score": 0.7893345355987549
+        },
+        {
           "topic_id": 2,
-          "score": 0.7954831123352051
-        },
-        {
-          "topic_id": 0,
-          "score": 0.6807436347007751
-        },
-        {
-          "topic_id": 1,
-          "score": 0.6368282437324524
+          "score": 0.7053014039993286
         }
       ],
       "is_noise": false
@@ -1035,16 +1254,16 @@
       "end_sentence": 110,
       "topic_scores": [
         {
+          "topic_id": 8,
+          "score": 0.8875614404678345
+        },
+        {
+          "topic_id": 7,
+          "score": 0.7488031387329102
+        },
+        {
           "topic_id": 2,
-          "score": 0.7799259424209595
-        },
-        {
-          "topic_id": 1,
-          "score": 0.6288682818412781
-        },
-        {
-          "topic_id": 0,
-          "score": 0.5815630555152893
+          "score": 0.6177147626876831
         }
       ],
       "is_noise": false
@@ -1055,16 +1274,16 @@
       "end_sentence": 113,
       "topic_scores": [
         {
+          "topic_id": 8,
+          "score": 0.9453858137130737
+        },
+        {
+          "topic_id": 7,
+          "score": 0.7260338068008423
+        },
+        {
           "topic_id": 2,
-          "score": 0.7890197038650513
-        },
-        {
-          "topic_id": 0,
-          "score": 0.6345716714859009
-        },
-        {
-          "topic_id": 1,
-          "score": 0.5922563076019287
+          "score": 0.6657763123512268
         }
       ],
       "is_noise": false
@@ -1075,16 +1294,16 @@
       "end_sentence": 116,
       "topic_scores": [
         {
+          "topic_id": 8,
+          "score": 0.9340155124664307
+        },
+        {
           "topic_id": 2,
-          "score": 0.7620350122451782
+          "score": 0.6840691566467285
         },
         {
-          "topic_id": 0,
-          "score": 0.65934157371521
-        },
-        {
-          "topic_id": 1,
-          "score": 0.5694118142127991
+          "topic_id": 6,
+          "score": 0.6250431537628174
         }
       ],
       "is_noise": false
@@ -1095,16 +1314,16 @@
       "end_sentence": 119,
       "topic_scores": [
         {
+          "topic_id": 8,
+          "score": 0.8939226865768433
+        },
+        {
+          "topic_id": 6,
+          "score": 0.7160294055938721
+        },
+        {
           "topic_id": 2,
-          "score": 0.7717368006706238
-        },
-        {
-          "topic_id": 0,
-          "score": 0.6404920220375061
-        },
-        {
-          "topic_id": 1,
-          "score": 0.5576667785644531
+          "score": 0.6522687077522278
         }
       ],
       "is_noise": false
@@ -1115,16 +1334,16 @@
       "end_sentence": 122,
       "topic_scores": [
         {
+          "topic_id": 8,
+          "score": 0.7974330186843872
+        },
+        {
+          "topic_id": 3,
+          "score": 0.7024848461151123
+        },
+        {
           "topic_id": 2,
-          "score": 0.7473691701889038
-        },
-        {
-          "topic_id": 0,
-          "score": 0.6255300045013428
-        },
-        {
-          "topic_id": 1,
-          "score": 0.5804414749145508
+          "score": 0.6484891772270203
         }
       ],
       "is_noise": false
@@ -1142,8 +1361,16 @@
       "end_sentence": 128,
       "topic_scores": [
         {
+          "topic_id": 3,
+          "score": 0.9597139954566956
+        },
+        {
+          "topic_id": 8,
+          "score": 0.5816620588302612
+        },
+        {
           "topic_id": 2,
-          "score": 0.5437824130058289
+          "score": 0.5411866903305054
         }
       ],
       "is_noise": false
@@ -1152,29 +1379,69 @@
       "window_index": 39,
       "start_sentence": 117,
       "end_sentence": 131,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 3,
+          "score": 0.9637057781219482
+        },
+        {
+          "topic_id": 8,
+          "score": 0.540182888507843
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 40,
       "start_sentence": 120,
       "end_sentence": 134,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 3,
+          "score": 0.9005743861198425
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 41,
       "start_sentence": 123,
       "end_sentence": 137,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 3,
+          "score": 0.7233078479766846
+        },
+        {
+          "topic_id": 2,
+          "score": 0.582075297832489
+        },
+        {
+          "topic_id": 8,
+          "score": 0.5297197103500366
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 42,
       "start_sentence": 126,
       "end_sentence": 140,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 2,
+          "score": 0.6911482810974121
+        },
+        {
+          "topic_id": 8,
+          "score": 0.609294056892395
+        },
+        {
+          "topic_id": 3,
+          "score": 0.595390796661377
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 43,
@@ -1182,16 +1449,16 @@
       "end_sentence": 143,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.6968404650688171
-        },
-        {
           "topic_id": 2,
-          "score": 0.6914857029914856
+          "score": 0.7694103717803955
         },
         {
-          "topic_id": 1,
-          "score": 0.5679993033409119
+          "topic_id": 8,
+          "score": 0.7126151323318481
+        },
+        {
+          "topic_id": 7,
+          "score": 0.6200147867202759
         }
       ],
       "is_noise": false
@@ -1202,16 +1469,16 @@
       "end_sentence": 146,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8264760971069336
-        },
-        {
           "topic_id": 2,
-          "score": 0.7160496711730957
+          "score": 0.8625110387802124
         },
         {
-          "topic_id": 1,
-          "score": 0.6031020879745483
+          "topic_id": 8,
+          "score": 0.7042368650436401
+        },
+        {
+          "topic_id": 6,
+          "score": 0.6209806799888611
         }
       ],
       "is_noise": false
@@ -1222,16 +1489,16 @@
       "end_sentence": 149,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8934721946716309
-        },
-        {
           "topic_id": 2,
-          "score": 0.7359825372695923
+          "score": 0.895572304725647
         },
         {
-          "topic_id": 1,
-          "score": 0.6064064502716064
+          "topic_id": 8,
+          "score": 0.7084863185882568
+        },
+        {
+          "topic_id": 6,
+          "score": 0.685307502746582
         }
       ],
       "is_noise": false
@@ -1242,16 +1509,16 @@
       "end_sentence": 152,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.9346885681152344
-        },
-        {
           "topic_id": 2,
-          "score": 0.65550297498703
+          "score": 0.9171701669692993
         },
         {
-          "topic_id": 1,
-          "score": 0.5152173638343811
+          "topic_id": 8,
+          "score": 0.6487922668457031
+        },
+        {
+          "topic_id": 6,
+          "score": 0.6386975049972534
         }
       ],
       "is_noise": false
@@ -1262,12 +1529,16 @@
       "end_sentence": 155,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8803311586380005
+          "topic_id": 2,
+          "score": 0.8388991355895996
         },
         {
-          "topic_id": 2,
-          "score": 0.5685317516326904
+          "topic_id": 6,
+          "score": 0.5729143619537354
+        },
+        {
+          "topic_id": 8,
+          "score": 0.5366153717041016
         }
       ],
       "is_noise": false
@@ -1278,12 +1549,16 @@
       "end_sentence": 158,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.921844482421875
+          "topic_id": 2,
+          "score": 0.8907628059387207
         },
         {
-          "topic_id": 2,
-          "score": 0.5861999988555908
+          "topic_id": 8,
+          "score": 0.5620673894882202
+        },
+        {
+          "topic_id": 6,
+          "score": 0.5530891418457031
         }
       ],
       "is_noise": false
@@ -1294,12 +1569,16 @@
       "end_sentence": 161,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.9142663478851318
+          "topic_id": 2,
+          "score": 0.8802310228347778
         },
         {
-          "topic_id": 2,
-          "score": 0.5848914384841919
+          "topic_id": 6,
+          "score": 0.5617867708206177
+        },
+        {
+          "topic_id": 8,
+          "score": 0.5562957525253296
         }
       ],
       "is_noise": false
@@ -1310,12 +1589,16 @@
       "end_sentence": 164,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8974467515945435
+          "topic_id": 2,
+          "score": 0.865922212600708
         },
         {
-          "topic_id": 2,
-          "score": 0.6169486045837402
+          "topic_id": 8,
+          "score": 0.5961133241653442
+        },
+        {
+          "topic_id": 6,
+          "score": 0.5900517702102661
         }
       ],
       "is_noise": false
@@ -1326,12 +1609,16 @@
       "end_sentence": 167,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.9136972427368164
+          "topic_id": 2,
+          "score": 0.8799405694007874
         },
         {
-          "topic_id": 2,
-          "score": 0.6175861358642578
+          "topic_id": 6,
+          "score": 0.5963131785392761
+        },
+        {
+          "topic_id": 8,
+          "score": 0.5884836912155151
         }
       ],
       "is_noise": false
@@ -1342,12 +1629,16 @@
       "end_sentence": 170,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8431476354598999
+          "topic_id": 2,
+          "score": 0.8263541460037231
         },
         {
-          "topic_id": 2,
-          "score": 0.6460819840431213
+          "topic_id": 8,
+          "score": 0.5755171775817871
+        },
+        {
+          "topic_id": 6,
+          "score": 0.5741629600524902
         }
       ],
       "is_noise": false
@@ -1358,34 +1649,103 @@
       "end_sentence": 173,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8472282886505127
-        },
-        {
           "topic_id": 2,
-          "score": 0.706053614616394
+          "score": 0.8369677066802979
         },
         {
-          "topic_id": 1,
-          "score": 0.5852622389793396
+          "topic_id": 8,
+          "score": 0.6540827751159668
+        },
+        {
+          "topic_id": 6,
+          "score": 0.6352623701095581
         }
       ],
       "is_noise": false
     }
   ],
   "mentions_per_sentence": {
-    "30": 4,
-    "31": 4,
-    "32": 4,
-    "33": 4,
-    "34": 4,
-    "35": 4,
-    "36": 4,
-    "37": 4,
-    "38": 4,
-    "39": 4,
-    "40": 4,
-    "41": 4,
+    "123": 4,
+    "124": 4,
+    "125": 4,
+    "126": 5,
+    "127": 5,
+    "128": 5,
+    "129": 5,
+    "130": 5,
+    "131": 5,
+    "132": 5,
+    "133": 5,
+    "134": 5,
+    "135": 5,
+    "136": 5,
+    "137": 5,
+    "138": 5,
+    "139": 5,
+    "140": 5,
+    "141": 5,
+    "142": 5,
+    "143": 5,
+    "144": 5,
+    "145": 5,
+    "146": 5,
+    "147": 5,
+    "148": 5,
+    "149": 5,
+    "150": 5,
+    "151": 5,
+    "152": 5,
+    "153": 5,
+    "154": 5,
+    "155": 5,
+    "156": 5,
+    "157": 5,
+    "158": 5,
+    "159": 5,
+    "160": 5,
+    "161": 5,
+    "162": 4,
+    "163": 4,
+    "164": 4,
+    "165": 3,
+    "166": 3,
+    "167": 3,
+    "168": 2,
+    "169": 2,
+    "170": 2,
+    "171": 1,
+    "172": 1,
+    "173": 1,
+    "12": 5,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 5,
+    "18": 5,
+    "19": 5,
+    "20": 5,
+    "21": 5,
+    "22": 5,
+    "23": 5,
+    "24": 5,
+    "25": 5,
+    "26": 5,
+    "27": 5,
+    "28": 5,
+    "29": 5,
+    "30": 5,
+    "31": 5,
+    "32": 5,
+    "33": 5,
+    "34": 5,
+    "35": 5,
+    "36": 5,
+    "37": 5,
+    "38": 5,
+    "39": 5,
+    "40": 5,
+    "41": 5,
     "42": 5,
     "43": 5,
     "44": 5,
@@ -1404,21 +1764,9 @@
     "57": 5,
     "58": 5,
     "59": 5,
-    "60": 5,
-    "61": 5,
-    "62": 5,
-    "63": 5,
-    "64": 5,
-    "65": 5,
-    "66": 5,
-    "67": 5,
-    "68": 5,
-    "69": 5,
-    "70": 5,
-    "71": 5,
-    "72": 5,
-    "73": 5,
-    "74": 5,
+    "60": 4,
+    "61": 4,
+    "62": 4,
     "75": 5,
     "76": 5,
     "77": 5,
@@ -1461,92 +1809,35 @@
     "114": 4,
     "115": 4,
     "116": 4,
-    "117": 3,
-    "118": 3,
-    "119": 3,
-    "120": 2,
-    "121": 2,
-    "122": 2,
-    "123": 1,
-    "124": 1,
-    "125": 1,
-    "126": 1,
-    "127": 1,
-    "128": 1,
-    "129": 1,
-    "130": 1,
-    "131": 1,
-    "132": 2,
-    "133": 2,
-    "134": 2,
-    "135": 3,
-    "136": 3,
-    "137": 3,
-    "138": 4,
-    "139": 4,
-    "140": 4,
-    "141": 5,
-    "142": 5,
-    "143": 5,
-    "144": 5,
-    "145": 5,
-    "146": 5,
-    "147": 5,
-    "148": 5,
-    "149": 5,
-    "150": 5,
-    "151": 5,
-    "152": 5,
-    "153": 5,
-    "154": 5,
-    "155": 5,
-    "156": 5,
-    "157": 5,
-    "158": 5,
-    "159": 5,
-    "160": 5,
-    "161": 5,
-    "162": 4,
-    "163": 4,
-    "164": 4,
-    "165": 3,
-    "166": 3,
-    "167": 3,
-    "168": 2,
-    "169": 2,
-    "170": 2,
-    "171": 1,
-    "172": 1,
-    "173": 1,
+    "117": 4,
+    "118": 4,
+    "119": 4,
+    "120": 4,
+    "121": 4,
+    "122": 4,
     "0": 1,
     "1": 1,
     "2": 1,
-    "3": 1,
-    "4": 1,
-    "5": 1,
-    "6": 2,
-    "7": 2,
-    "8": 2,
-    "9": 3,
-    "10": 3,
-    "11": 3,
-    "12": 4,
-    "13": 4,
-    "14": 4,
-    "15": 4,
-    "16": 4,
-    "17": 4,
-    "18": 5,
-    "19": 5,
-    "20": 5,
-    "21": 5,
-    "22": 5,
-    "23": 5,
-    "24": 5,
-    "25": 5,
-    "26": 5,
-    "27": 4,
-    "28": 4,
-    "29": 4
+    "3": 2,
+    "4": 2,
+    "5": 2,
+    "6": 3,
+    "7": 3,
+    "8": 3,
+    "9": 4,
+    "10": 4,
+    "11": 4,
+    "63": 4,
+    "64": 4,
+    "65": 4,
+    "66": 4,
+    "67": 4,
+    "68": 4,
+    "69": 4,
+    "70": 4,
+    "71": 4,
+    "72": 4,
+    "73": 4,
+    "74": 4
   }
 }

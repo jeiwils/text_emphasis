@@ -294,6 +294,10 @@ class SyntaxAnalyzer:
                 window.update(dep_windows[idx])
             if idx < len(window_slices):
                 window_sents = window_slices[idx]
+                window["max_depth"] = max(
+                    (sent.get("max_depth", 0) for sent in window_sents),
+                    default=0,
+                )
                 total_tokens = sum(sent.get("token_count", 0) for sent in window_sents)
                 total_punctuation = sum(sent.get("punctuation_count", 0) for sent in window_sents)
                 total_non_space = total_tokens + total_punctuation

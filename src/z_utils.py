@@ -58,14 +58,14 @@ def analytics_path(
 ) -> Path:
     """
     Unified helper for analytics outputs under data/analytics.
-    kind: "corpus", "window", "topic", or "dashboard".
+    kind: "corpus", "window", "topic", or "embeddings".
     """
     base = Path("data") / "analytics"
     folder_map = {
         "corpus": base / "corpus_analytics",
         "window": base / "window_metrics",
         "topic": base / "topic_modelling",
-        "dashboard": base / "dashboard",
+        "embeddings": base / "embeddings",
     }
     if kind not in folder_map:
         raise ValueError(f"kind must be one of {list(folder_map.keys())}")
@@ -78,15 +78,24 @@ def analytics_path(
     return path
 
 
-def figures_path(
+def results_path(
+    kind: str,
     subfolder: Optional[str] = None,
     category: Optional[Union[str, Sequence[str]]] = None,
     filename: Optional[str] = None,
 ) -> Path:
     """
-    Unified helper for visualization outputs under analytics/figures.
+    Unified helper for results outputs under data/results.
+    kind: "figures" or "dashboard".
     """
-    path = Path("analytics") / "figures"
+    base = Path("data") / "results"
+    folder_map = {
+        "figures": base / "figures",
+        "dashboard": base / "dashboard",
+    }
+    if kind not in folder_map:
+        raise ValueError(f"kind must be one of {list(folder_map.keys())}")
+    path = folder_map[kind]
     if subfolder:
         path = path / subfolder
     category_parts = _category_parts(category)
@@ -97,38 +106,85 @@ def figures_path(
     return path
 
 
-def iter_category_dirs(root: Path) -> Iterable[Tuple[str, Path]]:
+def find_topic_file(window_metrics_path: Path) -> Optional[Path]:
+    """Return the topic JSON for a window metrics file, preferring clustered topics."""
+    text_dir = window_metrics_path.parent
+    author_dir = window_metrics_path.parent.parent
+    genre_dir = window_metrics_path.parent.parent.parent
+    topic_root = analytics_path("topic") / genre_dir.name / author_dir.name / text_dir.name
+    candidates = [
+        topic_root / f"{text_dir.name}_clustered_topics.json",
+        topic_root / f"{text_dir.name}_topics.json",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def find_window_metrics_files() -> List[Path]:
+    """Return sorted window metrics JSON paths under data/analytics/window_metrics."""
+    root = analytics_path("window")
+    if not root.exists():
+        return []
+    return sorted(root.glob("*/*/*/*_window_metrics.json"))
+
+
+def iter_dirs(
+    root: Path,
+    *,
+    genres: Optional[Sequence[str]] = None,
+    authors: Optional[Sequence[str]] = None,
+    depth: Optional[int] = None,
+) -> Iterable[Tuple[str, Path]]:
     """
-    Yield (category_key, dir_path) pairs for leaf category directories.
-    Supports either <root>/<category>/... or <root>/<group>/<author>/... layouts.
+    Yield (category_key, dir_path) pairs for category directories.
+    depth=1 yields <root>/<category>, depth=2 yields <root>/<genre>/<author>.
+    depth=None auto-detects leaf categories by file presence.
+    Optional genres/authors filter first/second level names.
     """
     if not root.exists():
         return
-    for entry in root.iterdir():
-        if not entry.is_dir():
-            continue
-        if any(child.is_file() for child in entry.iterdir()):
-            yield entry.name, entry
-            continue
-        for child in entry.iterdir():
-            if child.is_dir():
+    if depth is not None and depth not in (1, 2):
+        raise ValueError("depth must be 1, 2, or None")
+
+    if depth is None:
+        for entry in root.iterdir():
+            if not entry.is_dir():
+                continue
+            if genres and entry.name not in genres:
+                continue
+            if any(child.is_file() for child in entry.iterdir()):
+                yield entry.name, entry
+                continue
+            for child in entry.iterdir():
+                if not child.is_dir():
+                    continue
+                if authors and child.name not in authors:
+                    continue
                 if any(grandchild.is_file() for grandchild in child.iterdir()):
                     category_key = f"{entry.name}/{child.name}"
                     yield category_key, child
+        return
 
+    if depth == 1:
+        entries = (
+            [root / genre for genre in genres]
+            if genres
+            else [path for path in root.iterdir() if path.is_dir()]
+        )
+        for entry in entries:
+            if entry.is_dir():
+                yield entry.name, entry
+        return
 
-def iter_genre_author_dirs(
-    root: Path,
-    genres: Sequence[str],
-    authors: Optional[Sequence[str]] = None,
-) -> Iterable[Tuple[str, str, Path]]:
-    """
-    Yield (genre, author, dir_path) for hardcoded genre roots.
-    If authors is provided, only those author folders are used.
-    """
-    for genre in genres:
-        genre_dir = root / genre
-        if not genre_dir.exists():
+    genre_dirs = (
+        [root / genre for genre in genres]
+        if genres
+        else [path for path in root.iterdir() if path.is_dir()]
+    )
+    for genre_dir in genre_dirs:
+        if not genre_dir.is_dir():
             continue
         if authors:
             author_dirs = [genre_dir / author for author in authors]
@@ -136,78 +192,8 @@ def iter_genre_author_dirs(
             author_dirs = [path for path in genre_dir.iterdir() if path.is_dir()]
         for author_dir in author_dirs:
             if author_dir.is_dir():
-                yield genre, author_dir.name, author_dir
-
-
-
-def embeddings_path(
-    embedding_type: str,
-    filename: Optional[str] = None,
-) -> Path:
-    """
-
-    
-    """
-    base_dir = "data/embeddings"
-
-    folder_map = {
-        "concept": "concept_embeddings",
-        "passage": "passage_embeddings",
-    }
-
-    if embedding_type not in folder_map:
-        raise ValueError(f"embedding_type must be one of {list(folder_map.keys())}")
-
-    path = Path(base_dir) / folder_map[embedding_type]
-
-    if filename:
-        path = path / filename
-
-    return path
-
-
-
-def graph_path(
-    graph_type: str,
-    subfolder: Optional[str] = None,
-    filename: Optional[str] = None,
-) -> Path:
-    """
-
-    """
-    base_dir = "data/graphs"
-
-    folder_map = {
-        "network": "network_analysis",
-        "syntactic": "syntactic_graphs",
-    }
-
-    if graph_type not in folder_map:
-        raise ValueError(f"graph_type must be one of {list(folder_map.keys())}")
-
-    path = Path(base_dir) / folder_map[graph_type]
-    if subfolder:
-        path = path / subfolder
-    if filename:
-        path = path / filename
-    return path
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                category_key = f"{genre_dir.name}/{author_dir.name}"
+                yield category_key, author_dir
 
 def sliding_windows(seq, n, step: int = 1):
     """

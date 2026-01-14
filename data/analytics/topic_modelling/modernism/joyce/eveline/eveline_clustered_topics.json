@@ -6,8 +6,8 @@
     "model_window_size": 15,
     "window_stride": 3,
     "num_sentences": 127,
-    "min_cluster_size": 5,
-    "min_samples": null,
+    "min_cluster_size": 3,
+    "min_samples": 2,
     "soft_score_threshold": 0.5,
     "soft_top_k_topics": 3,
     "use_pca": true,
@@ -15,155 +15,22 @@
   },
   "topics": [
     {
-      "topic_id": 0,
-      "keywords": [
-        "money",
-        "hard",
-        "leave",
-        "dead",
-        "work",
-        "use",
-        "saturday night",
-        "business"
-      ],
-      "stats": {
-        "prevalence": 0.5212186258286238,
-        "persistence": 4.4,
-        "coherence": 0.45770236867908115,
-        "exclusivity": 0.9583333333333334
-      },
-      "mentions": [
-        {
-          "sentence_index": 6,
-          "end_sentence": 20,
-          "window_index": 2,
-          "start_char": 458,
-          "end_char": 1805,
-          "text": "then a man from belfast buy the field and build house in it not like their little brown house but bright brick house with shin roof the child of the avenue use to play together in that field the devines the waters the dunns little keogh the cripple she and her brother and sister ernest however never play he be too grow up her father use often to hunt they in out of the field with his blackthorn stick but usually little keogh use to keep nix and call out when he see her father come still they seem to have be rather happy then her father be not so bad then and besides her mother be alive that be a long time ago she and her brother and sister be all grow up her mother be dead tizzie dunn be dead too and the waters have go back to england everything change now she be go to go away like the other to leave her home home she look round the room review all its familiar object which she have dust once a week for so many year wonder where on earth all the dust come from perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father"
-        },
-        {
-          "sentence_index": 9,
-          "end_sentence": 23,
-          "window_index": 3,
-          "start_char": 782,
-          "end_char": 1977,
-          "text": "her father use often to hunt they in out of the field with his blackthorn stick but usually little keogh use to keep nix and call out when he see her father come still they seem to have be rather happy then her father be not so bad then and besides her mother be alive that be a long time ago she and her brother and sister be all grow up her mother be dead tizzie dunn be dead too and the waters have go back to england everything change now she be go to go away like the other to leave her home home she look round the room review all its familiar object which she have dust once a week for so many year wonder where on earth all the dust come from perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise"
-        },
-        {
-          "sentence_index": 12,
-          "end_sentence": 26,
-          "window_index": 4,
-          "start_char": 1051,
-          "end_char": 2188,
-          "text": "that be a long time ago she and her brother and sister be all grow up her mother be dead tizzie dunn be dead too and the waters have go back to england everything change now she be go to go away like the other to leave her home home she look round the room review all its familiar object which she have dust once a week for so many year wonder where on earth all the dust come from perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business"
-        },
-        {
-          "sentence_index": 15,
-          "end_sentence": 29,
-          "window_index": 5,
-          "start_char": 1221,
-          "end_char": 2384,
-          "text": "now she be go to go away like the other to leave her home home she look round the room review all its familiar object which she have dust once a week for so many year wonder where on earth all the dust come from perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad"
-        },
-        {
-          "sentence_index": 18,
-          "end_sentence": 32,
-          "window_index": 6,
-          "start_char": 1433,
-          "end_char": 2536,
-          "text": "perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please"
-        },
-        {
-          "sentence_index": 21,
-          "end_sentence": 35,
-          "window_index": 7,
-          "start_char": 1806,
-          "end_char": 2694,
-          "text": "whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline"
-        },
-        {
-          "sentence_index": 24,
-          "end_sentence": 38,
-          "window_index": 8,
-          "start_char": 1978,
-          "end_char": 2877,
-          "text": "she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence"
-        },
-        {
-          "sentence_index": 27,
-          "end_sentence": 41,
-          "window_index": 9,
-          "start_char": 2189,
-          "end_char": 3182,
-          "text": "what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she"
-        },
-        {
-          "sentence_index": 30,
-          "end_sentence": 44,
-          "window_index": 10,
-          "start_char": 2385,
-          "end_char": 3725,
-          "text": "she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night"
-        },
-        {
-          "sentence_index": 33,
-          "end_sentence": 47,
-          "window_index": 11,
-          "start_char": 2537,
-          "end_char": 4196,
-          "text": "she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly"
-        },
-        {
-          "sentence_index": 36,
-          "end_sentence": 50,
-          "window_index": 12,
-          "start_char": 2695,
-          "end_char": 4393,
-          "text": "people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly it be hard work a hard life but now that she be about to leave it she do not find it a wholly undesirable life she be about to explore another life with frank frank be very kind manly open hearted"
-        },
-        {
-          "sentence_index": 39,
-          "end_sentence": 53,
-          "window_index": 13,
-          "start_char": 2878,
-          "end_char": 4661,
-          "text": "she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly it be hard work a hard life but now that she be about to leave it she do not find it a wholly undesirable life she be about to explore another life with frank frank be very kind manly open hearted she be to go away with he by the night boat to be his wife and to live with he in buenos ayres where he have a home wait for she how well she remember the first time she have see he he be lodge in a house on the main road where she use to visit it seem a few week ago"
-        },
-        {
-          "sentence_index": 42,
-          "end_sentence": 56,
-          "window_index": 14,
-          "start_char": 3183,
-          "end_char": 4880,
-          "text": "ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly it be hard work a hard life but now that she be about to leave it she do not find it a wholly undesirable life she be about to explore another life with frank frank be very kind manly open hearted she be to go away with he by the night boat to be his wife and to live with he in buenos ayres where he have a home wait for she how well she remember the first time she have see he he be lodge in a house on the main road where she use to visit it seem a few week ago he be stand at the gate his peaked cap push back on his head and his hair tumble forward over a face of bronze then they have come to know each other he use to meet she outside the stores every evening and see her home"
-        },
-        {
-          "sentence_index": 45,
-          "end_sentence": 59,
-          "window_index": 15,
-          "start_char": 3726,
-          "end_char": 5162,
-          "text": "in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly it be hard work a hard life but now that she be about to leave it she do not find it a wholly undesirable life she be about to explore another life with frank frank be very kind manly open hearted she be to go away with he by the night boat to be his wife and to live with he in buenos ayres where he have a home wait for she how well she remember the first time she have see he he be lodge in a house on the main road where she use to visit it seem a few week ago he be stand at the gate his peaked cap push back on his head and his hair tumble forward over a face of bronze then they have come to know each other he use to meet she outside the stores every evening and see her home he take she to see the bohemian girl and she feel elated as she sit in an unaccustomed part of the theatre with he he be aw fully fond of music and sing a little people know that they be court and when he sing about the lass that love a sailor,9 she always feel pleasantly confused"
-        }
-      ]
-    },
-    {
       "topic_id": 1,
       "keywords": [
         "sea",
-        "distress",
         "draw",
-        "passage",
+        "distress",
         "heart",
-        "station",
-        "hand",
-        "arm"
+        "iron",
+        "passage",
+        "grip hand",
+        "blow"
       ],
       "stats": {
-        "prevalence": 0.3835524544119835,
-        "persistence": 3.2,
-        "coherence": 0.6127298239004114,
-        "exclusivity": 0.9583333333333334
+        "prevalence": 0.39392285284243134,
+        "persistence": 6.666666666666667,
+        "coherence": 0.6324319099368864,
+        "exclusivity": 0.9791666666666667
       },
       "mentions": [
         {
@@ -221,28 +88,52 @@
           "start_char": 8417,
           "end_char": 8822,
           "text": "her distress awake a nausea in her body and she keep mov e her lip in silent fervent prayer a bell clang upon her heart she feel he seize her hand come all the sea of the world tumble about her heart he be draw she into they he would drown she she grip with both hand at the iron railing come no no no it be impossible her hand clutch the iron in frenzy amid the sea she send a cry of anguish eveline evvy"
+        },
+        {
+          "sentence_index": 111,
+          "end_sentence": 125,
+          "window_index": 37,
+          "start_char": 8569,
+          "end_char": 8984,
+          "text": "all the sea of the world tumble about her heart he be draw she into they he would drown she she grip with both hand at the iron railing come no no no it be impossible her hand clutch the iron in frenzy amid the sea she send a cry of anguish eveline evvy he rush beyond the barrier and call to she to follow he be shout at to go on but he still call to she she set her white face to he passive like a helpless animal"
         }
       ]
     },
     {
-      "topic_id": 2,
+      "topic_id": 3,
       "keywords": [
+        "sing",
         "ship",
         "tell",
-        "affair forbid",
+        "sailor",
+        "meet",
+        "day",
         "11",
-        "11 fall",
-        "allan line canada",
-        "allan line",
-        "allan"
+        "11 fall foot"
       ],
       "stats": {
-        "prevalence": 0.6025108322501183,
-        "persistence": 7.25,
-        "coherence": 0.9436791050332032,
-        "exclusivity": 1.0
+        "prevalence": 0.4974798748367711,
+        "persistence": 5.4,
+        "coherence": 0.6756534262945495,
+        "exclusivity": 0.9583333333333334
       },
       "mentions": [
+        {
+          "sentence_index": 45,
+          "end_sentence": 59,
+          "window_index": 15,
+          "start_char": 3726,
+          "end_char": 5162,
+          "text": "in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly it be hard work a hard life but now that she be about to leave it she do not find it a wholly undesirable life she be about to explore another life with frank frank be very kind manly open hearted she be to go away with he by the night boat to be his wife and to live with he in buenos ayres where he have a home wait for she how well she remember the first time she have see he he be lodge in a house on the main road where she use to visit it seem a few week ago he be stand at the gate his peaked cap push back on his head and his hair tumble forward over a face of bronze then they have come to know each other he use to meet she outside the stores every evening and see her home he take she to see the bohemian girl and she feel elated as she sit in an unaccustomed part of the theatre with he he be aw fully fond of music and sing a little people know that they be court and when he sing about the lass that love a sailor,9 she always feel pleasantly confused"
+        },
+        {
+          "sentence_index": 48,
+          "end_sentence": 62,
+          "window_index": 16,
+          "start_char": 4197,
+          "end_char": 5330,
+          "text": "it be hard work a hard life but now that she be about to leave it she do not find it a wholly undesirable life she be about to explore another life with frank frank be very kind manly open hearted she be to go away with he by the night boat to be his wife and to live with he in buenos ayres where he have a home wait for she how well she remember the first time she have see he he be lodge in a house on the main road where she use to visit it seem a few week ago he be stand at the gate his peaked cap push back on his head and his hair tumble forward over a face of bronze then they have come to know each other he use to meet she outside the stores every evening and see her home he take she to see the bohemian girl and she feel elated as she sit in an unaccustomed part of the theatre with he he be aw fully fond of music and sing a little people know that they be court and when he sing about the lass that love a sailor,9 she always feel pleasantly confused he use to call her poppens out of fun first of all it have be an excitement for she to have a fellow and then she have begin to like he he have tale of distant country"
+        },
         {
           "sentence_index": 51,
           "end_sentence": 65,
@@ -294,22 +185,22 @@
       ]
     },
     {
-      "topic_id": 3,
+      "topic_id": 4,
       "keywords": [
-        "air",
-        "promise",
-        "derevaun seraun",
         "seraun",
+        "promise",
         "derevaun",
-        "hear",
-        "air strange come",
-        "close dark room"
+        "derevaun seraun",
+        "air",
+        "organ",
+        "escape",
+        "remember father"
       ],
       "stats": {
-        "prevalence": 0.5527108740061522,
-        "persistence": 5.2,
-        "coherence": 0.9099013457734406,
-        "exclusivity": 0.9583333333333334
+        "prevalence": 0.4321973841441305,
+        "persistence": 5.75,
+        "coherence": 0.711415764249651,
+        "exclusivity": 0.9375
       },
       "mentions": [
         {
@@ -326,7 +217,7 @@
           "window_index": 24,
           "start_char": 6053,
           "end_char": 7408,
-          "text": "ernest have be her favourite but she like harry too her father be become old lately she notice he would miss she sometimes he could be very nice not long before when she have be lay up for a day he have read she out a ghost story and make toast for she at the fire another day when their mother be alive they have all go for a picnic to the hill of howth she remember her father put on her mother bonnet to make the child laugh her time be run out but she continue to sit by the window lean her head against the window curtain inhale the odour of dusty cretonne down far in the avenue she could hear a street organ playing she know the air strange that it should come that very night to remind she of the promise to her mother her promise to keep the home together as long as she could she remember the last night of her mother illness she be again in the close dark room at the other side of the hall and outside she hear a melancholy air of italy the organ player have be order to go away and give sixpence she remember her father strut back into the sickroom say damned italians come over here!12 as she muse the pitiful vision of her mother life lay its spell on the very quick of her be that life of commonplace sacrifice clo ing in final craziness she tremble as she hear again her mother voice say constantly with foolish insistence derevaun seraun"
+          "text": "ernest have be her favourite but she like harry too her father be become old lately she notice he would miss she sometimes he could be very nice not long before when she have be lay up for a day he have read she out a ghost story and make toast for she at the fire another day when their mother be alive they have all go for a picnic to the hill of howth she remember her father put on her mother bonnet to make the child laugh her time be run out but she continue to sit by the window lean her head against the window curtain inhale the odour of dusty cretonne down far in the avenue she could hear a street organ playing she know the air strange that it should come that very night to remind she of the promise to her mother her promise to keep the home together as long as she could she remember the last night of her mother illness she be again in the close dark room at the other side of the hall and outside she hear a melancholy air of italy the organ player have be order to go away and give sixpence she remember her father strut back into the sickroom say damned italians come over here!12 as she muse the pitiful vision of her mother life lay its spell on the very quick of she be that life of commonplace sacrifice clo ing in final craziness she tremble as she hear again her mother voice say constantly with foolish insistence derevaun seraun"
         },
         {
           "sentence_index": 75,
@@ -334,7 +225,7 @@
           "window_index": 25,
           "start_char": 6166,
           "end_char": 7477,
-          "text": "sometimes he could be very nice not long before when she have be lay up for a day he have read she out a ghost story and make toast for she at the fire another day when their mother be alive they have all go for a picnic to the hill of howth she remember her father put on her mother bonnet to make the child laugh her time be run out but she continue to sit by the window lean her head against the window curtain inhale the odour of dusty cretonne down far in the avenue she could hear a street organ playing she know the air strange that it should come that very night to remind she of the promise to her mother her promise to keep the home together as long as she could she remember the last night of her mother illness she be again in the close dark room at the other side of the hall and outside she hear a melancholy air of italy the organ player have be order to go away and give sixpence she remember her father strut back into the sickroom say damned italians come over here!12 as she muse the pitiful vision of her mother life lay its spell on the very quick of her be that life of commonplace sacrifice clo ing in final craziness she tremble as she hear again her mother voice say constantly with foolish insistence derevaun seraun derevaun seraun!13 she stand up in a sudden impulse of terror escape"
+          "text": "sometimes he could be very nice not long before when she have be lay up for a day he have read she out a ghost story and make toast for she at the fire another day when their mother be alive they have all go for a picnic to the hill of howth she remember her father put on her mother bonnet to make the child laugh her time be run out but she continue to sit by the window lean her head against the window curtain inhale the odour of dusty cretonne down far in the avenue she could hear a street organ playing she know the air strange that it should come that very night to remind she of the promise to her mother her promise to keep the home together as long as she could she remember the last night of her mother illness she be again in the close dark room at the other side of the hall and outside she hear a melancholy air of italy the organ player have be order to go away and give sixpence she remember her father strut back into the sickroom say damned italians come over here!12 as she muse the pitiful vision of her mother life lay its spell on the very quick of she be that life of commonplace sacrifice clo ing in final craziness she tremble as she hear again her mother voice say constantly with foolish insistence derevaun seraun derevaun seraun!13 she stand up in a sudden impulse of terror escape"
         },
         {
           "sentence_index": 78,
@@ -342,7 +233,7 @@
           "window_index": 26,
           "start_char": 6408,
           "end_char": 7554,
-          "text": "she remember her father put on her mother bonnet to make the child laugh her time be run out but she continue to sit by the window lean her head against the window curtain inhale the odour of dusty cretonne down far in the avenue she could hear a street organ playing she know the air strange that it should come that very night to remind she of the promise to her mother her promise to keep the home together as long as she could she remember the last night of her mother illness she be again in the close dark room at the other side of the hall and outside she hear a melancholy air of italy the organ player have be order to go away and give sixpence she remember her father strut back into the sickroom say damned italians come over here!12 as she muse the pitiful vision of her mother life lay its spell on the very quick of her be that life of commonplace sacrifice clo ing in final craziness she tremble as she hear again her mother voice say constantly with foolish insistence derevaun seraun derevaun seraun!13 she stand up in a sudden impulse of terror escape she must escape frank would save she he would give her life perhaps love too"
+          "text": "she remember her father put on her mother bonnet to make the child laugh her time be run out but she continue to sit by the window lean her head against the window curtain inhale the odour of dusty cretonne down far in the avenue she could hear a street organ playing she know the air strange that it should come that very night to remind she of the promise to her mother her promise to keep the home together as long as she could she remember the last night of her mother illness she be again in the close dark room at the other side of the hall and outside she hear a melancholy air of italy the organ player have be order to go away and give sixpence she remember her father strut back into the sickroom say damned italians come over here!12 as she muse the pitiful vision of her mother life lay its spell on the very quick of she be that life of commonplace sacrifice clo ing in final craziness she tremble as she hear again her mother voice say constantly with foolish insistence derevaun seraun derevaun seraun!13 she stand up in a sudden impulse of terror escape she must escape frank would save she he would give her life perhaps love too"
         },
         {
           "sentence_index": 81,
@@ -350,7 +241,227 @@
           "window_index": 27,
           "start_char": 6676,
           "end_char": 7631,
-          "text": "she know the air strange that it should come that very night to remind she of the promise to her mother her promise to keep the home together as long as she could she remember the last night of her mother illness she be again in the close dark room at the other side of the hall and outside she hear a melancholy air of italy the organ player have be order to go away and give sixpence she remember her father strut back into the sickroom say damned italians come over here!12 as she muse the pitiful vision of her mother life lay its spell on the very quick of her be that life of commonplace sacrifice clo ing in final craziness she tremble as she hear again her mother voice say constantly with foolish insistence derevaun seraun derevaun seraun!13 she stand up in a sudden impulse of terror escape she must escape frank would save she he would give her life perhaps love too but she want to live why should she be unhappy she have a right to happiness"
+          "text": "she know the air strange that it should come that very night to remind she of the promise to her mother her promise to keep the home together as long as she could she remember the last night of her mother illness she be again in the close dark room at the other side of the hall and outside she hear a melancholy air of italy the organ player have be order to go away and give sixpence she remember her father strut back into the sickroom say damned italians come over here!12 as she muse the pitiful vision of her mother life lay its spell on the very quick of she be that life of commonplace sacrifice clo ing in final craziness she tremble as she hear again her mother voice say constantly with foolish insistence derevaun seraun derevaun seraun!13 she stand up in a sudden impulse of terror escape she must escape frank would save she he would give her life perhaps love too but she want to live why should she be unhappy she have a right to happiness"
+        },
+        {
+          "sentence_index": 84,
+          "end_sentence": 98,
+          "window_index": 28,
+          "start_char": 7002,
+          "end_char": 7768,
+          "text": "the organ player have be order to go away and give sixpence she remember her father strut back into the sickroom say damned italians come over here!12 as she muse the pitiful vision of her mother life lay its spell on the very quick of she be that life of commonplace sacrifice clo ing in final craziness she tremble as she hear again her mother voice say constantly with foolish insistence derevaun seraun derevaun seraun!13 she stand up in a sudden impulse of terror escape she must escape frank would save she he would give her life perhaps love too but she want to live why should she be unhappy she have a right to happiness frank would take she in his arm fold she in his arm he would save she she stand among the sway crowd in the station at the north wall.14"
+        },
+        {
+          "sentence_index": 87,
+          "end_sentence": 101,
+          "window_index": 29,
+          "start_char": 7409,
+          "end_char": 8060,
+          "text": "derevaun seraun!13 she stand up in a sudden impulse of terror escape she must escape frank would save she he would give her life perhaps love too but she want to live why should she be unhappy she have a right to happiness frank would take she in his arm fold she in his arm he would save she she stand among the sway crowd in the station at the north wall.14 he hold her hand and she know that he be speak to she say something about the passage over and over again the station be full of soldier with brown baggage through the wide door of the shed she catch a glimpse of the black mass of the boat lie in beside the quay wall with illumined porthole"
+        }
+      ]
+    },
+    {
+      "topic_id": 6,
+      "keywords": [
+        "money",
+        "saturday",
+        "saturday night",
+        "dead harry church",
+        "dead harry",
+        "decorate",
+        "begin weary",
+        "business nearly country"
+      ],
+      "stats": {
+        "prevalence": 0.21025721493520236,
+        "persistence": 3.3333333333333335,
+        "coherence": 1.0,
+        "exclusivity": 0.9791666666666667
+      },
+      "mentions": [
+        {
+          "sentence_index": 30,
+          "end_sentence": 44,
+          "window_index": 10,
+          "start_char": 2385,
+          "end_char": 3725,
+          "text": "she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night"
+        },
+        {
+          "sentence_index": 33,
+          "end_sentence": 47,
+          "window_index": 11,
+          "start_char": 2537,
+          "end_char": 4196,
+          "text": "she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly"
+        },
+        {
+          "sentence_index": 36,
+          "end_sentence": 50,
+          "window_index": 12,
+          "start_char": 2695,
+          "end_char": 4393,
+          "text": "people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly it be hard work a hard life but now that she be about to leave it she do not find it a wholly undesirable life she be about to explore another life with frank frank be very kind manly open hearted"
+        },
+        {
+          "sentence_index": 39,
+          "end_sentence": 53,
+          "window_index": 13,
+          "start_char": 2878,
+          "end_char": 4661,
+          "text": "she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly it be hard work a hard life but now that she be about to leave it she do not find it a wholly undesirable life she be about to explore another life with frank frank be very kind manly open hearted she be to go away with he by the night boat to be his wife and to live with he in buenos ayres where he have a home wait for she how well she remember the first time she have see he he be lodge in a house on the main road where she use to visit it seem a few week ago"
+        },
+        {
+          "sentence_index": 42,
+          "end_sentence": 56,
+          "window_index": 14,
+          "start_char": 3183,
+          "end_char": 4880,
+          "text": "ernest be dead and harry who be in the church decorate business be nearly always down somewhere in the country.5 besides the invariable squabble for money on saturday night have begin to weary she unspeakably she always give her entire wage seven shilling and harry always send up what he could but the trouble be to get any money from her father he say she use to squander the money that she have no head that he be not go to give she his hard earn money to throw about the street and much more for he be usually fairly bad on saturday night in the end he would give she the money and ask she have she any inten tion of buy sundays dinner then she have to rush out as quickly as she could and do her marketing hold her black leather purse tightly in her hand as she elbow her way through the crowd and return home late under her load of provision she have hard work to keep the house together and to see that the two young child who have be leave to her charge go to school regularly and get their meal regularly it be hard work a hard life but now that she be about to leave it she do not find it a wholly undesirable life she be about to explore another life with frank frank be very kind manly open hearted she be to go away with he by the night boat to be his wife and to live with he in buenos ayres where he have a home wait for she how well she remember the first time she have see he he be lodge in a house on the main road where she use to visit it seem a few week ago he be stand at the gate his peaked cap push back on his head and his hair tumble forward over a face of bronze then they have come to know each other he use to meet she outside the stores every evening and see her home"
+        }
+      ]
+    },
+    {
+      "topic_id": 2,
+      "keywords": [
+        "familiar",
+        "year",
+        "object",
+        "familiar object",
+        "friend father photograph",
+        "father photograph visitor",
+        "father photograph",
+        "dust"
+      ],
+      "stats": {
+        "prevalence": 0.3369864899861185,
+        "persistence": 6.0,
+        "coherence": 0.8163845049277424,
+        "exclusivity": 0.8958333333333334
+      },
+      "mentions": [
+        {
+          "sentence_index": 9,
+          "end_sentence": 23,
+          "window_index": 3,
+          "start_char": 782,
+          "end_char": 1977,
+          "text": "her father use often to hunt they in out of the field with his blackthorn stick but usually little keogh use to keep nix and call out when he see her father come still they seem to have be rather happy then her father be not so bad then and besides her mother be alive that be a long time ago she and her brother and sister be all grow up her mother be dead tizzie dunn be dead too and the waters have go back to england everything change now she be go to go away like the other to leave her home home she look round the room review all its familiar object which she have dust once a week for so many year wonder where on earth all the dust come from perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise"
+        },
+        {
+          "sentence_index": 12,
+          "end_sentence": 26,
+          "window_index": 4,
+          "start_char": 1051,
+          "end_char": 2188,
+          "text": "that be a long time ago she and her brother and sister be all grow up her mother be dead tizzie dunn be dead too and the waters have go back to england everything change now she be go to go away like the other to leave her home home she look round the room review all its familiar object which she have dust once a week for so many year wonder where on earth all the dust come from perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business"
+        },
+        {
+          "sentence_index": 15,
+          "end_sentence": 29,
+          "window_index": 5,
+          "start_char": 1221,
+          "end_char": 2384,
+          "text": "now she be go to go away like the other to leave her home home she look round the room review all its familiar object which she have dust once a week for so many year wonder where on earth all the dust come from perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad"
+        },
+        {
+          "sentence_index": 18,
+          "end_sentence": 32,
+          "window_index": 6,
+          "start_char": 1433,
+          "end_char": 2536,
+          "text": "perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please"
+        }
+      ]
+    },
+    {
+      "topic_id": 0,
+      "keywords": [
+        "play",
+        "field",
+        "use play",
+        "man",
+        "sister",
+        "brother",
+        "keogh",
+        "little keogh"
+      ],
+      "stats": {
+        "prevalence": 0.1151078013997329,
+        "persistence": 5.0,
+        "coherence": 0.3678319573467806,
+        "exclusivity": 0.8958333333333334
+      },
+      "mentions": [
+        {
+          "sentence_index": 0,
+          "end_sentence": 14,
+          "window_index": 0,
+          "start_char": 0,
+          "end_char": 1220,
+          "text": "she sit at the window watch the evening invade the avenue her head be lean against the window curtain and in her nostril be the odour of dusty cretonne she be tired few people pass the man out of the last house pass on his way home she hear his footstep clack along the concrete pave ment and afterwards crunch on the cinder path before the new red house one time there use to be a field there in which they use to play every evening with other people child then a man from belfast buy the field and build house in it not like their little brown house but bright brick house with shin roof the child of the avenue use to play together in that field the devines the waters the dunns little keogh the cripple she and her brother and sister ernest however never play he be too grow up her father use often to hunt they in out of the field with his blackthorn stick but usually little keogh use to keep nix and call out when he see her father come still they seem to have be rather happy then her father be not so bad then and besides her mother be alive that be a long time ago she and her brother and sister be all grow up her mother be dead tizzie dunn be dead too and the waters have go back to england everything change"
+        },
+        {
+          "sentence_index": 3,
+          "end_sentence": 17,
+          "window_index": 1,
+          "start_char": 165,
+          "end_char": 1432,
+          "text": "few people pass the man out of the last house pass on his way home she hear his footstep clack along the concrete pave ment and afterwards crunch on the cinder path before the new red house one time there use to be a field there in which they use to play every evening with other people child then a man from belfast buy the field and build house in it not like their little brown house but bright brick house with shin roof the child of the avenue use to play together in that field the devines the waters the dunns little keogh the cripple she and her brother and sister ernest however never play he be too grow up her father use often to hunt they in out of the field with his blackthorn stick but usually little keogh use to keep nix and call out when he see her father come still they seem to have be rather happy then her father be not so bad then and besides her mother be alive that be a long time ago she and her brother and sister be all grow up her mother be dead tizzie dunn be dead too and the waters have go back to england everything change now she be go to go away like the other to leave her home home she look round the room review all its familiar object which she have dust once a week for so many year wonder where on earth all the dust come from"
+        },
+        {
+          "sentence_index": 6,
+          "end_sentence": 20,
+          "window_index": 2,
+          "start_char": 458,
+          "end_char": 1805,
+          "text": "then a man from belfast buy the field and build house in it not like their little brown house but bright brick house with shin roof the child of the avenue use to play together in that field the devines the waters the dunns little keogh the cripple she and her brother and sister ernest however never play he be too grow up her father use often to hunt they in out of the field with his blackthorn stick but usually little keogh use to keep nix and call out when he see her father come still they seem to have be rather happy then her father be not so bad then and besides her mother be alive that be a long time ago she and her brother and sister be all grow up her mother be dead tizzie dunn be dead too and the waters have go back to england everything change now she be go to go away like the other to leave her home home she look round the room review all its familiar object which she have dust once a week for so many year wonder where on earth all the dust come from perhaps she would never see again those familiar object from which she have never dream of be divide and yet during all those year she have never find out the name of the priest whose yellowing photograph hang on the wall above the broken harmonium beside the coloured print of the prom ise make to blessed margaret mary alacoque.3 he have be a school friend of her father"
+        }
+      ]
+    },
+    {
+      "topic_id": 5,
+      "keywords": [
+        "treat",
+        "miss hill",
+        "place advertisement miss",
+        "miss gavan",
+        "advertisement miss",
+        "advertisement miss gavan",
+        "like marry eveline",
+        "like marry"
+      ],
+      "stats": {
+        "prevalence": 0.20328742265701294,
+        "persistence": 10.0,
+        "coherence": 0.42542302811877264,
+        "exclusivity": 0.8125
+      },
+      "mentions": [
+        {
+          "sentence_index": 21,
+          "end_sentence": 35,
+          "window_index": 7,
+          "start_char": 1806,
+          "end_char": 2694,
+          "text": "whenever he show the photograph to a visitor her father use to pass it with a casual word he be in melbourne now she have consent to go away to leave her home be that wise she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline"
+        },
+        {
+          "sentence_index": 24,
+          "end_sentence": 38,
+          "window_index": 8,
+          "start_char": 1978,
+          "end_char": 2877,
+          "text": "she try to weigh each side of the question in her home anyway she have shelter and food she have those whom she have know all her life about she of course she have to work hard both in the house and at business what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence"
+        },
+        {
+          "sentence_index": 27,
+          "end_sentence": 41,
+          "window_index": 9,
+          "start_char": 2189,
+          "end_char": 3182,
+          "text": "what would they say of she in the stores when they find out that she have run away with a fellow say she be a fool perhaps and her place would be fill up by advertisement miss gavan would be glad she have always have an edge on she especially whenever there be people listen miss hill do not you see these lady be wait look lively miss hill please she would not cry many tear at leave the store but in her new home in a distant unknown country it would not be like that then she would be marry she eveline people would treat she with respect then she would not be treat as her mother have be even now though she be over nineteen she sometimes feel herself in danger of her father violence she know it be that that have give she the palpitation when they be grow up he have never go for she like he use to go for harry and ernest because she be a girl but latterly he have begin to threaten she and say what he would do to she only for her dead mother sake and no she have nobody to protect she"
         }
       ]
     }
@@ -360,15 +471,41 @@
       "window_index": 0,
       "start_sentence": 0,
       "end_sentence": 14,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 0,
+          "score": 0.9717382192611694
+        },
+        {
+          "topic_id": 2,
+          "score": 0.6581748127937317
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6121537089347839
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 1,
       "start_sentence": 3,
       "end_sentence": 17,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 0,
+          "score": 0.9736444354057312
+        },
+        {
+          "topic_id": 2,
+          "score": 0.6047626733779907
+        },
+        {
+          "topic_id": 3,
+          "score": 0.5860949754714966
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 2,
@@ -377,15 +514,15 @@
       "topic_scores": [
         {
           "topic_id": 0,
-          "score": 0.717545747756958
-        },
-        {
-          "topic_id": 3,
-          "score": 0.616152286529541
+          "score": 0.958844780921936
         },
         {
           "topic_id": 2,
-          "score": 0.58918696641922
+          "score": 0.732703685760498
+        },
+        {
+          "topic_id": 3,
+          "score": 0.6110859513282776
         }
       ],
       "is_noise": false
@@ -396,16 +533,16 @@
       "end_sentence": 23,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8326835632324219
-        },
-        {
-          "topic_id": 3,
-          "score": 0.6732144355773926
-        },
-        {
           "topic_id": 2,
-          "score": 0.6150521636009216
+          "score": 0.9237860441207886
+        },
+        {
+          "topic_id": 0,
+          "score": 0.7594863176345825
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6446801424026489
         }
       ],
       "is_noise": false
@@ -416,16 +553,16 @@
       "end_sentence": 26,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8381010293960571
-        },
-        {
-          "topic_id": 3,
-          "score": 0.6484788656234741
-        },
-        {
           "topic_id": 2,
-          "score": 0.6259179711341858
+          "score": 0.9504289627075195
+        },
+        {
+          "topic_id": 0,
+          "score": 0.7103826999664307
+        },
+        {
+          "topic_id": 5,
+          "score": 0.6552764773368835
         }
       ],
       "is_noise": false
@@ -436,16 +573,16 @@
       "end_sentence": 29,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8623561859130859
+          "topic_id": 2,
+          "score": 0.9603908061981201
+        },
+        {
+          "topic_id": 5,
+          "score": 0.7624092698097229
         },
         {
           "topic_id": 3,
-          "score": 0.598961353302002
-        },
-        {
-          "topic_id": 2,
-          "score": 0.5857288837432861
+          "score": 0.6171579360961914
         }
       ],
       "is_noise": false
@@ -456,16 +593,16 @@
       "end_sentence": 32,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8457095623016357
-        },
-        {
-          "topic_id": 3,
-          "score": 0.547487735748291
-        },
-        {
           "topic_id": 2,
-          "score": 0.5154585838317871
+          "score": 0.9157015085220337
+        },
+        {
+          "topic_id": 5,
+          "score": 0.8194864988327026
+        },
+        {
+          "topic_id": 6,
+          "score": 0.611294150352478
         }
       ],
       "is_noise": false
@@ -476,12 +613,16 @@
       "end_sentence": 35,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8086178302764893
+          "topic_id": 5,
+          "score": 0.9290202856063843
         },
         {
           "topic_id": 2,
-          "score": 0.5582371950149536
+          "score": 0.7801695466041565
+        },
+        {
+          "topic_id": 3,
+          "score": 0.5927008390426636
         }
       ],
       "is_noise": false
@@ -492,8 +633,16 @@
       "end_sentence": 38,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8189816474914551
+          "topic_id": 5,
+          "score": 0.9721614718437195
+        },
+        {
+          "topic_id": 2,
+          "score": 0.7103568911552429
+        },
+        {
+          "topic_id": 6,
+          "score": 0.6307694911956787
         }
       ],
       "is_noise": false
@@ -504,16 +653,16 @@
       "end_sentence": 41,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8314523696899414
+          "topic_id": 5,
+          "score": 0.9399112462997437
+        },
+        {
+          "topic_id": 6,
+          "score": 0.7294189929962158
         },
         {
           "topic_id": 2,
-          "score": 0.5201950073242188
-        },
-        {
-          "topic_id": 3,
-          "score": 0.5156035423278809
+          "score": 0.6636908054351807
         }
       ],
       "is_noise": false
@@ -524,16 +673,16 @@
       "end_sentence": 44,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8632128238677979
+          "topic_id": 6,
+          "score": 0.9322496056556702
         },
         {
-          "topic_id": 3,
-          "score": 0.6014704704284668
+          "topic_id": 5,
+          "score": 0.7346007823944092
         },
         {
           "topic_id": 2,
-          "score": 0.5644435286521912
+          "score": 0.6415390968322754
         }
       ],
       "is_noise": false
@@ -544,16 +693,16 @@
       "end_sentence": 47,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8619670867919922
+          "topic_id": 6,
+          "score": 0.9729874730110168
         },
         {
-          "topic_id": 3,
-          "score": 0.6110455989837646
+          "topic_id": 5,
+          "score": 0.6697826385498047
         },
         {
           "topic_id": 2,
-          "score": 0.5752226114273071
+          "score": 0.6338500380516052
         }
       ],
       "is_noise": false
@@ -564,16 +713,16 @@
       "end_sentence": 50,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8358202576637268
+          "topic_id": 6,
+          "score": 0.9671359658241272
         },
         {
-          "topic_id": 3,
-          "score": 0.6000961065292358
+          "topic_id": 5,
+          "score": 0.6332792639732361
         },
         {
           "topic_id": 2,
-          "score": 0.5458877086639404
+          "score": 0.5970380306243896
         }
       ],
       "is_noise": false
@@ -584,16 +733,16 @@
       "end_sentence": 53,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8405349254608154
-        },
-        {
-          "topic_id": 3,
-          "score": 0.5806218385696411
+          "topic_id": 6,
+          "score": 0.9597513675689697
         },
         {
           "topic_id": 2,
-          "score": 0.5454630851745605
+          "score": 0.6232962608337402
+        },
+        {
+          "topic_id": 5,
+          "score": 0.6089941263198853
         }
       ],
       "is_noise": false
@@ -604,16 +753,16 @@
       "end_sentence": 56,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.8030809164047241
+          "topic_id": 6,
+          "score": 0.8872329592704773
         },
         {
           "topic_id": 3,
-          "score": 0.615656852722168
+          "score": 0.6191065311431885
         },
         {
           "topic_id": 2,
-          "score": 0.5613143444061279
+          "score": 0.6053261756896973
         }
       ],
       "is_noise": false
@@ -624,16 +773,16 @@
       "end_sentence": 59,
       "topic_scores": [
         {
-          "topic_id": 0,
-          "score": 0.7076287269592285
-        },
-        {
-          "topic_id": 2,
-          "score": 0.6903461217880249
+          "topic_id": 3,
+          "score": 0.7986332178115845
         },
         {
           "topic_id": 1,
-          "score": 0.6626383066177368
+          "score": 0.6496491432189941
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6139117479324341
         }
       ],
       "is_noise": false
@@ -642,8 +791,21 @@
       "window_index": 16,
       "start_sentence": 48,
       "end_sentence": 62,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 3,
+          "score": 0.8263903856277466
+        },
+        {
+          "topic_id": 1,
+          "score": 0.6419960260391235
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6050509214401245
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 17,
@@ -651,16 +813,16 @@
       "end_sentence": 65,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.8666563034057617
-        },
-        {
-          "topic_id": 0,
-          "score": 0.622162938117981
+          "topic_id": 3,
+          "score": 0.8917727470397949
         },
         {
           "topic_id": 1,
-          "score": 0.619031548500061
+          "score": 0.618014395236969
+        },
+        {
+          "topic_id": 2,
+          "score": 0.603001058101654
         }
       ],
       "is_noise": false
@@ -671,16 +833,16 @@
       "end_sentence": 68,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.9334216713905334
+          "topic_id": 3,
+          "score": 0.920405387878418
         },
         {
           "topic_id": 1,
-          "score": 0.6035553216934204
+          "score": 0.6013917922973633
         },
         {
-          "topic_id": 0,
-          "score": 0.5756195783615112
+          "topic_id": 2,
+          "score": 0.5428187847137451
         }
       ],
       "is_noise": false
@@ -691,16 +853,16 @@
       "end_sentence": 71,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.9578345417976379
+          "topic_id": 3,
+          "score": 0.944021463394165
         },
         {
           "topic_id": 1,
-          "score": 0.6620961427688599
+          "score": 0.6596543192863464
         },
         {
-          "topic_id": 3,
-          "score": 0.589337944984436
+          "topic_id": 4,
+          "score": 0.5885071754455566
         }
       ],
       "is_noise": false
@@ -711,16 +873,16 @@
       "end_sentence": 74,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.9519938230514526
-        },
-        {
-          "topic_id": 0,
-          "score": 0.6558565497398376
+          "topic_id": 3,
+          "score": 0.9176051020622253
         },
         {
           "topic_id": 1,
-          "score": 0.650267481803894
+          "score": 0.6475850343704224
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6070250272750854
         }
       ],
       "is_noise": false
@@ -731,16 +893,16 @@
       "end_sentence": 77,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.9374899864196777
-        },
-        {
           "topic_id": 3,
-          "score": 0.6522808074951172
+          "score": 0.898851752281189
         },
         {
           "topic_id": 1,
-          "score": 0.6475494503974915
+          "score": 0.6461213827133179
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6368003487586975
         }
       ],
       "is_noise": false
@@ -751,16 +913,16 @@
       "end_sentence": 80,
       "topic_scores": [
         {
-          "topic_id": 2,
-          "score": 0.7770662307739258
-        },
-        {
           "topic_id": 3,
-          "score": 0.7232248783111572
+          "score": 0.7603687047958374
         },
         {
-          "topic_id": 0,
-          "score": 0.7016154527664185
+          "topic_id": 4,
+          "score": 0.6909160017967224
+        },
+        {
+          "topic_id": 6,
+          "score": 0.6811811923980713
         }
       ],
       "is_noise": false
@@ -771,16 +933,16 @@
       "end_sentence": 83,
       "topic_scores": [
         {
+          "topic_id": 4,
+          "score": 0.8381685614585876
+        },
+        {
           "topic_id": 3,
-          "score": 0.900639533996582
+          "score": 0.6190388798713684
         },
         {
-          "topic_id": 0,
-          "score": 0.6624250411987305
-        },
-        {
-          "topic_id": 2,
-          "score": 0.6179516911506653
+          "topic_id": 6,
+          "score": 0.6177529692649841
         }
       ],
       "is_noise": false
@@ -791,16 +953,16 @@
       "end_sentence": 86,
       "topic_scores": [
         {
-          "topic_id": 3,
-          "score": 0.8924242258071899
+          "topic_id": 4,
+          "score": 0.8456881046295166
         },
         {
-          "topic_id": 2,
-          "score": 0.6588308215141296
+          "topic_id": 3,
+          "score": 0.6619135141372681
         },
         {
           "topic_id": 1,
-          "score": 0.6353518962860107
+          "score": 0.6287353038787842
         }
       ],
       "is_noise": false
@@ -811,16 +973,16 @@
       "end_sentence": 89,
       "topic_scores": [
         {
-          "topic_id": 3,
-          "score": 0.9431819915771484
+          "topic_id": 4,
+          "score": 0.8988053202629089
         },
         {
-          "topic_id": 0,
-          "score": 0.6801245212554932
+          "topic_id": 3,
+          "score": 0.6803613901138306
         },
         {
           "topic_id": 2,
-          "score": 0.6592132449150085
+          "score": 0.6584514379501343
         }
       ],
       "is_noise": false
@@ -831,16 +993,16 @@
       "end_sentence": 92,
       "topic_scores": [
         {
-          "topic_id": 3,
-          "score": 0.9339156150817871
+          "topic_id": 4,
+          "score": 0.9523283243179321
         },
         {
           "topic_id": 1,
-          "score": 0.6733324527740479
+          "score": 0.6631969809532166
         },
         {
-          "topic_id": 0,
-          "score": 0.6345985531806946
+          "topic_id": 3,
+          "score": 0.6093131303787231
         }
       ],
       "is_noise": false
@@ -851,16 +1013,16 @@
       "end_sentence": 95,
       "topic_scores": [
         {
-          "topic_id": 3,
-          "score": 0.9202591180801392
+          "topic_id": 4,
+          "score": 0.9441269636154175
         },
         {
           "topic_id": 1,
-          "score": 0.7332844734191895
+          "score": 0.7193603515625
         },
         {
-          "topic_id": 0,
-          "score": 0.6789007186889648
+          "topic_id": 3,
+          "score": 0.6524796485900879
         }
       ],
       "is_noise": false
@@ -869,15 +1031,37 @@
       "window_index": 28,
       "start_sentence": 84,
       "end_sentence": 98,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 4,
+          "score": 0.8681675791740417
+        },
+        {
+          "topic_id": 1,
+          "score": 0.6677894592285156
+        },
+        {
+          "topic_id": 3,
+          "score": 0.5221178531646729
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 29,
       "start_sentence": 87,
       "end_sentence": 101,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 4,
+          "score": 0.7299320697784424
+        },
+        {
+          "topic_id": 1,
+          "score": 0.678983211517334
+        }
+      ],
+      "is_noise": false
     },
     {
       "window_index": 30,
@@ -886,15 +1070,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.8753947019577026
+          "score": 0.8614456653594971
+        },
+        {
+          "topic_id": 4,
+          "score": 0.7068442702293396
         },
         {
           "topic_id": 3,
-          "score": 0.6231309175491333
-        },
-        {
-          "topic_id": 2,
-          "score": 0.5788857936859131
+          "score": 0.6340231895446777
         }
       ],
       "is_noise": false
@@ -906,15 +1090,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.9273304343223572
+          "score": 0.9105472564697266
         },
         {
-          "topic_id": 2,
-          "score": 0.668817937374115
+          "topic_id": 4,
+          "score": 0.723336935043335
         },
         {
           "topic_id": 3,
-          "score": 0.6549735069274902
+          "score": 0.7156112790107727
         }
       ],
       "is_noise": false
@@ -926,15 +1110,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.9431904554367065
+          "score": 0.9266809821128845
+        },
+        {
+          "topic_id": 4,
+          "score": 0.725232720375061
         },
         {
           "topic_id": 3,
-          "score": 0.66806960105896
-        },
-        {
-          "topic_id": 2,
-          "score": 0.6229263544082642
+          "score": 0.6662933826446533
         }
       ],
       "is_noise": false
@@ -946,15 +1130,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.9484691023826599
-        },
-        {
-          "topic_id": 2,
-          "score": 0.6780750751495361
+          "score": 0.944084882736206
         },
         {
           "topic_id": 3,
-          "score": 0.6447567939758301
+          "score": 0.6906169652938843
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6787627935409546
         }
       ],
       "is_noise": false
@@ -966,15 +1150,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.9493997693061829
+          "score": 0.9440603852272034
+        },
+        {
+          "topic_id": 4,
+          "score": 0.7040040493011475
         },
         {
           "topic_id": 3,
-          "score": 0.6733164191246033
-        },
-        {
-          "topic_id": 2,
-          "score": 0.6461111903190613
+          "score": 0.6730650663375854
         }
       ],
       "is_noise": false
@@ -986,15 +1170,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.9042178392410278
-        },
-        {
-          "topic_id": 2,
-          "score": 0.6603489518165588
+          "score": 0.905138373374939
         },
         {
           "topic_id": 3,
-          "score": 0.643200159072876
+          "score": 0.6936771869659424
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6639494895935059
         }
       ],
       "is_noise": false
@@ -1006,15 +1190,15 @@
       "topic_scores": [
         {
           "topic_id": 1,
-          "score": 0.838569164276123
+          "score": 0.8650639057159424
+        },
+        {
+          "topic_id": 4,
+          "score": 0.6399096846580505
         },
         {
           "topic_id": 3,
-          "score": 0.615247368812561
-        },
-        {
-          "topic_id": 2,
-          "score": 0.5722688436508179
+          "score": 0.5853731632232666
         }
       ],
       "is_noise": false
@@ -1023,77 +1207,36 @@
       "window_index": 37,
       "start_sentence": 111,
       "end_sentence": 125,
-      "topic_scores": [],
-      "is_noise": true
+      "topic_scores": [
+        {
+          "topic_id": 1,
+          "score": 0.7895695567131042
+        },
+        {
+          "topic_id": 3,
+          "score": 0.5161556005477905
+        },
+        {
+          "topic_id": 4,
+          "score": 0.5051986575126648
+        }
+      ],
+      "is_noise": false
     }
   ],
   "mentions_per_sentence": {
-    "6": 1,
-    "7": 1,
-    "8": 1,
-    "9": 2,
-    "10": 2,
-    "11": 2,
-    "12": 3,
-    "13": 3,
-    "14": 3,
-    "15": 4,
-    "16": 4,
-    "17": 4,
-    "18": 5,
-    "19": 5,
-    "20": 5,
-    "21": 5,
-    "22": 5,
-    "23": 5,
-    "24": 5,
-    "25": 5,
-    "26": 5,
-    "27": 5,
-    "28": 5,
-    "29": 5,
-    "30": 5,
-    "31": 5,
-    "32": 5,
-    "33": 5,
-    "34": 5,
-    "35": 5,
-    "36": 5,
-    "37": 5,
-    "38": 5,
-    "39": 5,
-    "40": 5,
-    "41": 5,
-    "42": 5,
-    "43": 5,
-    "44": 5,
-    "45": 5,
-    "46": 5,
-    "47": 5,
-    "48": 4,
-    "49": 4,
-    "50": 4,
-    "51": 4,
-    "52": 4,
-    "53": 4,
-    "54": 4,
-    "55": 4,
-    "56": 4,
-    "57": 4,
-    "58": 4,
-    "59": 4,
-    "90": 3,
-    "91": 3,
-    "92": 3,
-    "93": 3,
-    "94": 3,
-    "95": 3,
-    "96": 3,
-    "97": 3,
-    "98": 3,
-    "99": 4,
-    "100": 4,
-    "101": 4,
+    "90": 5,
+    "91": 5,
+    "92": 5,
+    "93": 5,
+    "94": 5,
+    "95": 5,
+    "96": 5,
+    "97": 5,
+    "98": 5,
+    "99": 5,
+    "100": 5,
+    "101": 5,
     "102": 5,
     "103": 5,
     "104": 5,
@@ -1103,21 +1246,39 @@
     "108": 5,
     "109": 5,
     "110": 5,
-    "111": 4,
-    "112": 4,
-    "113": 4,
-    "114": 3,
-    "115": 3,
-    "116": 3,
-    "117": 2,
-    "118": 2,
-    "119": 2,
-    "120": 1,
-    "121": 1,
-    "122": 1,
-    "60": 4,
-    "61": 4,
-    "62": 4,
+    "111": 5,
+    "112": 5,
+    "113": 5,
+    "114": 4,
+    "115": 4,
+    "116": 4,
+    "117": 3,
+    "118": 3,
+    "119": 3,
+    "120": 2,
+    "121": 2,
+    "122": 2,
+    "123": 1,
+    "124": 1,
+    "125": 1,
+    "45": 5,
+    "46": 5,
+    "47": 5,
+    "48": 5,
+    "49": 5,
+    "50": 5,
+    "51": 5,
+    "52": 5,
+    "53": 5,
+    "54": 5,
+    "55": 5,
+    "56": 5,
+    "57": 5,
+    "58": 5,
+    "59": 5,
+    "60": 5,
+    "61": 5,
+    "62": 5,
     "63": 5,
     "64": 5,
     "65": 5,
@@ -1139,11 +1300,56 @@
     "81": 5,
     "82": 5,
     "83": 5,
-    "84": 4,
-    "85": 4,
-    "86": 4,
-    "87": 3,
-    "88": 3,
-    "89": 3
+    "84": 5,
+    "85": 5,
+    "86": 5,
+    "87": 5,
+    "88": 5,
+    "89": 5,
+    "30": 5,
+    "31": 5,
+    "32": 5,
+    "33": 5,
+    "34": 5,
+    "35": 5,
+    "36": 5,
+    "37": 5,
+    "38": 5,
+    "39": 5,
+    "40": 5,
+    "41": 5,
+    "42": 5,
+    "43": 5,
+    "44": 5,
+    "9": 4,
+    "10": 4,
+    "11": 4,
+    "12": 5,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 5,
+    "18": 5,
+    "19": 5,
+    "20": 5,
+    "21": 5,
+    "22": 5,
+    "23": 5,
+    "24": 5,
+    "25": 5,
+    "26": 5,
+    "27": 5,
+    "28": 5,
+    "29": 5,
+    "0": 1,
+    "1": 1,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 2,
+    "6": 3,
+    "7": 3,
+    "8": 3
   }
 }
