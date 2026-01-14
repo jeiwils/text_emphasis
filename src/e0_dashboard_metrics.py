@@ -27,7 +27,7 @@ Output (build_dashboard_row):
     },
     {
       "lexical": [
-        {"lexical_density": 0.61},
+        {"lexical_density_per_token": 0.61},
         {"lexical_diversity_mattr": 0.68},
         {"avg_word_freq": 12.0},
         {"normalized_freq": 0.76},
@@ -66,7 +66,7 @@ Input (build_topic_correlation_report / build_central_report):
 Output (build_topic_correlation_report):
 {
   "window_count": 40,
-  "metric_names": ["syntax.mean_depth", "lexico_semantics.lexical_density", "..."],
+  "metric_names": ["syntax.mean_depth", "lexico_semantics.lexical_density_per_token", "..."],
   "topics": {
     "0": {
       "keywords": ["term1", "..."],
@@ -193,6 +193,40 @@ def collect_window_tables(window_data: Dict[str, object]) -> List[Dict[str, floa
     return table
 
 
+def dashboard_metric_names(window_table: List[Dict[str, float]]) -> List[str]:
+    if not window_table:
+        return []
+    metric_names = sorted(window_table[0].keys())
+    metric_names = [
+        name
+        for name in metric_names
+        if not any(token in name for token in ("sentence_index", "start_sentence", "end_sentence"))
+    ]
+    metric_names = [
+        name for name in metric_names if not _is_length_metric(name) and not _is_excluded_dashboard_metric(name)
+    ]
+    return metric_names
+
+
+def compute_metric_variances(window_table: List[Dict[str, float]]) -> Dict[str, float]:
+    metric_names = dashboard_metric_names(window_table)
+    if not metric_names:
+        return {}
+    variances: Dict[str, float] = {}
+    for metric in metric_names:
+        values = []
+        for row in window_table:
+            val = row.get(metric)
+            if not isinstance(val, (int, float)):
+                raise ValueError(f"Non-numeric metric value for {metric}")
+            if isinstance(val, float) and math.isnan(val):
+                raise ValueError(f"NaN metric value for {metric}")
+            values.append(float(val))
+        if values:
+            variances[metric] = statistics.pvariance(values)
+    return variances
+
+
 def _is_length_metric(name: str) -> bool:
     if name == "syntax.avg_tokens_per_sentence":
         return False
@@ -208,6 +242,8 @@ def _is_length_metric(name: str) -> bool:
 
 
 def _is_excluded_dashboard_metric(name: str) -> bool:
+    if name == "lexico_semantics.lexical_density":
+        return True
     if "discourse.pronoun_ratio" in name:
         return True
     if "lexico_semantics.num_agents_" in name:
@@ -463,15 +499,7 @@ def build_topic_correlation_report(
     if not window_table or len(window_table) != len(topic_metrics):
         return {}
 
-    metric_names = sorted(window_table[0].keys()) if window_table else []
-    metric_names = [
-        name
-        for name in metric_names
-        if not any(token in name for token in ("sentence_index", "start_sentence", "end_sentence"))
-    ]
-    metric_names = [
-        name for name in metric_names if not _is_length_metric(name) and not _is_excluded_dashboard_metric(name)
-    ]
+    metric_names = dashboard_metric_names(window_table)
     topics = set()
     for entry in topic_metrics:
         topics.update(entry.get("topic_counts", {}).keys())
@@ -625,23 +653,13 @@ def build_central_report(
     )
 
     report: Dict[str, object] = weighted_report if weighted_report else {}
-    if len(central_topic_ids) > 1:
+    if len(central_topic_ids) > 0:
         window_entries = window_data.get("syntax", {}).get("windows", [])
         topic_mentions = collect_topic_mentions(topics_data)
         topic_metrics = build_topic_window_metrics(topic_mentions, window_entries)
         window_table = collect_window_tables(window_data)
         if window_table and len(window_table) == len(topic_metrics):
-            metric_names = sorted(window_table[0].keys()) if window_table else []
-            metric_names = [
-                name
-                for name in metric_names
-                if not any(token in name for token in ("sentence_index", "start_sentence", "end_sentence"))
-            ]
-            metric_names = [
-                name
-                for name in metric_names
-                if not _is_length_metric(name) and not _is_excluded_dashboard_metric(name)
-            ]
+            metric_names = dashboard_metric_names(window_table)
             presence_rows = []
             with_central = 0
             without_central = 0
@@ -742,6 +760,8 @@ def build_dashboard_row(
     sentences = log_prob.get("sentences", []) if isinstance(log_prob, dict) else []
     mean_surprisals = []
     variance_values = []
+    token_counts = []
+    token_surprisals = []
     for sent in sentences if isinstance(sentences, list) else []:
         if not isinstance(sent, dict):
             continue
@@ -759,15 +779,36 @@ def build_dashboard_row(
             if isinstance(mean_surprisal, float) and math.isnan(mean_surprisal):
                 raise ValueError("NaN mean_surprisal")
             mean_surprisals.append(float(mean_surprisal))
-        if variance is not None:
+            token_counts.append(float(num_tokens))
+            if variance is None:
+                variance = 0.0
             if not isinstance(variance, (int, float)):
                 raise ValueError("Non-numeric surprisal_variance")
             if isinstance(variance, float) and math.isnan(variance):
                 raise ValueError("NaN surprisal_variance")
             variance_values.append(float(variance))
-    avg_token_surprisal = statistics.mean(_require_numbers(mean_surprisals, label="mean_surprisal"))
-    max_token_surprisal = max(_require_numbers(mean_surprisals, label="mean_surprisal"))
-    surprisal_variance = statistics.mean(_require_numbers(variance_values, label="surprisal_variance"))
+        log_probs = sent.get("sentence_log_probs", [])
+        if isinstance(log_probs, list):
+            for lp in log_probs:
+                if isinstance(lp, (int, float)) and not (
+                    isinstance(lp, float) and math.isnan(lp)
+                ):
+                    token_surprisals.append(-float(lp))
+    mean_surprisals = _require_numbers(mean_surprisals, label="mean_surprisal")
+    token_counts = _require_numbers(token_counts, label="num_tokens")
+    total_tokens = sum(token_counts)
+    avg_token_surprisal = (
+        sum(mean * count for mean, count in zip(mean_surprisals, token_counts))
+        / total_tokens
+        if total_tokens
+        else 0.0
+    )
+    max_token_surprisal = max(token_surprisals) if token_surprisals else 0.0
+    pooled_variance = 0.0
+    for mean, var, count in zip(mean_surprisals, variance_values, token_counts):
+        pooled_variance += count * var
+        pooled_variance += count * (mean - avg_token_surprisal) ** 2
+    surprisal_variance = pooled_variance / total_tokens if total_tokens else 0.0
 
     lexico = window_data.get("lexico_semantics", {}) if isinstance(window_data, dict) else {}
     lexico_windows = lexico.get("windows", []) if isinstance(lexico, dict) else []
@@ -780,8 +821,6 @@ def build_dashboard_row(
         if not isinstance(window, dict):
             continue
         density = window.get("lexical_density_per_token")
-        if density is None:
-            density = window.get("lexical_density")
         if density is not None:
             densities.append(density)
         mattr = window.get("lexical_diversity_mattr", {})
@@ -798,7 +837,9 @@ def build_dashboard_row(
         information_content = window.get("information_content")
         if information_content is not None:
             information_contents.append(information_content)
-    lexical_density = statistics.mean(_require_numbers(densities, label="lexical_density"))
+    lexical_density_per_token = statistics.mean(
+        _require_numbers(densities, label="lexical_density_per_token")
+    )
     lexical_diversity_mattr = statistics.mean(
         _require_numbers(mattr_scores, label="lexical_diversity_mattr")
     )
@@ -819,6 +860,7 @@ def build_dashboard_row(
     avg_mean_dependency_distances = []
     avg_median_depths = []
     depth_skews = []
+    punctuation_per_tokens = []
     for window in syntax_windows:
         if not isinstance(window, dict):
             continue
@@ -851,6 +893,9 @@ def build_dashboard_row(
         depth_skew = window.get("avg_depth_skew", window.get("depth_skew"))
         if depth_skew is not None:
             depth_skews.append(depth_skew)
+        punctuation_per_token = window.get("punctuation_per_token")
+        if punctuation_per_token is not None:
+            punctuation_per_tokens.append(punctuation_per_token)
     mean_dependency_depth = statistics.mean(_require_numbers(mean_depths, label="mean_depth"))
     max_dependency_depth = max(_require_numbers(max_depths, label="max_depth"))
     clause_density = statistics.mean(_require_numbers(clauses, label="clause_counts_per_token"))
@@ -870,16 +915,23 @@ def build_dashboard_row(
         _require_numbers(avg_median_depths, label="avg_median_depth")
     )
     depth_skew = statistics.mean(_require_numbers(depth_skews, label="depth_skew"))
+    punctuation_per_token = statistics.mean(
+        _require_numbers(punctuation_per_tokens, label="punctuation_per_token")
+    )
 
     explicit_connectives_per_token = []
     connective_counts_per_token: Dict[str, List[float]] = {}
     tense_shifts = []
+    modality_per_tokens = []
     for window in discourse_windows:
         if not isinstance(window, dict):
             continue
         explicit_connectives = window.get("explicit_connectives_per_token")
         if explicit_connectives is not None:
             explicit_connectives_per_token.append(explicit_connectives)
+        modality_per_token = window.get("modality_per_token")
+        if modality_per_token is not None:
+            modality_per_tokens.append(modality_per_token)
         connective_counts = window.get("connective_counts_per_token", {})
         if isinstance(connective_counts, dict):
             for key, value in connective_counts.items():
@@ -896,6 +948,7 @@ def build_dashboard_row(
         for key, values in connective_counts_per_token.items()
     }
     tense_shift = statistics.mean(_require_numbers(tense_shifts, label="tense_shift"))
+    modality_per_token = statistics.mean(_require_numbers(modality_per_tokens, label="modality_per_token"))
 
     row["metrics"] = [
         {
@@ -907,7 +960,7 @@ def build_dashboard_row(
         },
         {
             "lexical": [
-                {"lexical_density": lexical_density},
+                {"lexical_density_per_token": lexical_density_per_token},
                 {"lexical_diversity_mattr": lexical_diversity_mattr},
                 {"avg_word_freq": avg_word_freq},
                 {"normalized_freq": normalized_freq},
@@ -924,11 +977,13 @@ def build_dashboard_row(
                 {"avg_mean_dependency_distance": avg_mean_dependency_distance},
                 {"avg_median_depth": avg_median_depth},
                 {"depth_skew": depth_skew},
+                {"punctuation_per_token": punctuation_per_token},
             ]
         },
         {
             "discourse": [
                 {"explicit_connectives_per_token": explicit_connectives_per_token},
+                {"modality_per_token": modality_per_token},
                 {"connective_counts_per_token": connective_counts_per_token},
                 {"tense_shift": tense_shift},
                 {"entity_overlap_rate": entity_overlap_rate},

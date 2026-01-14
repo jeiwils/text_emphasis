@@ -39,12 +39,13 @@ from c4_topic_modeling import run_topic_modelling
 from c1_syntactics import SyntaxAnalyzer
 from c2_lexico_semantics import LexicoSemanticsAnalyzer
 from c3_discourse import DiscourseAnalyzer
-from w_dashboard import run_dashboard
+from src.e1_dashboard import run_dashboard
 from z_utils import analytics_path, iter_genre_author_dirs, text_path
 
 _DASHBOARD_METRICS = {
     "discourse": {
         "explicit_connectives_per_token",
+        "modality_per_token",
         "connective_counts_per_token",
         "tense_shift",
         "entity_overlap_ratio",
@@ -52,7 +53,7 @@ _DASHBOARD_METRICS = {
         "pronoun_ratio",
     },
     "lexico_semantics": {
-        "lexical_density",
+        "lexical_density_per_token",
         "lexical_diversity_mattr",
         "content_function_ratio",
         "avg_word_freq",
@@ -77,10 +78,12 @@ _DASHBOARD_METRICS = {
         "max_depth",
         "depth_skew",
         "avg_tokens_per_sentence",
+        "punctuation_per_token",
     },
     "log_prob": {
         "token_weighted_mean_surprisal",
         "token_weighted_surprisal_variance",
+        "max_token_surprisal",
     },
 }
 

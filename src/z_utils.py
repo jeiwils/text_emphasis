@@ -78,6 +78,25 @@ def analytics_path(
     return path
 
 
+def figures_path(
+    subfolder: Optional[str] = None,
+    category: Optional[Union[str, Sequence[str]]] = None,
+    filename: Optional[str] = None,
+) -> Path:
+    """
+    Unified helper for visualization outputs under analytics/figures.
+    """
+    path = Path("analytics") / "figures"
+    if subfolder:
+        path = path / subfolder
+    category_parts = _category_parts(category)
+    if category_parts:
+        path = path.joinpath(*category_parts)
+    if filename:
+        path = path / filename
+    return path
+
+
 def iter_category_dirs(root: Path) -> Iterable[Tuple[str, Path]]:
     """
     Yield (category_key, dir_path) pairs for leaf category directories.

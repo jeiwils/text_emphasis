@@ -302,6 +302,7 @@ class NeuralTopicModeler:
         if not vocab:
             return {topic_id: {"coherence": 0.0, "exclusivity": 0.0} for topic_id in keywords}
         stats: Dict[int, Dict[str, float]] = {}
+        num_topics = len(keywords)
         for topic_id, terms in keywords.items():
             topic_texts = topic_window_texts.get(topic_id, [])
             if not topic_texts:
@@ -335,7 +336,12 @@ class NeuralTopicModeler:
             exclusivity_scores = []
             for idx in term_indices:
                 count = term_topic_counts[idx] if idx < len(term_topic_counts) else 1
-                exclusivity_scores.append(1.0 / max(1.0, float(count)))
+                count = max(1.0, float(count))
+                if num_topics <= 1:
+                    exclusivity_scores.append(1.0)
+                else:
+                    score = 1.0 - ((count - 1.0) / (num_topics - 1.0))
+                    exclusivity_scores.append(max(0.0, min(1.0, score)))
             exclusivity = float(np.mean(exclusivity_scores)) if exclusivity_scores else 0.0
             stats[topic_id] = {
                 "coherence": coherence,

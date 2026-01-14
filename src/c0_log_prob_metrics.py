@@ -66,6 +66,7 @@ Output:
 
 import math
 import statistics
+import warnings
 from collections import Counter
 
 import numpy as np
@@ -150,7 +151,10 @@ class WholeTextMetrics:
                     .tolist()
                 )
 
-            scored_start = stride if stride > 0 and i > 0 else 0
+            if stride > 0 and i > 0:
+                scored_start = max(stride - 1, 0)
+            else:
+                scored_start = 0
             for offset_idx, lp in enumerate(
                 chunk_log_probs[scored_start:], start=scored_start
             ):
@@ -220,7 +224,7 @@ class WholeTextMetrics:
 
             surprisals = [-lp for lp in log_probs]
             mean_surprisal = statistics.mean(surprisals)
-            surprisal_variance = statistics.variance(surprisals) if len(surprisals) > 1 else 0.0
+            surprisal_variance = statistics.pvariance(surprisals) if surprisals else 0.0
 
             sent_metrics.append(
                 {
@@ -302,6 +306,11 @@ class WholeTextMetrics:
         if total_scored_tokens > 0:
             total_log_prob = sum(sum(lp_list) for lp_list in sentence_log_probs)
             avg_log_prob = total_log_prob / total_scored_tokens
+        else:
+            warnings.warn(
+                f"No scored tokens for {filename}; check tokenization offsets/sentence spans.",
+                RuntimeWarning,
+            )
 
         # Build aligned sentence-level payloads with nested metrics and raw log-probs
         sentences = []
@@ -335,6 +344,17 @@ class WholeTextMetrics:
                 surprisal_tokens = [
                     sent.get("sentence_surprisal_metrics", {}) for sent in window_sents
                 ]
+                window_log_probs = sentence_log_probs[window_idx : window_idx + len(window_sents)]
+                token_surprisals = []
+                for sent_log_probs in window_log_probs:
+                    if not isinstance(sent_log_probs, list):
+                        continue
+                    for lp in sent_log_probs:
+                        if isinstance(lp, (int, float)) and not (
+                            isinstance(lp, float) and math.isnan(lp)
+                        ):
+                            token_surprisals.append(-float(lp))
+                max_token_surprisal = max(token_surprisals) if token_surprisals else 0.0
                 total_tokens = sum(metrics.get("num_tokens", 0) for metrics in log_prob_tokens)
                 sum_log_prob = sum(metrics.get("sum_log_prob", 0.0) for metrics in log_prob_tokens)
 
@@ -353,8 +373,7 @@ class WholeTextMetrics:
                             continue
                         mean_surprisal = metrics.get("mean_surprisal", 0.0)
                         var_surprisal = metrics.get("surprisal_variance", 0.0)
-                        if token_count > 1:
-                            pooled_variance += (token_count - 1) * var_surprisal
+                        pooled_variance += token_count * var_surprisal
                         pooled_variance += token_count * (mean_surprisal - token_weighted_mean_surprisal) ** 2
 
                     token_weighted_surprisal_variance = pooled_variance / total_tokens
@@ -376,6 +395,7 @@ class WholeTextMetrics:
                 windows[window_idx]["token_weighted_surprisal_variance"] = round(
                     token_weighted_surprisal_variance, 6
                 )
+                windows[window_idx]["max_token_surprisal"] = round(max_token_surprisal, 6)
                 windows[window_idx]["sentence_log_prob_metrics"] = {
                     "sum_log_prob": round(sum_log_prob, 6),
                     "mean_log_prob": round(token_weighted_mean_log_prob, 6),

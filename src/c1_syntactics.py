@@ -57,13 +57,9 @@ Output:
 """
 
 import statistics
-from pathlib import Path
-from typing import Optional
-
-import matplotlib.pyplot as plt
 
 from x_configs import DEFAULT_WINDOW_SIZE
-from z_utils import aggregate_windows, graph_path, load_json, sliding_windows
+from z_utils import aggregate_windows, sliding_windows
 
 
 class SyntaxAnalyzer:
@@ -74,9 +70,10 @@ class SyntaxAnalyzer:
         sentence_metrics = []
 
         for sent in doc.sents:
-            token_count = len([t for t in sent if not t.is_punct])
+            tokens = [t for t in sent if not t.is_punct]
+            token_count = len(tokens)
             main_counts = sub_counts = coord_counts = 0
-            for token in sent:
+            for token in tokens:
                 if token.dep_ == "ROOT":
                     main_counts += 1
                 elif token.dep_ in ("advcl", "ccomp", "xcomp"):
@@ -251,6 +248,7 @@ class SyntaxAnalyzer:
             1.0
         """
         sentences = list(doc.sents)
+        punctuation_counts = [sum(1 for t in sent if t.is_punct) for sent in sentences]
         clause_sent, clause_windows = self.compute_clause_metrics(doc, window_size=window_size)
         depth_sent, depth_windows = self.compute_clause_embedding_depth(doc, window_size=window_size)
         dep_sent, dep_windows = self.compute_dependency_complexity(doc, window_size=window_size)
@@ -260,6 +258,10 @@ class SyntaxAnalyzer:
             clause_payload = clause_sent[idx] if idx < len(clause_sent) else {}
             depth_payload = depth_sent[idx] if idx < len(depth_sent) else {}
             dep_payload = dep_sent[idx] if idx < len(dep_sent) else {}
+            token_count = clause_payload.get("token_count", 0)
+            punctuation_count = punctuation_counts[idx] if idx < len(punctuation_counts) else 0
+            total_non_space = token_count + punctuation_count
+            punctuation_per_token = round(punctuation_count / total_non_space, 6) if total_non_space else 0.0
 
             combined_sentences.append(
                 {
@@ -275,6 +277,8 @@ class SyntaxAnalyzer:
                     "avg_max_dependents_per_head": dep_payload.get("avg_max_dependents_per_head", 0),
                     "avg_mean_dependency_distance": dep_payload.get("avg_mean_dependency_distance", 0),
                     "token_count": clause_payload.get("token_count", 0),
+                    "punctuation_count": punctuation_count,
+                    "punctuation_per_token": punctuation_per_token,
                 }
             )
 
@@ -291,10 +295,16 @@ class SyntaxAnalyzer:
             if idx < len(window_slices):
                 window_sents = window_slices[idx]
                 total_tokens = sum(sent.get("token_count", 0) for sent in window_sents)
+                total_punctuation = sum(sent.get("punctuation_count", 0) for sent in window_sents)
+                total_non_space = total_tokens + total_punctuation
                 window["token_count"] = total_tokens
                 window["avg_tokens_per_sentence"] = round(
                     total_tokens / len(window_sents), 6
                 ) if window_sents else 0.0
+                window["punctuation_count"] = total_punctuation
+                window["punctuation_per_token"] = (
+                    round(total_punctuation / total_non_space, 6) if total_non_space else 0.0
+                )
                 clause_counts_total = {"main": 0, "subordinate": 0, "coordinate": 0}
                 for sent in window_sents:
                     for key, value in sent.get("clause_counts", {}).items():
@@ -328,132 +338,3 @@ class SyntaxAnalyzer:
             "sentences": combined_sentences,
             "windows": windows,
         }
-
-
-class SyntaxVisualiser:
-    def __init__(self, json_file: str):
-        self.json_file = Path(json_file)
-        self.data = load_json(self.json_file)
-        self.windows = self.data.get("windows", [])
-
-    def _text_label(self) -> str:
-        return self.data.get("filename") or self.data.get("meta", {}).get("filename", "")
-
-    def _clause_metrics(self):
-        if "clause_metrics" in self.data:
-            return self.data["clause_metrics"]
-        return [w for w in self.windows if "avg_counts" in w and "avg_ratios" in w]
-
-    def _depth_metrics(self):
-        if "clause_embedding_metrics" in self.data:
-            return self.data["clause_embedding_metrics"]
-        return [w for w in self.windows if "avg_max_depth" in w]
-
-    def _dependency_metrics(self):
-        if "dependency_metrics" in self.data:
-            return self.data["dependency_metrics"]
-        return [w for w in self.windows if "avg_mean_dependency_distance" in w]
-
-    def plot_clause_complexity(self, save_path: Optional[Path] = None):
-        clause_metrics = self._clause_metrics()
-        if not clause_metrics:
-            return
-
-        snippets = [(c["start_sentence"] + c["end_sentence"]) // 2 for c in clause_metrics]
-        sub_counts = [c["avg_counts"]["subordinate"] for c in clause_metrics]
-        coord_counts = [c["avg_counts"]["coordinate"] for c in clause_metrics]
-
-        plt.figure(figsize=(12, 6))
-        plt.bar(snippets, sub_counts, label="Subordinate", color="#377eb8")
-        plt.bar(snippets, coord_counts, bottom=sub_counts, label="Coordinate", color="#e41a1c")
-
-        plt.xlabel("Snippet midpoint (sentence index)")
-        plt.ylabel("Average clause count")
-        plt.title(f"Clause Composition: {self._text_label()}")
-        plt.legend()
-        plt.tight_layout()
-
-        if save_path:
-            save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, dpi=300)
-        plt.close()
-
-    def plot_clause_depth_metrics(self, save_path: Optional[Path] = None):
-        metrics = self._depth_metrics()
-        if not metrics:
-            return
-        snippets = [(c["start_sentence"] + c["end_sentence"]) // 2 for c in metrics]
-
-        plt.figure(figsize=(12, 6))
-        plt.plot(snippets, [c["avg_max_depth"] for c in metrics], label="Max Depth", linewidth=2)
-        plt.plot(snippets, [c["avg_mean_depth"] for c in metrics], label="Mean Depth", linestyle="--")
-        plt.plot(snippets, [c["avg_median_depth"] for c in metrics], label="Median Depth", linestyle=":")
-        plt.plot(snippets, [c["avg_depth_skew"] for c in metrics], label="Depth Skew", linestyle="-.", alpha=0.7)
-
-        plt.xlabel("Snippet midpoint (sentence index)")
-        plt.ylabel("Depth Value")
-        plt.title(f"Syntactic Depth: {self._text_label()}")
-        plt.legend()
-        plt.tight_layout()
-
-        if save_path:
-            save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, dpi=300)
-        plt.close()
-
-    def plot_clause_depth_area(self, save_path: Optional[Path] = None):
-        metrics = self._depth_metrics()
-        if not metrics:
-            return
-        snippets = [(c["start_sentence"] + c["end_sentence"]) // 2 for c in metrics]
-
-        plt.figure(figsize=(12, 6))
-        plt.stackplot(
-            snippets,
-            [c["avg_median_depth"] for c in metrics],
-            [c["avg_mean_depth"] for c in metrics],
-            [c["avg_max_depth"] for c in metrics],
-            labels=["Median Depth", "Mean Depth", "Max Depth"],
-            alpha=0.7,
-        )
-
-        plt.xlabel("Snippet midpoint (sentence index)")
-        plt.ylabel("Depth Value")
-        plt.title(f"Stacked Syntactic Depth: {self._text_label()}")
-        plt.legend(loc="upper left")
-        plt.tight_layout()
-
-        if save_path:
-            save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, dpi=300)
-        plt.close()
-
-    def plot_dependency_complexity(self, save_path: Optional[Path] = None):
-        metrics = self._dependency_metrics()
-        if not metrics:
-            return
-        snippets = [(c["start_sentence"] + c["end_sentence"]) // 2 for c in metrics]
-
-        mean_dep_dist = [c["avg_mean_dependency_distance"] for c in metrics]
-        max_dep = [c["avg_max_dependents_per_head"] for c in metrics]
-        main_dep = [c["avg_dependents_per_head"]["main_clause"] for c in metrics]
-        sub_dep = [c["avg_dependents_per_head"]["subordinate_clause"] for c in metrics]
-        coord_dep = [c["avg_dependents_per_head"]["coordinate_clause"] for c in metrics]
-
-        plt.figure(figsize=(12, 6))
-        plt.bar(snippets, mean_dep_dist, color="#b2df8a", alpha=0.6, label="Mean Dependency Distance")
-        plt.plot(snippets, main_dep, label="Main Clause", color="#1f78b4", linewidth=2)
-        plt.plot(snippets, sub_dep, label="Subordinate Clause", color="#33a02c", linestyle="--")
-        plt.plot(snippets, coord_dep, label="Coordinate Clause", color="#e31a1c", linestyle=":")
-        plt.plot(snippets, max_dep, label="Max Dependents/Head", color="#ff7f00", linestyle="-.", alpha=0.7)
-
-        plt.xlabel("Snippet midpoint (sentence index)")
-        plt.ylabel("Complexity Metric Value")
-        plt.title(f"Dependency Complexity: {self._text_label()}")
-        plt.legend(loc="upper left")
-        plt.tight_layout()
-
-        if save_path:
-            save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, dpi=300)
-        plt.close()

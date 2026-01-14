@@ -12,12 +12,8 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - optional dependency
     pdfplumber = None
 from bs4 import BeautifulSoup
-try:
-    from transformers import pipeline
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    pipeline = None
 
-from x_configs import GENRES, MODEL_CONFIGS, load_spacy_model
+from x_configs import GENRES, load_spacy_model
 from z_utils import text_path
 
 def _html_to_text(html: str, selector: Optional[str] = None) -> str:
@@ -122,10 +118,10 @@ WEB_CONFIGS = {
 
         # Kill running headers + page-number-only lines that get injected mid-story
         "patterns": [
-            # "THE MARQUISE OF O" / OCR zero variant "0"
+            # "THE MARQUISE OF O" / zero variant "0"
             r"^\s*THE\s+MARQUISE\s+OF\s+[O0]\s*$",
 
-            # Running header with optional OCR page marker:
+            # Running header with optional page marker:
             # e.g. "The  Marquise  of  O [61" or "The  Marquise  of  O-"
             r"^\s*The\s+Marquise\s+of\s+O-?(?:\s*\[\s*\d+(?:\s+\d+)*\s*\]?)?\s*$",
 
@@ -270,10 +266,6 @@ class TextPreprocessor:
     def __init__(self, language: str = "en_core_web_sm"):
         """Initialize the preprocessor with specified language model."""
         self.nlp = load_spacy_model(language)
-        self._asr_pipeline = None
-        self._asr_model_name = None
-        self._asr_chunk_length_s = None
-        self._asr_device = None
 
     def tokenize_text(self, text: str) -> List[str]:
         """Tokenize text into words."""
@@ -330,7 +322,7 @@ class TextPreprocessor:
             Collapse spaced-out headings like 'C 1 HAPTER' or 'C HAPTER' and
             abbreviations like 'M r.' -> 'Mr.' that leak into tokens.
             """
-            # Remove interspersed numerals (often OCR'd chapter numbers) and glue the word.
+            # Remove interspersed numerals (often chapter numbers) and glue the word.
             value = re.sub(
                 r'\b([A-Z])\s+(?:[0-9IVXLC]+\s+)?([A-Z][A-Za-z]+)\b',
                 lambda m: f"{m.group(1)}{m.group(2).lower()}".capitalize(),
@@ -530,50 +522,6 @@ class TextPreprocessor:
         return [token.lemma_ for token in doc]
     
 
-    def transcribe_audio(
-        self,
-        audio_path: str,
-        model_name: str = MODEL_CONFIGS["asr"],
-        chunk_length_s: int = 30,
-        device: Optional[int] = None,
-    ) -> str:
-        """
-        Transcribe spoken audio to text using a Whisper ASR model.
-
-        Audio can be any format supported by ffmpeg. Requires the model to be
-        available locally (or network access for first-time download).
-        """
-        if pipeline is None:
-            raise RuntimeError("transformers is required for ASR transcription.")
-        needs_new_pipeline = (
-            self._asr_pipeline is None
-            or self._asr_model_name != model_name
-            or self._asr_chunk_length_s != chunk_length_s
-            or self._asr_device != device
-        )
-
-        if needs_new_pipeline:
-            try:
-                self._asr_pipeline = pipeline(
-                    task="automatic-speech-recognition",
-                    model=model_name,
-                    chunk_length_s=chunk_length_s,
-                    device=device,
-                )
-                self._asr_model_name = model_name
-                self._asr_chunk_length_s = chunk_length_s
-                self._asr_device = device
-            except Exception as exc:  # noqa: BLE001
-                raise RuntimeError(
-                    f"Failed to load ASR model '{model_name}'. Ensure it is installed locally "
-                    "or downloadable in your environment."
-                ) from exc
-
-        result = self._asr_pipeline(audio_path)
-        transcript = result["text"]
-        return self.clean_text(transcript)
-
-
     def pdf_to_text(self, pdf_path: str) -> str:
         """Extract text from a text-based PDF."""
         if pdfplumber is None:
@@ -727,26 +675,34 @@ BOOK_CONFIGS = {
     # --- Poe (updated PDFs) ---
 
     "the_telltale_heart": {
-        "pages": list(range(1, 5)),  # 1–4
+        # Skip cover + copyright pages; story starts on PDF page 3
+        "pages": list(range(3, 9)),  # 3-8
         "use_text_flow": True,
-        "start_marker": "iT’s TRue! yes, i have been ill,",
-        "end_marker": "Why does it not stop!?”",
+        "start_marker": "TRUE!",
+        "end_marker": "hideous heart!",
         "patterns": [
-            r"^\s*\d{1,3}\s*$",                  # page numbers 64–67
-            r"^\s*E\s+d\s+g\s+a\s+r.*P\s+o\s+e.*$",  # spaced author header
-            r"^\s*p\s*$",                        # the stray 'p' line
+            r"^\s*\d{1,3}\s*$",  # page numbers
+            r"^\s*EDGAR\s+ALLAN\s+POE\s+\d+\s*$",
+            r"^\s*\d+\s+THE\s+TELL-TALE\s+HEART\s*$",
+            r"^\s*THE\s+TELL-TALE\s+HEART\s+\d+\s*$",
+            r"^\s*E\s+d\s+g\s+a\s+r.*P\s+o\s+e.*$",
+            r"^\s*p\s*$",
         ],
     },
 
     "the_cask_of_amontillado": {
-        "pages": list(range(1, 6)),  # 1–5
+        # Skip cover + copyright pages; story starts on PDF page 3
+        "pages": list(range(3, 11)),  # 3-10
         "use_text_flow": True,
-        "start_marker": "foRTunaTo had huRT me a",
-        "end_marker": "May he rest in peace!",
+        "start_marker": "THE thousand injuries of Fortunato I had borne as I best",
+        "end_marker": "In pace requiescat!",
         "patterns": [
-            r"^\s*\d{1,3}\s*$",                  # page numbers 68–72
-            r"^\s*E\s+d\s+g\s+a\s+r.*P\s+o\s+e.*$",  # spaced author header
-            r"^\s*p\s*$",                        # the stray 'p' line
+            r"^\s*\d{1,3}\s*$",  # page numbers
+            r"^\s*EDGAR\s+ALLAN\s+POE\s+\d+\s*$",
+            r"^\s*\d+\s+THE\s+CASK\s+OF\s+AMONTILLADO\s*$",
+            r"^\s*THE\s+CASK\s+OF\s+AMONTILLADO\s+\d+\s*$",
+            r"^\s*E\s+d\s+g\s+a\s+r.*P\s+o\s+e.*$",
+            r"^\s*p\s*$",
         ],
     },
 
@@ -765,8 +721,6 @@ BOOK_CONFIGS = {
             r"\*\s*Watson[\s\S]{0,200}?vol\.\s*v\.",
         ],
     },
-}
-BOOK_CONFIGS.update({
     # --- Kleist ---
     "saint_cecilia": {
         "pages": list(range(1, 9)),  # 1–8
@@ -825,30 +779,31 @@ BOOK_CONFIGS.update({
 
     # --- Le Fanu (Blackmask) ---
     "mr_justice_harbottle": {
-        "pages": list(range(3, 24)),  # 3–23
+        "pages": list(range(3, 24)),  # 3-23
         "use_text_flow": False,
-        "start_marker": "ON this case Doctor Hesselius",
+        "start_marker": "CHAPTER I. THE JUDGE'S HOUSE",
         "end_marker": "the rich man died, and was buried.",
         "patterns": [
             r"This page copyright.*",
             r"http://www\.blackmask\.com.*",
             r"^\s*MR\. JUSTICE HARBOTTLE\s*$",
-            r"^\s*•\s+.*$",  # TOC bullets
-            # footer lines with trailing page number (keep real chapter headings)
+            r"^\s*MR\. JUSTICE HARBOTTLE\s+\d+\s*$",
+            r"^\s*\?\s+.*$",  # TOC bullets
             r"^\s*CHAPTER\s+[IVXLC]+\..*\s+\d+\s*$",
             r"\(cid:\d+\)",
         ],
     },
 
     "the_familiar": {
-        "pages": list(range(4, 27)),  # 4–26 (skip cover + TOC + copyright page)
+        "pages": list(range(4, 27)),  # 4-26 (skip cover + TOC + copyright page)
         "use_text_flow": False,
-        "start_marker": "Had I seen Mr. Barton, and examined him",
-        "end_marker": "Papers of Dr. Hesselius].",
+        "start_marker": "CHAPTER I. FOOTSTEPS",
+        "end_marker": "absolute and impenetrable mystery is like to prevail until the day of doom.",
         "patterns": [
             r"This page copyright.*",
             r"http://www\.blackmask\.com.*",
             r"^\s*THE FAMILIAR\s*$",
+            r"^\s*THE FAMILIAR\s+\d+\s*$",
             r"^\s*CHAPTER.*\s+\d+\s*$",
             r"^\s*POSTSCRIPT BY THE EDITOR\s+\d+\s*$",
             r"\(cid:\d+\)",
@@ -856,17 +811,17 @@ BOOK_CONFIGS.update({
     },
 
     "green_tea": {
-        "pages": list(range(3, 23)),  # 3–22 (skip cover + TOC; drop “The End” page)
+        "pages": list(range(3, 23)),  # 3-22 (skip cover/TOC/end page)
         "use_text_flow": False,
-        "start_marker": "Through carefully educated in medicine and surgery",
-        "end_marker": "his cure is certain.",
+        "start_marker": "CHAPTER I. Dr. Hesselius Relates How He Met the Rev. Mr. Jennings",
+        "end_marker": "and the mortal and immortal prematurely make acquaintance.",
         "patterns": [
             r"This page copyright.*",
             r"http://www\.blackmask\.com.*",
             r"^\s*Green Tea\s*$",
             r"^\s*Green Tea\s+\d+\s*$",
-            r"^\s*•\s+.*$",      # TOC bullets
-            r"^\s*i\s*$",        # stray roman numeral page marker
+            r"^\s*\?\s+.*$",
+            r"^\s*i\s*$",
         ],
     },
 
@@ -901,156 +856,154 @@ BOOK_CONFIGS.update({
             r"^by The Author of Frankenstein\s*$",
         ],
     },
-})
 
-BOOK_CONFIGS.update({
     # --- Kate Chopin ---
     "the_story_of_an_hour": {
-    "pages": [1, 2],
-    "use_text_flow": True,
-    "start_marker": "Knowing that Mrs. Mallard was afflicted with a heart trouble,",
-    "end_marker": "When the doctors came they said she had died of heart disease—of joy that kills.",
-    "patterns": None,
+        "pages": [1, 2],
+        "use_text_flow": True,
+        "start_marker": "Knowing that Mrs. Mallard was afflicted with a heart trouble,",
+        "end_marker": "When the doctors came they said she had died of heart disease—of joy that kills.",
+        "patterns": None,
     },
 
     "a_pair_of_silk_stockings": {
-    "pages": [1, 2, 3],  # page 4 is notes only
-    "use_text_flow": True,
-    "start_marker": "Little Mrs. Sommers one day found herself the unexpected possessor of fifteen",
-    "end_marker": "go on and on with her forever.",
-    "patterns": [
-        r"^\s*\d+\s*$",  # page numbers like "2", "3"
-    ],
+        "pages": [1, 2, 3],  # page 4 is notes only
+        "use_text_flow": True,
+        "start_marker": "Little Mrs. Sommers one day found herself the unexpected possessor of fifteen",
+        "end_marker": "go on and on with her forever.",
+        "patterns": [
+            r"^\s*\d+\s*$",  # page numbers like "2", "3"
+        ],
     },
 
     "desirees_baby": {
-    "pages": [1, 2, 3, 4],
-    "use_text_flow": True,
-    "start_marker": "As the day was pleasant, Madame Valmondé drove over to L’Abri to see Désirée",
-    "end_marker": "the brand of slavery.”",
-    "patterns": None,
+        "pages": [1, 2, 3, 4],
+        "use_text_flow": True,
+        "start_marker": "As the day was pleasant, Madame Valmondé drove over to L’Abri to see Désirée",
+        "end_marker": "the brand of slavery.”",
+        "patterns": None,
     },
 
     # --- Henry James (Blackmask-style PDFs: TOC/headers/footers) ---
 
     # NOTE: file name is the_real_thing.pdf but the actual text is "The Real Right Thing"
     "the_real_thing": {
-    # Skip cover/TOC/copyright pages; story starts on PDF page 6
-    "pages": list(range(6, 14)),  # 6–13
-    "use_text_flow": True,
-    "start_marker": "When, after the death of Ashton Doyne",
-    "end_marker": "\"I give up.\"",
-    "patterns": [
-        r"^\s*The Real Right Thing\s*$",  # footer/header
-        r"^\s*\d+\s+\d+\s*$",             # footer like "1 3", "2 6", etc.
-        r"^\s*\d+\s*$",                   # section markers like "1", "2", "3" on their own line
-    ],
+        # Skip cover/TOC/copyright pages; story starts on PDF page 6
+        "pages": list(range(6, 14)),  # 6–13
+        "use_text_flow": True,
+        "start_marker": "When, after the death of Ashton Doyne",
+        "end_marker": "\"I give up.\"",
+        "patterns": [
+            r"^\s*The Real Right Thing\s*$",  # footer/header
+            r"^\s*\d+\s+\d+\s*$",             # footer like "1 3", "2 6", etc.
+            r"^\s*\d+\s*$",                   # section markers like "1", "2", "3" on their own line
+        ],
     },
 
     "the_author_of_beltraffio": {
-    # Skip cover + TOC; story begins on PDF page 3
-    "pages": list(range(3, 29)),  # 3–28
-    "use_text_flow": True,
-    "start_marker": "Much as I wished to see him I had kept my letter of introduction",
-    "end_marker": 'she even dipped into the black "Beltraffio."',
-    "patterns": [
-        r"^\s*This page copyright.*$",
-        r"^\s*http://www\.blackmask\.com\s*$",
-        r"^\s*The Author of Beltraffio\s*$",
-        r"^\s*The Author of Beltraffio\s*\d+\s*$",  # footer like "The Author of Beltraffio 12"
-        r"^\s*CHAPTER\s+[IVXLC]+\.?\s+\d+\s*$",     # footer like "CHAPTER II 9"
-        r"^\s*•\s*$",
-    ],
+        # Skip cover + TOC; story begins on PDF page 3
+        "pages": list(range(3, 29)),  # 3–28
+        "use_text_flow": True,
+        "start_marker": "Much as I wished to see him I had kept my letter of introduction",
+        "end_marker": 'she even dipped into the black "Beltraffio."',
+        "patterns": [
+            r"^\s*This page copyright.*$",
+            r"^\s*http://www\.blackmask\.com\s*$",
+            r"^\s*The Author of Beltraffio\s*$",
+            r"^\s*The Author of Beltraffio\s*\d+\s*$",  # footer like "The Author of Beltraffio 12"
+            r"^\s*CHAPTER\s+[IVXLC]+\.?\s+\d+\s*$",     # footer like "CHAPTER II 9"
+            r"^\s*•\s*$",
+        ],
     },
 
     "the_figure_in_the_carpet": {
-    # Skip cover + TOC; story content begins on PDF page 3 (after the copyright/transcription lines)
-    "pages": list(range(3, 24)),  # 3–23
-    "use_text_flow": True,
-    "start_marker": "I had done a few things and earned a few pence",
-    "end_marker": "quite my revenge.",
-    "patterns": [
-        r"^\s*This page copyright.*$",
-        r"^\s*http://www\.blackmask\.com\s*$",
-        r"^\s*Transcribed from.*$",
-        r"^\s*The Figure in the Carpet\s*$",               # per-page footer/header
-        r"^\s*CHAPTER\s+[IVXLC0-9]+\.?\s+\d+\s*$",         # footer like "CHAPTER XI. 21"
-        r"^\s*CHAPTER\s+[IVXLC0-9]+\.?\s*•\s*$",           # "CHAPTER I •" lists
-        r"^\s*•\s*$",
-    ],
+        # Skip cover + TOC; story content begins on PDF page 3 (after the copyright/transcription lines)
+        "pages": list(range(3, 24)),  # 3–23
+        "use_text_flow": True,
+        "start_marker": "I had done a few things and earned a few pence",
+        "end_marker": "quite my revenge.",
+        "patterns": [
+            r"^\s*This page copyright.*$",
+            r"^\s*http://www\.blackmask\.com\s*$",
+            r"^\s*Transcribed from.*$",
+            r"^\s*The Figure in the Carpet\s*$",               # per-page footer/header
+            r"^\s*CHAPTER\s+[IVXLC0-9]+\.?\s+\d+\s*$",         # footer like "CHAPTER XI. 21"
+            r"^\s*CHAPTER\s+[IVXLC0-9]+\.?\s*•\s*$",           # "CHAPTER I •" lists
+            r"^\s*•\s*$",
+        ],
     },
 
     # --- Kafka ---
     "in_the_penal_colony": {
-    "pages": list(range(1, 17)),  # 1–16
-    "use_text_flow": True,
-    "start_marker": "‘It’s a remarkable piece of apparatus,’ said the officer to the explorer",
-    "end_marker": "kept them from attempting the leap.",
-    "patterns": [
-        r"^\s*©\s*\d{4}\s+by\s+http://www\.HorrorMasters\.com\s*$",
-        r"^\s*\(c\)\s*\d{4}\s+by\s+Horror\s+Masters\s*$",
-        r"^\s*Blah blah blah.*$",
-        r"^\s*To the reader:.*stolen this story.*$",
-        r"^~\^\^.*$",
-        r"^@#\$.*$",
-    ],
+        "pages": list(range(1, 17)),  # 1–16
+        "use_text_flow": True,
+        "start_marker": "‘It’s a remarkable piece of apparatus,’ said the officer to the explorer",
+        "end_marker": "kept them from attempting the leap.",
+        "patterns": [
+            r"^\s*©\s*\d{4}\s+by\s+http://www\.HorrorMasters\.com\s*$",
+            r"^\s*\(c\)\s*\d{4}\s+by\s+Horror\s+Masters\s*$",
+            r"^\s*Blah blah blah.*$",
+            r"^\s*To the reader:.*stolen this story.*$",
+            r"^~\^\^.*$",
+            r"^@#\$.*$",
+        ],
     },
 
     "the_judgement": {
-    "pages": list(range(1, 8)),  # 1–7
-    "use_text_flow": True,
-    # Keeps "For F." and captures the split drop-cap ("I" + "t was...")
-    "start_marker": "For F.\nI\nt was on a Sunday morning",
-    "end_marker": "At this moment an almost endless traffic rolled across the bridge.",
-    "patterns": [
-        r'^\s*Franz\s+Kafka\s+"The\s+Judgement"\s+\d+\s*$',  # header on every page
-        r"^_+\s*$",                                         # trailing separator line
-    ],
+        "pages": list(range(1, 8)),  # 1–7
+        "use_text_flow": True,
+        # Keeps "For F." and captures the split drop-cap ("I" + "t was...")
+        "start_marker": "For F.\nI\nt was on a Sunday morning",
+        "end_marker": "At this moment an almost endless traffic rolled across the bridge.",
+        "patterns": [
+            r'^\s*Franz\s+Kafka\s+"The\s+Judgement"\s+\d+\s*$',  # header on every page
+            r"^_+\s*$",                                         # trailing separator line
+        ],
     },
 
     "a_hunger_artist": {
-    "pages": [1, 2, 3, 4, 5],
-    "use_text_flow": True,
+        "pages": [1, 2, 3, 4, 5],
+        "use_text_flow": True,
 
-    # IMPORTANT: This PDF needs x_tolerance lowered to prevent missing spaces
-    "extract_kwargs": {"x_tolerance": 1},
+        # IMPORTANT: This PDF needs x_tolerance lowered to prevent missing spaces
+        "extract_kwargs": {"x_tolerance": 1},
 
-    "start_marker": "During these last decades the interest in professional fasting has markedly diminished.",
-    "end_marker": "did not ever want to move away.",
-    "patterns": [
-        r"^\s*Franz\s+Kafka\s+\d+\s+A\s+Hunger\s+Artist\s*$",  # footer on every page
-    ],
+        "start_marker": "During these last decades the interest in professional fasting has markedly diminished.",
+        "end_marker": "did not ever want to move away.",
+        "patterns": [
+            r"^\s*Franz\s+Kafka\s+\d+\s+A\s+Hunger\s+Artist\s*$",  # footer on every page
+        ],
     },
 
     "kew_gardens": {
-    "pages": list(range(1, 7)),  # 1–6
-    "use_text_flow": False,
-    "start_marker": "From the oval-shaped flower-bed",
-    "end_marker": "voices cried aloud and the petals of myriads of flowers flashed their colours into the air.",
-    "patterns": [
-        r"Downloaded from\s+www\.libraryofshortstories\.com.*",
-        r"This work is in the public domain.*",
-        r"Please check your local copyright laws.*",
-    ],
+        "pages": list(range(1, 7)),  # 1–6
+        "use_text_flow": False,
+        "start_marker": "From the oval-shaped flower-bed",
+        "end_marker": "voices cried aloud and the petals of myriads of flowers flashed their colours into the air.",
+        "patterns": [
+            r"Downloaded from\s+www\.libraryofshortstories\.com.*",
+            r"This work is in the public domain.*",
+            r"Please check your local copyright laws.*",
+        ],
     },
     "the_mark_on_the_wall": {
-    "pages": list(range(1, 10)),  # 1–9 (story); pages 10–13 are exercises
-    "use_text_flow": True,
-    "start_marker": "Perhaps it was the middle of January",
-    "end_marker": "Ah, the mark on the wall! It was a snail",
-    "patterns": [
-        # Running headers
-        r"^\s*\d{1,3}\s*/\s*(?:KALEIDOSCOPE|THE MARK ON THE WALL)\s*$",
-        # Footer
-        r"^\s*Reprint\s+\d{4}-\d{2}\s*$",
+        "pages": list(range(1, 10)),  # 1–9 (story); pages 10–13 are exercises
+        "use_text_flow": True,
+        "start_marker": "Perhaps it was the middle of January",
+        "end_marker": "Ah, the mark on the wall! It was a snail",
+        "patterns": [
+            # Running headers
+            r"^\s*\d{1,3}\s*/\s*(?:KALEIDOSCOPE|THE MARK ON THE WALL)\s*$",
+            # Footer
+            r"^\s*Reprint\s+\d{4}-\d{2}\s*$",
 
-        # “Stop and Think” block injected mid-story (remove questions, keep story)
-        r"Stop and Think(?:\s+Stop and Think)*\s*1\.[\s\S]*?(?=In certain lights)",
-        r"Stop and Think(?:\s+Stop and Think)*\s*1\.[\s\S]*?(?=Someone is standing over me)",
+            # “Stop and Think” block injected mid-story (remove questions, keep story)
+            r"Stop and Think(?:\s+Stop and Think)*\s*1\.[\s\S]*?(?=In certain lights)",
+            r"Stop and Think(?:\s+Stop and Think)*\s*1\.[\s\S]*?(?=Someone is standing over me)",
 
-        # Whitaker’s Almanack explanatory note (not Woolf’s story text)
-        r"\*\s*Whitaker.?s Almanack[\s\S]{0,250}?subjects\.",
-    ],
+            # Whitaker’s Almanack explanatory note (not Woolf’s story text)
+            r"\*\s*Whitaker.?s Almanack[\s\S]{0,250}?subjects\.",
+        ],
     },
 
     "an_unwritten_novel": {
@@ -1060,11 +1013,7 @@ BOOK_CONFIGS.update({
         # IMPORTANT: fixes the initial drop-cap ordering ("S" + "UCH")
         "use_text_flow": True,
 
-        # No OCR needed (clean text layer)
-        "use_ocr": False,
-        "ocr_force": False,
-
-        # Start at title (easy to match), and cut before transcriber notes
+        # Start at title (easy to match), and cut before end notes
         "start_marker": "AN UNWRITTEN NOVEL",
         "end_marker": "adorable world!",
 
@@ -1082,10 +1031,6 @@ BOOK_CONFIGS.update({
         # Default extraction order is fine for this PDF
         "use_text_flow": False,
 
-        # No OCR needed (text layer is good)
-        "use_ocr": False,
-        "ocr_force": False,
-
         # Trim out title/header by starting at the first story sentence
         "start_marker": "The balloon, beginning at a point on Fourteenth Street",
         "end_marker": "when we are angry with one another.",
@@ -1097,37 +1042,37 @@ BOOK_CONFIGS.update({
     },
 
     "the_school": {
-    "pages": list(range(1, 5)),  # 1–4
-    "use_text_flow": False,      # IMPORTANT for correct order in this PDF
-    "start_marker": "Well, we had all these children out planting trees, see,",
-    "end_marker": "The children cheered wildly.",
-    "patterns": [
-        # Running headers
-        r"^\s*\d+\s+amateurs\s*$",
-        r"^\s*the\s+school\s+\d+\s*$",
+        "pages": list(range(1, 5)),  # 1–4
+        "use_text_flow": False,      # IMPORTANT for correct order in this PDF
+        "start_marker": "Well, we had all these children out planting trees, see,",
+        "end_marker": "The children cheered wildly.",
+        "patterns": [
+            # Running headers
+            r"^\s*\d+\s+amateurs\s*$",
+            r"^\s*the\s+school\s+\d+\s*$",
 
-        # LOA subscribe boilerplate
-        r"^\s*Are you receiving Story of the Week.*$",
-        r"^\s*Sign up now at loa\.org/sotw.*$",
+            # LOA subscribe boilerplate
+            r"^\s*Are you receiving Story of the Week.*$",
+            r"^\s*Sign up now at loa\.org/sotw.*$",
 
-        # Footer garbage from "6966 Book.indb ..."
-        r"^\s*\d+\s*BBooookk\.\.iinnddbb.*$",
+            # Footer garbage from "6966 Book.indb ..."
+            r"^\s*\d+\s*BBooookk\.\.iinnddbb.*$",
 
-        # Standalone page-number lines
-        r"^\s*\d{1,4}\s*$",
-    ],
+            # Standalone page-number lines
+            r"^\s*\d{1,4}\s*$",
+        ],
     },
 
     "the_distance_of_the_moon": {
-    "pages": list(range(1, 7)),  # 1–6 only
-    "use_text_flow": True,       # REQUIRED for correct reading order
-    "start_marker": "At one time, according to Sir George H. Darwin",
-    "end_marker": "and me with them.",
-    "patterns": [
-        r"^\s*\d+\s*$",  # page numbers 1–6 at the top
-    ],
+        "pages": list(range(1, 7)),  # 1–6 only
+        "use_text_flow": True,       # REQUIRED for correct reading order
+        "start_marker": "At one time, according to Sir George H. Darwin",
+        "end_marker": "and me with them.",
+        "patterns": [
+            r"^\s*\d+\s*$",  # page numbers 1–6 at the top
+        ],
     },
-})
+}
 
 
 DEFAULT_BOOK_CONFIG = {
@@ -1339,40 +1284,6 @@ def preprocess_pdf(
     print(f"[INFO] Normalised text saved to {normalised_path}")
     print(f"[INFO] Normalised segmented text saved to {normalised_segmented_path}")
     return cleaned_path
-
-
-
-def preprocess_audio_file(
-    audio_path: Path,
-    preproc: "TextPreprocessor",
-    model_name: str = "openai/whisper-small", ### CONFIGS SHOULD BE INTEGRATED HERE
-    chunk_length_s: int = 30,
-    device: Optional[int] = None,
-    save: bool = True,
-    category: Optional[str] = None,
-):
-    """
-    Transcribe and clean an audio file; optionally save the transcript.
-
-    Returns the cleaned transcript path when saving, otherwise the text.
-    """
-    transcript = preproc.transcribe_audio(
-        str(audio_path),
-        model_name=model_name,
-        chunk_length_s=chunk_length_s,
-        device=device,
-    )
-
-    if not save:
-        return transcript
-
-    category_name = category or audio_path.parent.name
-    save_dir = text_path("processed", "audio_transcripts", category_name)
-    save_dir.mkdir(parents=True, exist_ok=True)
-    transcript_path = save_dir / f"{audio_path.stem}_transcript.txt"
-    transcript_path.write_text(transcript, encoding="utf-8")
-    print(f"[INFO] Transcript saved to {transcript_path}")
-    return transcript_path
 
 
 

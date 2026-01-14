@@ -1,212 +1,103 @@
 # Textual Emphasis Analysis
 
-Python 3.10
+Python 3.10.
 
-## Overview
+## Introduction / overview
 The pipeline analyzes textual emphasis using linguistic metrics, topic modeling, embeddings, and visualization. Windowed metrics are computed over sliding sentence windows (default size 3, stride 1) so syntax/lexico-semantics/discourse/surprisal can be aligned to topic windows and compared across shared sentence indices.
 
+## Running
+- `python -m d_window_metrics` runs the full pipeline: preprocessing, concept embeddings, topic modeling, corpus metrics, window metrics, then run_dashboard.
+- `python -m w_dashboard` builds per-text topic correlation outputs and per-genre central topic presence correlations.
 
-## Running the pipeline
+Note: `python -m w_dashboard` requires window metrics produced by `python -m d_window_metrics` and writes:
+- `data/analytics/dashboard/<category>/<name>/<name>_dashboard.json`
+- `data/analytics/dashboard/<category>/<name>/<name>_topic_correlations.json`
+- `data/analytics/dashboard/<category>/<name>/<name>_central_topic_correlations.json`
 
-- `d_window_metrics.py` runs the full analysis end-to-end (preprocessing, embeddings, topic modeling, corpus metrics, window metrics, then dashboard outputs).
-- `w_dashboard.py` can be run independently to build the summary dashboard outputs from existing window metrics. It loads the pruned window-metric JSONs, computes per-text summary rows and topic correlations, and writes:
-  - `data/analytics/dashboard/<category>/<name>/<name>_dashboard.json`
-  - `data/analytics/dashboard/<category>/<name>/<name>_topic_correlations.json`
-  - `data/analytics/dashboard/<category>/<name>/<name>_central_topic_correlations.json`
+## Central topics (top 60th percentile; capped to top_n)
+- Centrality selection:
+  - Uses topic stats: coherence, exclusivity, prevalence, persistence.
+  - Min-max normalize each metric across topics; sum normalized values for a score (only metrics present for that topic).
+  - Rank by score; compute the 60th percentile threshold; keep topics with score >= threshold.
+  - Ensure at least min(3, total topics) by taking top 3 if needed; return up to top_n.
+- Metric definitions (from topic modeling):
+  - Prevalence (soft mean): sum of topic scores across non-noise windows / number of non-noise windows.
+    - topic_scores already filtered by score_threshold/top_k at topic modeling time.
+  - Persistence (top-k presence): mean run length of consecutive windows where the topic appears in topic_scores (non-noise).
+  - Coherence: for each topic, use window texts where it appears; build binary doc-term matrix; compute NPMI for keyword pairs with co-occurrence > 0; coherence is mean NPMI (0 if none).
+  - Exclusivity: term_topic_count = number of topic-docs containing the term (tfidf > 0).
+    exclusivity_term = 1 - ((count - 1) / (num_topics - 1)), clipped to [0,1]; if num_topics <= 1, exclusivity_term = 1.
+    Exclusivity is mean across the topic keywords.
 
-Note: `w_dashboard.py` requires window metrics produced by `d_window_metrics.py`.
+## Window metrics and dashboard summaries
+- Unexpectedness (window-level, used in correlations):
+  - token_weighted_mean_surprisal: token-weighted mean of sentence mean_surprisal in the window.
+  - token_weighted_surprisal_variance: pooled token variance using sentence mean_surprisal + sentence surprisal_variance, weighted by num_tokens.
+  - max_token_surprisal: max token surprisal within the window.
+- Unexpectedness (text-level dashboard row, not currently written by w_dashboard):
+  - avg_token_surprisal: token-weighted mean of sentence mean_surprisal across all sentences with num_tokens > 0.
+  - max_token_surprisal: max across all token surprisals in the text.
+  - surprisal_variance: pooled token variance using sentence mean_surprisal + sentence surprisal_variance, weighted by num_tokens.
+- Lexical (window-level, used in correlations):
+  - lexical_density_per_token: token-weighted content/total tokens in window (content POS in {NOUN, VERB, ADJ, ADV}; tokens exclude punctuation).
+  - lexical_diversity_mattr.mattr_score: MATTR over window tokens (lowercased, no punct/space) using mattr_window_size.
+  - avg_word_freq: token-weighted mean of per-sentence avg_word_freq, weighted by avg_word_freq_token_count (alpha tokens).
+  - normalized_freq: same weighting, normalized against global_avg_freq if provided (else avg_word_freq).
+  - information_content: token-weighted mean of per-sentence information_content, weighted by information_content_token_count (alpha tokens).
+- Lexical (text-level dashboard row): mean across windows of the above window-level values.
+- Structure (window-level, used in correlations):
+  - clause_counts_per_token by clause type; clause_ratios by clause type.
+  - avg_dependents_per_head by clause type.
+  - avg_mean_dependency_distance, mean_depth, median_depth, max_depth, depth_skew, punctuation_per_token.
+- Structure (text-level dashboard row):
+  - mean_dependency_depth: mean across windows of mean_depth.
+  - max_dependency_depth: max across windows of max_depth (window max_depth is the mean of sentence max_depth).
+  - clause_density: mean across windows of sum(clause_counts_per_token).
+  - avg_dependents_per_head: mean across windows of the per-window mean across clause types.
+  - clause_ratios: mean across windows.
+  - avg_mean_dependency_distance: mean across windows.
+  - avg_median_depth: mean across windows.
+  - depth_skew: mean across windows.
+  - punctuation_per_token: mean across windows.
+- Discourse (window-level, used in correlations):
+  - explicit_connectives_per_token, modality_per_token, connective_counts_per_token by category,
+    tense_shift, entity_overlap_ratio, content_overlap_ratio, pronoun_ratio.
+- Discourse (text-level dashboard row): mean across windows of explicit_connectives_per_token, modality_per_token,
+  connective_counts_per_token, tense_shift, and entity_overlap_ratio.
 
-
-## Architecture flow
-
-```mermaid
-flowchart TD
-  raw[Raw PDFs / ASR] --> preprocess["Group A: preprocess & clean (a_preprocessing_cleaning)"]
-  preprocess --> cleaned["Cleaned texts JSON + cleaned segmented JSONL\n data/texts/processed/cleaned(_segmented)_texts/"]
-  preprocess --> normalised["Normalised texts JSON + normalised segmented JSONL\n data/texts/processed/normalised(_segmented)_texts/"]
-
-  normalised --> embeddings["Concept embeddings\nb1_concept_embeddings -> data/embeddings/concept_embeddings/"]
-  normalised --> topics["Topic modelling\nb2_topic_modeling -> data/analytics/topic_modelling/"]
-  cleaned --> logprob["Log-prob & surprisal (no direct IO)\nc0_log_prob_metrics -> data/analytics/corpus_analytics/<category>/<name>/ via d_window_metrics"]
-
-  cleaned --> windowed["Window metrics (syntax / lexico-semantics / discourse / log-prob)\nc1/c2/c3 + c0 aggregation -> data/analytics/window_metrics/<category>/<name>/"]
-  normalised --> windowed
-  logprob --> windowed
-
-  windowed --> heatmap["Heatmaps\n e1_heatmap"]
-  windowed --> network["Network viz\n e2_network"]
-  embeddings --> network
-  topics --> network
-
-  note["Orchestrator: d_window_metrics stitches steps 1-5 and writes combined outputs."]
-  windowed -.-> note
-```
-
-## Metric rationale
-
-The study's core aim is to localize and compare textual emphasis across a document by checking whether central topics align with variation in semantic, lexical, discourse, and log-probability signals. The B and C modules were chosen because they capture complementary signals that can be aligned to shared sentence windows, so we can test whether (for example) surprisal or syntactic complexity rises when key topics are discussed. Concretely, each window aggregates per-sentence metrics and can be compared against a topic window (e.g., a 3-sentence window where the topic model flags a dominant theme) to ask: do semantic/lexical/discourse/log-probability measures shift when a central topic is active?
-
-Group B: conceptual emphasis signals
-b1_concept_embeddings (noun-phrase embeddings + clustering)
-Metrics taken: extracted noun phrases (top-N by frequency), sentence-transformer embeddings, HDBSCAN cluster labels.
-Why: repeated or clustered concepts are a direct indicator of emphasis.
-Used for: building a concept inventory and locating concept clusters across the text.
-Relation to study: concept clusters define what is emphasized; window-level metrics can be compared against the presence of these clustered concepts.
-
-b2_topic_modeling (windowed topic clusters + keywords)
-Metrics taken: sentence/window embeddings, HDBSCAN topic labels, TF-IDF keywords, localized topic mentions (sentence indices and character spans).
-Why: topic clusters capture thematic concentration.
-Used for: generating a topic timeline and locating where topics are discussed.
-Relation to study: provides the anchor for alignment; topic-active windows are compared with lexical, discourse, syntactic, and log-probability variation.
-
-Group C: linguistic, probabilistic, and discourse emphasis signals
-c0_log_prob_metrics (log-probability, surprisal, perplexity)
-Metrics taken: per-sentence log-prob sums/means, per-sentence perplexity, mean surprisal, surprisal variance, plus windowed aggregates; orchestrator writes the corpus JSONs to data/analytics/corpus_analytics/<category>/<name>/.
-Why: emphasis can coincide with less predictable language or stylistic foregrounding.
-Used for: identifying unexpectedness peaks across sentence windows.
-Relation to study: tests whether windows with central topics show higher surprisal or shifts in predictability compared to surrounding windows.
-
-c1_syntactics (clause counts, depth, dependency complexity)
-Metrics taken: main/subordinate/coordinate clause counts and ratios, max/mean/median depth, depth skew, dependents-per-head, mean dependency distance, plus windowed aggregates.
-Why: syntactic complexity often increases with emphasis or rhetorical focus.
-Used for: tracking structural intensity across the text.
-Relation to study: checks whether topic-active windows show higher complexity (e.g., more subordination or deeper parses).
-
-c2_lexico_semantics (lexical density, information content, roles)
-Metrics taken: lexical density (content vs. total tokens), information content from corpus frequencies, MATTR (lexical diversity), average word frequency/normalized frequency, semantic role counts, agent/patient counts, plus windowed aggregates.
-Why: emphasized segments tend to be lexically dense, information-rich, and semantically loaded.
-Used for: quantifying semantic weight and lexical intensity.
-Relation to study: tests whether topic-active windows coincide with higher density, higher information content, or richer role structure.
-
-c3_discourse (connectives, overlap, pronouns, tense shifts)
-Metrics taken: explicit connective counts by relation type, entity/content overlap ratios, pronoun ratio, tense shifts, dominant relation, plus windowed aggregates.
-Why: discourse shifts and cohesion patterns often signal emphasis or topic transitions.
-Used for: detecting rhetorical transitions and cohesion changes.
-Relation to study: evaluates whether topic transitions align with discourse-level shifts (e.g., new connectives or reduced overlap).
-
-Together, these metrics support a multi-layer alignment analysis: what is emphasized (concepts/topics), how it stands out (surprisal, density, structure), and where it occurs (windowed alignment across signals).
-Example: if a 3-sentence window is labeled with a dominant topic and shows a spike in mean surprisal plus higher lexical density, that suggests the topic is being emphasized through both semantic concentration and probabilistic unexpectedness.
-
-Dashboard metric definitions (window-level, used in topic correlation outputs)
-All metrics below are computed per sliding window (default 3 sentences, stride 1). Unless noted, window values are computed from window totals (token-weighted) rather than simple means.
-
-Unexpectedness (log_prob)
-- log_prob.token_weighted_mean_surprisal: token-weighted mean of sentence mean_surprisal in the window: sum(mean_surprisal * num_tokens) / total_tokens.
-- log_prob.token_weighted_surprisal_variance: pooled token-level variance across the window: sum((n-1)*var) + sum(n*(mean - overall_mean)^2) divided by total_tokens; 0.0 if total_tokens == 0.
-
-Lexico-semantics
-- lexico_semantics.lexical_density: total content tokens / total tokens in the window (content POS in {NOUN, VERB, ADJ, ADV}; tokens exclude punctuation).
-- lexico_semantics.content_function_ratio: total content tokens / total alpha tokens in the window (same numerator as lexical_density; computed alongside word-frequency stats).
-- lexico_semantics.lexical_diversity_mattr.mattr_score: MATTR over window tokens (lowercased, no punct/space) using fixed mattr_window_size (default 50). If tokens < window size, uses type/token ratio over the full window.
-- lexico_semantics.avg_word_freq: token-weighted mean of per-sentence avg_word_freq, weighted by avg_word_freq_token_count (alpha tokens that contributed). Per-sentence avg_word_freq is the mean corpus frequency of alpha tokens.
-- lexico_semantics.normalized_freq: token-weighted mean of per-sentence normalized_freq (avg_word_freq / global_avg_freq if available; otherwise avg_word_freq), weighted by avg_word_freq_token_count.
-- lexico_semantics.information_content: token-weighted mean of per-sentence information_content, weighted by information_content_token_count. Per-token info content is -log(freq / total_corpus_tokens) for alpha tokens with corpus frequencies.
-- lexico_semantics.num_clauses_per_token: total clause count / total tokens in the window. Clauses are counted per verb head: main (ROOT), subordinate (advcl/ccomp/xcomp), coordinate (conj).
-
-Syntax
-- syntax.token_count: total non-punct tokens in the window (sum of sentence token_count).
-- syntax.clause_counts_per_token.main: total main clause heads / total tokens in the window.
-- syntax.clause_counts_per_token.subordinate: total subordinate clause heads / total tokens in the window.
-- syntax.clause_counts_per_token.coordinate: total coordinate clause heads / total tokens in the window.
-- syntax.clause_ratios.subordination_ratio: total subordinate clause heads / total main clause heads in the window (0 if no main clauses).
-- syntax.clause_ratios.coordination_ratio: total coordinate clause heads / total main clause heads in the window (0 if no main clauses).
-- syntax.avg_dependents_per_head.main_clause: total dependents of main clause heads / total main heads in the window.
-- syntax.avg_dependents_per_head.subordinate_clause: total dependents of subordinate clause heads / total subordinate heads in the window.
-- syntax.avg_dependents_per_head.coordinate_clause: total dependents of coordinate clause heads / total coordinate heads in the window.
-- syntax.avg_mean_dependency_distance: total dependency distance / total dependency links in the window; distance is abs(token.i - child.i).
-- syntax.mean_depth: mean of sentence-level mean dependency depth to root (depth includes punctuation).
-- syntax.median_depth: mean of sentence-level median dependency depth to root.
-- syntax.max_depth: mean of sentence-level max dependency depth to root (this is averaged, not max-pooled).
-- syntax.depth_skew: mean of sentence-level (mean_depth - median_depth).
-
-Discourse
-- discourse.explicit_connectives_per_token: total explicit connective matches / total tokens in the window.
-- discourse.connective_counts_per_token.Temporal: Temporal connective count / total tokens in the window.
-- discourse.connective_counts_per_token.Contingency: Contingency connective count / total tokens in the window.
-- discourse.connective_counts_per_token.Comparison: Comparison connective count / total tokens in the window.
-- discourse.connective_counts_per_token.Expansion: Expansion connective count / total tokens in the window.
-- discourse.entity_overlap_ratio: total noun-lemma overlap with the previous sentence / total noun lemma count in the window (noun lemmas are unique per sentence).
-- discourse.content_overlap_ratio: total content-lemma overlap with the previous sentence / total content lemma count in the window (content POS in {NOUN, PROPN, VERB, ADJ, ADV}).
-- discourse.tense_shift: mean of sentence-level tense shifts in the window; a shift is 1 when the inferred tense differs from the previous sentence, else 0.
-
-## Topic modeling notes
-
-Topic modeling defaults and statistics
-- Embedding normalization: window/sentence embeddings are L2-normalized; mean topic centroids are L2 re-normalized before cosine similarity so scores stay on the unit sphere.
-- Dimensionality reduction: PCA runs before HDBSCAN (default 50 components; per-book overrides in metadata/x_configs).
-- n-grams: topic modeling includes bi/tri-grams in keyword extraction.
-- Top-word overlap policy: optional downweighting/deduping of top words that recur across many clusters to improve exclusivity (documented here once finalized).
-
-Topic metrics and correlation statistics
-- Prevalence: how often a topic appears across sliding windows (topic coverage over the text).
-- Coherence: interpretability of a topic; do top words co-occur together in real usage (e.g., ship/sea/sail/captain)?
-- Exclusivity: distinctiveness of a topic; are top words specific to one topic rather than shared across many?
-- Significance testing: correlations use block bootstrap p-values; outputs are written alongside correlations in data/analytics/dashboard/**/*_topic_correlations.json and data/analytics/dashboard/**/*_central_topic_correlations.json.
-
-## Data layout
-
-- `data/texts/processed/cleaned_texts/<category>/*_cleaned.json`: inputs for corpus/window metrics (full text under `text` key).
-- `data/texts/processed/normalised_texts/<category>/*_normalised.json`: inputs for concept embeddings/networking (full text under `text` key).
-- `data/texts/processed/cleaned_segmented_texts/<category>/*_cleaned_segmented.jsonl` and `data/texts/processed/normalised_segmented_texts/<category>/*_normalised_segmented.jsonl`: sentence-level JSON Lines.
-- `data/analytics/corpus_analytics/<category>/<name>/*_metrics.json`: corpus log-prob/surprisal outputs from c0 (written via the orchestrator).
-- `data/analytics/window_metrics/<category>/<name>/*_metrics.json`: combined outputs from the orchestrator (syntax, lexico-semantic, discourse, log-prob windows).
-- `data/analytics/topic_modelling/`, `data/embeddings/concept_embeddings/`, `data/graphs/{network_analysis,syntactic_graphs}/`: downstream artifacts from group B/C/E modules.
-- Raw PDFs expected under `data/texts/raw/` (organized by genre/author, e.g. `gothic/poe`); other intermediate folders can be added as preprocessing requires.
-
-## Preliminary findings
-
-### Short stories
-
-#### The Black Cat
-
-![The Black Cat - topics vs IC/log-prob (|r| >= 0.4)](data/analytics/dashboard/short_stories/the_black_cat/the_black_cat_topic_ic_logprob_r04.png)
-
-- Stacked soft topic scores per window (top 5 topics by |r| for the selected metrics); right axis: z-scored metrics (lexical rarity, mean log-probability); topics filtered to |r| >= 0.3 with either metric.
-- Topics visible (keywords): Topic 2 - run; run fail; fail; fail anger; anger; anger run; near; new feeling | Topic 3 - tomorrow die; tomorrow; die; today want; today; happen; happen free; soul horrible | Topic 21 - man; love; love animal; animal; learn; man quite; young marry; somet love | Topic 22 - animal; man; listen; learn; love animal; love; destroy child; hear destroy
-- Observation: Topic 3 shows strong negative correlation with contextual predictability (mean log-probability), while Topics 2/21/22 align with higher lexical rarity (information content), suggesting emphasis spikes when these motifs surface.
-
-Top correlations (|r| >= 0.3, non-positional)
-- Topic 3 - perplexity up (r=+0.78), mean_surprisal up (r=+0.66), mean_log_prob down (r=-0.66); keywords: tomorrow die; tomorrow; die; today want; today; happen. Interpretation: "fatal tomorrow" motif coincides with less predictable, more surprising language.
-- Topic 0 - contingency connectives up (r=+0.65); keywords: hang; know; love; outside reach; place soul; deadly place. Interpretation: "hanging/doom" motif framed with more causal/contingency linking.
-- Topic 1 - contingency connectives up (r=+0.50); keywords: law; time; time push; human; time wrong; human time. Interpretation: "law/time/pressure" motif accompanied by more causal connectives.
-- Topic 18 - depth skew flatter (r?-0.49); keywords: stone; single; quite impossible; single stone; impossible; place pleased. Interpretation: "stone/impossible" motif links to more balanced dependency depth.
-- Topic 2 - comparison connectives up (r?+0.44); keywords: run; run fail; fail; fail anger; anger; anger run. Interpretation: comparison linking rises with this motif.
-
-#### The Tell-Tale Heart
-
-![The Tell-Tale Heart - topics vs IC/log-prob](data/analytics/dashboard/short_stories/the_telltale_heart/the_telltale_heart_topic_ic_logprob.png)
-
-- Stacked soft topic scores per binned window (mean per bin); right axis: z-scored metrics (sum log-probability, lexical density window token count); topics filtered to |r| >= 0.3 (non-positional) and top by |r|.
-- Topics visible: multiple active topics (e.g., Topic 36) that meet the filter.
-
-Top correlations (|r| >= 0.3, non-positional)
-- Topic 36 - sum_log_prob down (r=-0.52); token counts up (r?+0.50); keywords: eye; eye evil; kill eye; man feel; evil; feel kill. Interpretation: ?evil eye? motif co-occurs with longer, less probable spans.
-- Topic 23 - explicit_connectives up (r=+0.47); keywords: plan; madman plan; madman; mad madman; think mad; think; mad; plan week. Interpretation: ?madman plan? motif uses more explicit discourse connectives.
-- Topic 18 - surprisal variance up (r?+0.44); keywords: eye; like; blue; blue eye; like ice; body like. Interpretation: ?blue eye? motif shows higher surprisal variability.
-- Topic 14 - content overlap ratio up (r?+0.46); keywords: 34; like 34; cat pluto; pluto pet; pet like; like. Interpretation: higher content overlap when this motif appears.
-- Topic 6 - lexical metrics up (r?+0.47 across lexical windows); keywords: end; search; know; quietly expect; win battle; end end. Interpretation: lexical load rises with this motif.
-
-### Novellas
-
-*(Bar/line plots omitted here; trends are less observable in longer texts.)*
-
-#### The Metamorphosis
-
-Top correlations (|r| >= 0.3, non-positional)
-- Topic 5 - lexical window metrics (mattr/lexical_density/information_content windows) r?+0.44; keywords: samsa; mr samsa; mr; landing; samsa woman; man. Interpretation: ?Samsa/household? motif carries consistent lexical window signatures.
-- Topic 41 - entity_overlap r?+0.35; keywords: gregor; sister; window; sheet; couch; come room. Interpretation: higher entity cohesion with this motif.
-- Topic 30 - content/entity overlap r?0.33?0.34; keywords: sister; gregor; maid; food; help; mother. Interpretation: shared content/entities rise with this motif.
-- Topic 3 - lexical frequency/rarity (avg_word_freq, normalized_freq, MATTR span) r?-0.33 to -0.35; keywords: quite alright; night; alright; know; quite; illness. Interpretation: rarer words/longer spans with this motif.
-- Topic 6/37 - weaker (~0.30?0.31) signals in discourse/lexical features (e.g., pronoun_ratio, explicit_connectives).
-
-#### The Dead
-
-Top correlations (|r| >= 0.3, non-positional)
-- Topic 11 - mean_surprisal down / mean_log_prob up (|r|?0.34); keywords: good night; night; good; annoy; night gretta; night miss. Interpretation: this motif shows mild predictability shifts, but effects are modest.
+## Correlations
+- Per text:
+  - Correlations are computed only for central topics (even in the "topics" report).
+  - For each central topic, correlate window metrics with soft topic scores (overlap-weighted to the metric window);
+    compute Pearson r with block permutation p-values, and binary correlations from score > 0.
+  - Central topic presence (binary any central, using hard mentions overlapping the window) correlated with window metrics.
+- Per genre:
+  - Central topic presence correlations aggregated across texts via Fisher z for r (weighted by n-3; only n > 3)
+    and Stouffer for p-values (weights sqrt(n-3), sign from r).
 
 ## Notes
-
+- Tokenization:
+  - discourse token counts include punctuation (spaces excluded);
+  - syntax clause counts exclude punctuation but depth/complexity include punctuation;
+  - lexico-semantics uses non-punct tokens for lexical density, alpha tokens for information content and avg word freq;
+  - MATTR uses non-space/non-punct tokens;
+  - log probs use LM subword pieces with offsets.
+- Segmentation:
+  - topic modeling uses normalised segmented sentences;
+  - windowed metrics use cleaned segmented sentences for alignment;
+  - concept embeddings use full normalised text.
+- Correlations:
+  - metric list is flattened per-window metrics, then filters length metrics and excludes lexico_semantics.lexical_density,
+    discourse.pronoun_ratio, and agent/patient/role counts.
+- Significance:
+  - Pearson r omitted when n < 2 or either variable is constant;
+  - block permutation with contiguous blocks (default block_size=5, permutations=2000), two-sided on |r|;
+    p = (count + 1) / (permutations + 1); RNG fixed (np.random.default_rng(42)).
+- Aggregation:
+  - Fisher z uses r clipped to +/-0.999999; z_bar weighted by n-3; r_bar = tanh(z_bar).
+  - Stouffer uses two-sided p, sign by r, weight sqrt(n-3); p clamped to [1e-15, 1-1e-15].
+  - rows with n <= 3 are skipped.
+- Inputs and outputs:
+  - Raw PDFs expected under `data/texts/raw/` (organized by genre/author).
+  - Processed texts live under `data/texts/processed/`; analytics outputs under `data/analytics/`.
 - Set `x_configs.model` to the desired causal LM before running log-prob metrics.
-- Several modules still have TODOs and may assume corpus frequency data exists.
-- Tests are not present yet; `pytest` is included in `requirements.txt` for future coverage.
-- Topic modeling defaults, metrics, and correlation details live in the pipeline modules and configs.

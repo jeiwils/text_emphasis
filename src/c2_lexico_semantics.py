@@ -529,6 +529,7 @@ class LexicoSemanticsAnalyzer:
                 windows[window_idx]["lexical_density"] = round(
                     token_weighted_lexical_density, 6
                 )
+                windows[window_idx]["lexical_density_per_token"] = windows[window_idx]["lexical_density"]
                 windows[window_idx]["information_content_token_count"] = info_tokens
                 windows[window_idx]["avg_word_freq_token_count"] = avg_word_tokens
                 windows[window_idx]["information_content"] = round(

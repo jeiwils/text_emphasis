@@ -8,7 +8,6 @@ USE_EXISTING = True
 MODEL_CONFIGS = {
     "causal_lm": "gpt2",
     "sentence_embedding": "all-MiniLM-L6-v2",
-    "asr": "openai/whisper-small",
 }
 
 # Default spaCy pipeline configuration

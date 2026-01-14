@@ -117,11 +117,30 @@ CONNECTIVE_LEXICON: Dict[str, Sequence[str]] = {
     ],
 }
 
+MODALITY_MARKERS: Sequence[str] = [
+    "seem",
+    "as if",
+    "as though",
+    "maybe",
+    "perhaps",
+    "probably",
+    "possibly",
+    "apparently",
+]
+
 
 class DiscourseAnalyzer:
     def __init__(self, nlp=None):
         self.nlp = nlp or load_spacy_model()
         self._lexicon_phrases = self._prepare_lexicon()
+        self._modality_phrases = self._prepare_marker_phrases(MODALITY_MARKERS)
+
+    def _prepare_marker_phrases(self, markers: Sequence[str]) -> List[Tuple[List[str], str]]:
+        phrases = []
+        for marker in markers:
+            cleaned = marker.lower()
+            phrases.append((cleaned.split(), cleaned))
+        return sorted(phrases, key=lambda x: len(x[0]), reverse=True)
 
     def _prepare_lexicon(self) -> List[Tuple[str, List[str], str]]:
         phrases = []
@@ -213,6 +232,25 @@ class DiscourseAnalyzer:
                     )
         return matches
 
+    def find_modality_markers(self, sent) -> List[Dict[str, object]]:
+        tokens = [t.lemma_.lower() for t in sent if not t.is_space]
+        matches: List[Dict[str, object]] = []
+
+        for marker_tokens, marker_str in self._modality_phrases:
+            span_len = len(marker_tokens)
+            if span_len == 0 or len(tokens) < span_len:
+                continue
+            for i in range(len(tokens) - span_len + 1):
+                if tokens[i : i + span_len] == marker_tokens:
+                    matches.append(
+                        {
+                            "marker": marker_str,
+                            "start": i,
+                            "end": i + span_len - 1,
+                        }
+                    )
+        return matches
+
     def _empty_connective_counts(self) -> Dict[str, int]:
         return {category: 0 for category in CONNECTIVE_LEXICON}
 
@@ -232,6 +270,7 @@ class DiscourseAnalyzer:
         for idx, sent in enumerate(doc.sents):
             tokens = [t for t in sent if not t.is_space]
             connectives = self.find_connectives(sent)
+            modality_markers = self.find_modality_markers(sent)
             connective_counts = self._empty_connective_counts()
             for c in connectives:
                 connective_counts[c["category"]] += 1
@@ -252,6 +291,7 @@ class DiscourseAnalyzer:
             pronoun_ratio = round(pronoun_count / len(tokens), 3) if tokens else 0.0
 
             explicit_connectives_per_token = round(len(connectives) / len(tokens), 6) if tokens else 0.0
+            modality_per_token = round(len(modality_markers) / len(tokens), 6) if tokens else 0.0
             connective_counts_per_token = {
                 k: round(v / len(tokens), 6) if tokens else 0.0 for k, v in connective_counts.items()
             }
@@ -268,6 +308,8 @@ class DiscourseAnalyzer:
                     "pronoun_count": pronoun_count,
                     "explicit_connectives": len(connectives),
                     "explicit_connectives_per_token": explicit_connectives_per_token,
+                    "modality_count": len(modality_markers),
+                    "modality_per_token": modality_per_token,
                     "connective_counts": connective_counts,
                     "connective_counts_per_token": connective_counts_per_token,
                     "entity_overlap": entity_overlap,
@@ -298,6 +340,7 @@ class DiscourseAnalyzer:
                 window_sents = window_slices[idx]
                 total_tokens = sum(sent.get("num_tokens", 0) for sent in window_sents)
                 total_connectives = sum(sent.get("explicit_connectives", 0) for sent in window_sents)
+                total_modality = sum(sent.get("modality_count", 0) for sent in window_sents)
                 total_entity_overlap = sum(sent.get("entity_overlap", 0) for sent in window_sents)
                 total_content_overlap = sum(sent.get("content_overlap", 0) for sent in window_sents)
                 total_pronouns = sum(sent.get("pronoun_count", 0) for sent in window_sents)
@@ -311,12 +354,14 @@ class DiscourseAnalyzer:
                     window["num_tokens"] = total_tokens
                     window["pronoun_count"] = total_pronouns
                     window["explicit_connectives"] = total_connectives
+                    window["modality_count"] = total_modality
                     window["connective_counts"] = connective_counts_total
                     window["entity_overlap"] = total_entity_overlap
                     window["content_overlap"] = total_content_overlap
                     window["noun_lemma_count"] = total_noun_lemmas
                     window["content_lemma_count"] = total_content_lemmas
                     window["explicit_connectives_per_token"] = round(total_connectives / total_tokens, 6)
+                    window["modality_per_token"] = round(total_modality / total_tokens, 6)
                     window["connective_counts_per_token"] = {
                         k: round(v / total_tokens, 6) for k, v in connective_counts_total.items()
                     }
@@ -327,12 +372,14 @@ class DiscourseAnalyzer:
                     window["num_tokens"] = 0
                     window["pronoun_count"] = 0
                     window["explicit_connectives"] = 0
+                    window["modality_count"] = 0
                     window["connective_counts"] = connective_counts_total
                     window["entity_overlap"] = 0
                     window["content_overlap"] = 0
                     window["noun_lemma_count"] = 0
                     window["content_lemma_count"] = 0
                     window["explicit_connectives_per_token"] = 0.0
+                    window["modality_per_token"] = 0.0
                     window["connective_counts_per_token"] = {k: 0.0 for k in connective_counts_total}
                     window["entity_overlap_per_token"] = 0.0
                     window["content_overlap_per_token"] = 0.0
