@@ -15,7 +15,7 @@ flowchart LR
     topic_model --> central[Central topic selection]
 
     seg --> metric_windows[3-sentence metric windows]
-    metric_windows --> metrics[Metrics (syntax / lexical / discourse / surprisal)]
+    metric_windows --> metrics["Metrics (syntax / lexical / discourse / surprisal)"]
 
     central --> projection[Projection onto shared index]
     metrics --> projection
