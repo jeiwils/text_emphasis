@@ -88,7 +88,7 @@ Output (build_topic_correlation_report):
     "use_soft_topic_scores": true,
     "soft_score_threshold": 0.5,
     "soft_top_k": 3,
-    "central_top_n": 5,
+    "central_top_n": null,
     "block_size": 5,
     "permutations": 2000
   }
@@ -443,7 +443,7 @@ def topic_keywords(topics_data: Dict[str, object]) -> Dict[int, List[str]]:
 
 def central_topics(
     topics_data: Dict[str, object],
-    top_n: int = 5,
+    top_n: Optional[int] = None,
 ) -> List[Dict[str, object]]:
     topics = topics_data.get("topics", []) if isinstance(topics_data, dict) else []
     metrics = ["coherence", "exclusivity", "prevalence", "persistence"]
@@ -506,6 +506,8 @@ def central_topics(
         threshold = float(np.percentile(scores, 60))
         filtered = [row for row in ranked if row["score"] >= threshold]
         ranked = filtered
+    if top_n is None or top_n <= 0:
+        return ranked
     return ranked[:top_n]
 
 
@@ -515,7 +517,7 @@ def build_topic_correlation_report(
     *,
     soft_score_threshold: Optional[float] = 0.5,
     soft_top_k: Optional[int] = 3,
-    central_top_n: int = 5,
+    central_top_n: Optional[int] = None,
     topics_key: str = "topics",
     use_soft_scores: Optional[bool] = None,
     block_size: int = 5,
@@ -680,9 +682,10 @@ def build_central_report(
     *,
     soft_score_threshold: Optional[float],
     soft_top_k: Optional[int],
-    central_top_n: int,
+    central_top_n: Optional[int],
     block_size: int,
     permutations: int,
+    central_presence_percentile: float = 70.0,
 ) -> Dict[str, object]:
     central_ranked = central_topics(topics_data, top_n=central_top_n)
     central_topic_ids = {
@@ -704,62 +707,86 @@ def build_central_report(
     report: Dict[str, object] = weighted_report if weighted_report else {}
     if len(central_topic_ids) > 0:
         window_entries = window_data.get("syntax", {}).get("windows", [])
-        topic_mentions = collect_topic_mentions(topics_data)
-        topic_metrics = build_topic_window_metrics(topic_mentions, window_entries)
         window_table = collect_window_tables(window_data)
-        if window_table and len(window_table) == len(topic_metrics):
+        if window_table:
+            if not (0 < central_presence_percentile <= 100):
+                raise ValueError("central_presence_percentile must be in (0, 100]")
             metric_names = dashboard_metric_names(window_table)
             presence_rows = []
             with_central = 0
             without_central = 0
-            for idx, window_row in enumerate(window_table):
-                topic_counts = topic_metrics[idx].get("topic_counts", {})
-                has_central = any(topic_counts.get(topic_id, 0) >= 1 for topic_id in central_topic_ids)
-                presence = 1.0 if has_central else 0.0
-                with_central += 1 if has_central else 0
-                without_central += 0 if has_central else 1
-                presence_rows.append((presence, window_row))
-
-            correlations: Dict[str, object] = {}
-            rng = np.random.default_rng(42)
-            for metric in metric_names:
-                pairs = []
-                for presence, row in presence_rows:
-                    value = row.get(metric)
-                    if not isinstance(value, (int, float)):
-                        raise ValueError(f"Non-numeric metric value for {metric}")
-                    if isinstance(value, float) and math.isnan(value):
-                        raise ValueError(f"NaN metric value for {metric}")
-                    pairs.append((presence, float(value)))
-                if not pairs:
-                    continue
-                presences = [p for p, _ in pairs]
-                values = [v for _, v in pairs]
-                corr = pearson_correlation(presences, values)
-                if corr is None:
-                    continue
-                p_value = block_permutation_p_value(
-                    presences,
-                    values,
-                    block_size=block_size,
-                    permutations=permutations,
-                    rng=rng,
+            topic_score_windows = collect_window_topic_scores(
+                topics_data,
+                soft_score_threshold=soft_score_threshold,
+                soft_top_k=soft_top_k,
+                window_entries=window_entries,
+            )
+            if len(topic_score_windows) == len(window_table):
+                max_scores = [
+                    max(
+                        (score_map.get(topic_id, 0.0) for topic_id in central_topic_ids),
+                        default=0.0,
+                    )
+                    for score_map in topic_score_windows
+                ]
+                nonzero_scores = [score for score in max_scores if score > 0.0]
+                threshold = (
+                    float(np.percentile(nonzero_scores, central_presence_percentile))
+                    if nonzero_scores
+                    else None
                 )
-                values_with = [v for p, v in pairs if p > 0]
-                values_without = [v for p, v in pairs if p <= 0]
-                correlations[metric] = {
-                    "pearson_r": corr,
-                    "p_value": p_value,
-                    "n": len(values),
-                    "mean_with_topic": statistics.mean(_require_numbers(values_with, label=f"{metric}.with_topic")),
-                    "mean_without_topic": statistics.mean(_require_numbers(values_without, label=f"{metric}.without_topic")),
-                }
+                for max_score, window_row in zip(max_scores, window_table):
+                    has_central = (
+                        threshold is not None and max_score > 0.0 and max_score >= threshold
+                    )
+                    presence = 1.0 if has_central else 0.0
+                    with_central += 1 if has_central else 0
+                    without_central += 0 if has_central else 1
+                    presence_rows.append((presence, window_row))
 
-            report["central_topic_presence"] = {
-                "windows_with_central_topic": with_central,
-                "windows_without_central_topic": without_central,
-                "correlations": correlations,
-            }
+            if presence_rows:
+                correlations: Dict[str, object] = {}
+                rng = np.random.default_rng(42)
+                for metric in metric_names:
+                    pairs = []
+                    for presence, row in presence_rows:
+                        value = row.get(metric)
+                        if not isinstance(value, (int, float)):
+                            raise ValueError(f"Non-numeric metric value for {metric}")
+                        if isinstance(value, float) and math.isnan(value):
+                            raise ValueError(f"NaN metric value for {metric}")
+                        pairs.append((presence, float(value)))
+                    if not pairs:
+                        continue
+                    presences = [p for p, _ in pairs]
+                    values = [v for _, v in pairs]
+                    corr = pearson_correlation(presences, values)
+                    if corr is None:
+                        continue
+                    p_value = block_permutation_p_value(
+                        presences,
+                        values,
+                        block_size=block_size,
+                        permutations=permutations,
+                        rng=rng,
+                    )
+                    values_with = [v for p, v in pairs if p > 0]
+                    values_without = [v for p, v in pairs if p <= 0]
+                    correlations[metric] = {
+                        "pearson_r": corr,
+                        "p_value": p_value,
+                        "n": len(values),
+                        "mean_with_topic": statistics.mean(_require_numbers(values_with, label=f"{metric}.with_topic")),
+                        "mean_without_topic": statistics.mean(_require_numbers(values_without, label=f"{metric}.without_topic")),
+                    }
+
+                report["central_topic_presence"] = {
+                    "windows_with_central_topic": with_central,
+                    "windows_without_central_topic": without_central,
+                    "correlations": correlations,
+                }
+                params = report.setdefault("params", {})
+                params["central_presence_percentile"] = central_presence_percentile
 
     ordered_topics = []
     for row in central_ranked:

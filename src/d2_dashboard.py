@@ -86,7 +86,7 @@ def _stouffer_p_value(rows: List[Tuple[float, float, int]]) -> Optional[float]:
 def _build_text_central_topic_scores(
     window_metrics_path: Path,
     *,
-    central_top_n: int,
+    central_top_n: Optional[int],
 ) -> Optional[Dict[str, object]]:
     topic_file = find_topic_file(window_metrics_path)
     if not topic_file:
@@ -366,9 +366,10 @@ def _build_topic_dashboard_entry(
     *,
     soft_score_threshold: Optional[float],
     soft_top_k: Optional[int],
-    central_top_n: int,
+    central_top_n: Optional[int],
     block_size: int,
     permutations: int,
+    central_presence_percentile: float,
 ) -> Optional[Dict[str, object]]:
     topic_file = find_topic_file(window_metrics_path)
     if not topic_file:
@@ -397,6 +398,7 @@ def _build_topic_dashboard_entry(
         central_top_n=central_top_n,
         block_size=block_size,
         permutations=permutations,
+        central_presence_percentile=central_presence_percentile,
     )
 
     category = f"{window_metrics_path.parent.parent.parent.name}/{window_metrics_path.parent.parent.name}"
@@ -417,9 +419,10 @@ def _build_central_topic_entry(
     *,
     soft_score_threshold: Optional[float],
     soft_top_k: Optional[int],
-    central_top_n: int,
+    central_top_n: Optional[int],
     block_size: int,
     permutations: int,
+    central_presence_percentile: float,
 ) -> Optional[Dict[str, object]]:
     topic_file = find_topic_file(window_metrics_path)
     if not topic_file:
@@ -435,6 +438,7 @@ def _build_central_topic_entry(
         central_top_n=central_top_n,
         block_size=block_size,
         permutations=permutations,
+        central_presence_percentile=central_presence_percentile,
     )
 
     category = f"{window_metrics_path.parent.parent.parent.name}/{window_metrics_path.parent.parent.name}"
@@ -454,9 +458,10 @@ def run_dashboard(
     *,
     soft_score_threshold: Optional[float] = 0.5,
     soft_top_k: Optional[int] = 3,
-    central_top_n: int = 5,
+    central_top_n: Optional[int] = None,
     block_size: int = 5,
     permutations: int = 2000,
+    central_presence_percentile: float = 70.0,
     authors: Optional[List[str]] = None,
 ) -> List[Dict[str, object]]:
     """
@@ -504,6 +509,7 @@ def run_dashboard(
                 central_top_n=central_top_n,
                 block_size=block_size,
                 permutations=permutations,
+                central_presence_percentile=central_presence_percentile,
             )
             if topic_entry:
                 with open(topic_file, "w", encoding="utf-8") as f:
@@ -524,6 +530,7 @@ def run_dashboard(
                 central_top_n=central_top_n,
                 block_size=block_size,
                 permutations=permutations,
+                central_presence_percentile=central_presence_percentile,
             )
         if central_entry:
             with open(central_file, "w", encoding="utf-8") as f:

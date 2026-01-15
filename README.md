@@ -39,7 +39,7 @@ Notes:
 - The orchestrator runs preprocessing, embeddings, topic modeling, corpus metrics, window metrics, and dashboard correlations.
 - Outputs are written under `data/analytics/` and `data/results/`.
 
-## Central topics (top 60th percentile; capped to top_n)
+## Central topics (top 60th percentile)
 - Centrality selection:
   - Uses topic stats: coherence, exclusivity, prevalence, persistence.
   - Min-max normalize each metric across topics; sum normalized values for a score (only metrics present for that topic).
@@ -52,6 +52,27 @@ Notes:
   - Exclusivity: term_topic_count = number of topic-docs containing the term (tfidf > 0).
     exclusivity_term = 1 - ((count - 1) / (num_topics - 1)), clipped to [0,1]; if num_topics <= 1, exclusivity_term = 1.
     Exclusivity is mean across the topic keywords.
+
+## Central topic presence flow
+```mermaid
+flowchart TD
+    topic_windows[Topic windows (15 sentences)] --> embed[SentenceTransformer embeddings]
+    embed --> pca[PCA]
+    pca --> hdbscan[HDBSCAN clusters]
+    hdbscan --> centroids[Topic centroids]
+    centroids --> scores[Soft topic scores per topic window]
+    scores --> sparsify[Sparsify by score_threshold + top_k]
+    sparsify --> stats[Topic stats: prevalence / persistence / coherence / exclusivity]
+    stats --> central[Central topics: >= 60th percentile]
+
+    metric_windows[Metric windows (3 sentences)] --> projection[Overlap-weighted projection]
+    sparsify --> projection
+    central --> projection
+
+    projection --> maxscore[Per metric window: max score across central topics]
+    maxscore --> thresh[Threshold at 70th percentile of non-zero max scores]
+    thresh --> present[central_present = 1 if max >= threshold else 0]
+```
 
 ## Window metrics and dashboard summaries
 - Unexpectedness (window-level, used in correlations):
@@ -93,7 +114,9 @@ Notes:
   - Correlations are computed only for central topics (even in the "topics" report).
   - For each central topic, correlate window metrics with soft topic scores (overlap-weighted to the metric window);
     compute Pearson r with block permutation p-values, and binary correlations from score > 0.
-  - Central topic presence (binary any central, using hard mentions overlapping the window) correlated with window metrics.
+  - Central topic presence correlations use overlap-weighted central soft scores, with presence defined as
+    max central score at or above the 70th percentile of non-zero central scores within the text (set in
+    `run_dashboard` via `central_presence_percentile`, default 70).
 - Per genre:
   - Central topic presence correlations aggregated across texts via Fisher z for r (weighted by n-3; only n > 3)
     and Stouffer for p-values (weights sqrt(n-3), sign from r).
