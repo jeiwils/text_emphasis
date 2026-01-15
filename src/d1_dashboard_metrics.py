@@ -505,9 +505,6 @@ def central_topics(
     if scores:
         threshold = float(np.percentile(scores, 60))
         filtered = [row for row in ranked if row["score"] >= threshold]
-        min_count = min(3, len(ranked))
-        if len(filtered) < min_count:
-            filtered = ranked[:min_count]
         ranked = filtered
     return ranked[:top_n]
 

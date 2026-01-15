@@ -27,7 +27,15 @@ from spacy.tokens import Doc
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
-from x_configs import DEFAULT_WINDOW_SIZE, GENRES, MODEL_CONFIGS, WEB_CONFIGS, load_spacy_model
+from x_configs import (
+    DEFAULT_PIPELINE_TOPIC_WINDOW_STRIDE_MULTIPLE,
+    DEFAULT_TOPIC_WINDOW_MULTIPLE,
+    DEFAULT_WINDOW_SIZE,
+    GENRES,
+    MODEL_CONFIGS,
+    WEB_CONFIGS,
+    load_spacy_model,
+)
 from a_preprocessing_cleaning import (
     TextPreprocessor,
     preprocess_all_pdfs,
@@ -388,8 +396,8 @@ def run_all_metrics(
     run_topic_modelling(
         use_existing=use_existing,
         base_window_size=window_size,
-        window_multiple=5,
-        window_stride=window_size,
+        window_multiple=DEFAULT_TOPIC_WINDOW_MULTIPLE,
+        window_stride=window_size * DEFAULT_PIPELINE_TOPIC_WINDOW_STRIDE_MULTIPLE,
         encoder=shared_encoder,
         authors=authors,
     )

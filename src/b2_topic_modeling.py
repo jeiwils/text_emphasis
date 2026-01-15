@@ -86,6 +86,8 @@ from z_utils import (
 )
 from x_configs import (
     DEFAULT_WINDOW_SIZE,
+    DEFAULT_TOPIC_WINDOW_MULTIPLE,
+    DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
     GENRES,
     MODEL_CONFIGS,
 )
@@ -402,7 +404,7 @@ class NeuralTopicModeler:
         min_samples: Optional[int] = None,
         top_n: int = 8,
         ngram_range: Tuple[int, int] = (1, 3),
-        window_multiple: int = 5,
+        window_multiple: int = DEFAULT_TOPIC_WINDOW_MULTIPLE,
         base_window_size: int = DEFAULT_WINDOW_SIZE,
         window_size: Optional[int] = None,
         window_stride: Optional[int] = None,
@@ -415,15 +417,15 @@ class NeuralTopicModeler:
         Main entrypoint: consumes pre-segmented sentences with offsets and returns clustered topics.
 
         Sentences are grouped into sliding windows of size
-        `base_window_size * window_multiple` (default 3 * 5 = 15)
-        with stride `base_window_size * 2` (default 6) so that topic windows
+        `base_window_size * window_multiple` (default DEFAULT_WINDOW_SIZE * DEFAULT_TOPIC_WINDOW_MULTIPLE = 15)
+        with stride `base_window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE` (default 6) so that topic windows
         align to the sentence-scale metrics built on window size 3.
         """
         if not sentences:
             return [], []
 
         model_window_size = window_size or max(1, base_window_size * max(1, window_multiple))
-        stride = window_stride or max(1, base_window_size * 2)
+        stride = window_stride or max(1, base_window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE)
         windows = self.build_windows(sentences, model_window_size, stride=stride)
         window_texts = [w.text for w in windows]
 
@@ -955,7 +957,7 @@ def _auto_cluster_params(window_count: int) -> Tuple[int, int]:
 
 def run_topic_modelling(
     use_existing: bool = True,
-    window_multiple: int = 5,
+    window_multiple: int = DEFAULT_TOPIC_WINDOW_MULTIPLE,
     base_window_size: int = DEFAULT_WINDOW_SIZE,
     window_stride: Optional[int] = None,
     authors: Optional[List[str]] = None,
@@ -970,7 +972,8 @@ def run_topic_modelling(
     """
     Batch topic modelling across normalised, segmented text files.
 
-    Defaults: window size 15 (DEFAULT_WINDOW_SIZE * 5) with stride 6 (DEFAULT_WINDOW_SIZE * 2)
+    Defaults: window size DEFAULT_WINDOW_SIZE * DEFAULT_TOPIC_WINDOW_MULTIPLE (15) with stride
+    DEFAULT_WINDOW_SIZE * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE (6)
     so topic windows align to the sentence-level metrics that use window size 3.
     Output shape: data/analytics/topic_modelling/<category>/<name>/<name>_topics.json
     """
@@ -978,7 +981,7 @@ def run_topic_modelling(
     normalised_root = text_path("processed", "normalised_segmented_texts")
     output_root = analytics_path("topic")
     output_root.mkdir(parents=True, exist_ok=True)
-    stride = window_stride or (base_window_size * 2)
+    stride = window_stride or (base_window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE)
 
     categories = list(iter_dirs(normalised_root, genres=GENRES, authors=authors, depth=2))
     processed = 0

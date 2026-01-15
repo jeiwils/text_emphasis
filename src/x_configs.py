@@ -16,6 +16,14 @@ DEFAULT_SPACY_MODEL = "en_core_web_sm"
 DEFAULT_SPACY_DISABLE: Sequence[str] = ()
 # Shared window size (in sentences) for sliding window metrics
 DEFAULT_WINDOW_SIZE: int = 3
+# Default stride (in sentences) for sliding window metrics
+DEFAULT_METRIC_WINDOW_STRIDE: int = 1
+# Topic model windows use base_window_size * multiple
+DEFAULT_TOPIC_WINDOW_MULTIPLE: int = 5
+# Topic window stride uses base_window_size * stride_multiple
+DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE: int = 2
+# Pipeline topic stride override uses base_window_size * stride_multiple
+DEFAULT_PIPELINE_TOPIC_WINDOW_STRIDE_MULTIPLE: int = 1
 # Genre layout for raw/processed text folders
 GENRES = [
     "gothic",

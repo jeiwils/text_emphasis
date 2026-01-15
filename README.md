@@ -5,6 +5,26 @@ Python 3.10.
 ## Introduction / overview
 The pipeline analyzes textual emphasis using linguistic metrics, topic modeling, embeddings, and visualization. Windowed metrics are computed over sliding sentence windows (default size 3, stride 1) so syntax/lexico-semantics/discourse/surprisal can be aligned to topic windows and compared across shared sentence indices.
 
+
+## Pipeline diagram
+```mermaid
+flowchart LR
+    raw[Raw text] --> seg[Sentence segmentation]
+    seg --> topic_windows[15-sentence topic windows]
+    topic_windows --> topic_model[Topic model]
+    topic_model --> central[Central topic selection]
+
+    seg --> metric_windows[3-sentence metric windows]
+    metric_windows --> metrics[Metrics (syntax / lexical / discourse / surprisal)]
+
+    central --> projection[Projection onto shared index]
+    metrics --> projection
+    projection --> corr[Correlation + block permutation]
+    corr --> meta[Meta-analysis]
+    meta --> heatmap[Heatmap]
+```
+
+
 ## Running
 - `python -m d_window_metrics` runs the full pipeline: preprocessing, concept embeddings, topic modeling, corpus metrics, window metrics, then run_dashboard.
 - `python -m w_dashboard` builds per-text topic correlation outputs and per-genre central topic presence correlations.
@@ -19,7 +39,6 @@ Note: `python -m w_dashboard` requires window metrics produced by `python -m d_w
   - Uses topic stats: coherence, exclusivity, prevalence, persistence.
   - Min-max normalize each metric across topics; sum normalized values for a score (only metrics present for that topic).
   - Rank by score; compute the 60th percentile threshold; keep topics with score >= threshold.
-  - Ensure at least min(3, total topics) by taking top 3 if needed; return up to top_n.
 - Metric definitions (from topic modeling):
   - Prevalence (soft mean): sum of topic scores across non-noise windows / number of non-noise windows.
     - topic_scores already filtered by score_threshold/top_k at topic modeling time.

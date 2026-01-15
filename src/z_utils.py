@@ -8,6 +8,7 @@ from statistics import mean
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import HDBSCAN
 
+from x_configs import DEFAULT_METRIC_WINDOW_STRIDE
 
 
 
@@ -195,9 +196,9 @@ def iter_dirs(
                 category_key = f"{genre_dir.name}/{author_dir.name}"
                 yield category_key, author_dir
 
-def sliding_windows(seq, n, step: int = 1):
+def sliding_windows(seq, n, step: int = DEFAULT_METRIC_WINDOW_STRIDE):
     """
-    Sliding windows of width `n` with stride `step` (default 1).
+    Sliding windows of width `n` with stride `step` (default DEFAULT_METRIC_WINDOW_STRIDE).
     """
     seq = list(seq)
     if n <= 0:
