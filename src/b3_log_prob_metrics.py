@@ -73,8 +73,8 @@ import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
-from z_utils import aggregate_windows, sliding_windows
+from .x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
+from .z_utils import aggregate_windows, sliding_windows
 
 
 class WholeTextMetrics:

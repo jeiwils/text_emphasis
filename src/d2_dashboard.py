@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Tuple
 
 from tqdm import tqdm
 
-from src.d1_dashboard_metrics import (
+from .d1_dashboard_metrics import (
     build_central_report,
     build_topic_correlation_report,
     collect_window_tables,
@@ -28,7 +28,7 @@ from src.d1_dashboard_metrics import (
     central_topics,
     load_window_metrics,
 )
-from z_utils import find_topic_file, find_window_metrics_files, results_path
+from .z_utils import find_topic_file, find_window_metrics_files, results_path
 
 TEXT_CENTRAL_TOPIC_SCORES_FILENAME = "00_texts_central_topic_scores.json"
 GENRE_METRIC_VARIANCE_FILENAME = "00_genre_metric_variance_correlations.json"

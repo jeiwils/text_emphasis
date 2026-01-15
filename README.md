@@ -30,12 +30,10 @@ To run on your own texts:
 1. Install requirements: `pip install -r requirements.txt`.
 2. Add raw PDFs under `data/texts/raw/<genre>/<author>/`. If needed, add extraction/cleaning rules in
    `src/x_configs.py` (`BOOK_CONFIGS` or `WEB_CONFIGS`) and add new genres to `GENRES`.
-3. From repo root, run the full pipeline (ensure `PYTHONPATH=src` so both `src.*` and top-level imports resolve):
-   - PowerShell: `$env:PYTHONPATH="src"; python -m src.f_orchestrator`
-   - bash: `PYTHONPATH=src python -m src.f_orchestrator`
-4. From repo root, generate figures (same `PYTHONPATH`):
-   - PowerShell: `$env:PYTHONPATH="src"; python -m src.e_visualisations`
-   - bash: `PYTHONPATH=src python -m src.e_visualisations`
+3. From repo root, run the full pipeline:
+   - PowerShell: `python -m src.f_orchestrator`
+4. From repo root, generate figures:
+   - PowerShell: `python -m src.e_visualisations`
 
 Notes:
 - The orchestrator runs preprocessing, embeddings, topic modeling, corpus metrics, window metrics, and dashboard correlations.

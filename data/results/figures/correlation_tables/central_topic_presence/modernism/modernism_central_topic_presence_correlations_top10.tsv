@@ -1,11 +1,11 @@
-genre	author	text_name	metric	pearson_r	p_value	n	mean_with_topic	mean_without_topic	windows_with_central_topic	windows_without_central_topic
-modernism	woolf	kew_gardens	syntax.depth_skew	-0.6299229916412113	0.0004997501249375312	86	0.1346153846153846	0.62375	78	8
-modernism	kafka	the_judgement	syntax.avg_tokens_per_sentence	-0.5030163518826248	0.0004997501249375312	220	16.458333325	26.872222266666668	160	60
-modernism	kafka	the_judgement	discourse.pronoun_ratio	0.44037080810108714	0.0004997501249375312	220	0.16474375	0.10956666666666667	160	60
-modernism	kafka	the_judgement	syntax.avg_mean_dependency_distance	-0.40632561974718373	0.0004997501249375312	220	2.94387665	3.452231633333333	160	60
-modernism	woolf	an_unwritten_novel	syntax.clause_counts_per_token.main	0.4037672206206208	0.0004997501249375312	340	0.15424351639344264	0.0898334633027523	122	218
-modernism	woolf	an_unwritten_novel	log_prob.max_token_surprisal	-0.40184082151315165	0.0004997501249375312	340	10.528840991803278	12.247897472477064	122	218
-modernism	kafka	the_judgement	syntax.max_depth	-0.38546112946229927	0.0014992503748125937	220	6.15625	8.716666666666667	160	60
-modernism	kafka	the_judgement	syntax.median_depth	-0.3742674623324088	0.0014992503748125937	220	1.9994375	2.6133333333333333	160	60
-modernism	woolf	an_unwritten_novel	syntax.avg_mean_dependency_distance	-0.3730137509191145	0.0004997501249375312	340	2.5981933770491805	3.217581637614679	122	218
-modernism	woolf	an_unwritten_novel	syntax.avg_tokens_per_sentence	-0.35744182282445885	0.0004997501249375312	340	9.188524647540984	15.871559619266055	122	218
+author	text_name	metric	pearson_r	p_value	windows_with_central_topic	windows_without_central_topic
+woolf	kew_gardens	syntax.depth_skew	-0.630	<0.001	78	8
+kafka	the_judgement	syntax.avg_tokens_per_sentence	-0.503	<0.001	160	60
+kafka	the_judgement	discourse.pronoun_ratio	0.440	<0.001	160	60
+kafka	the_judgement	syntax.avg_mean_dependency_distance	-0.406	<0.001	160	60
+woolf	an_unwritten_novel	syntax.clause_counts_per_token.main	0.404	<0.001	122	218
+woolf	an_unwritten_novel	log_prob.max_token_surprisal	-0.402	<0.001	122	218
+kafka	the_judgement	syntax.max_depth	-0.385	0.001	160	60
+kafka	the_judgement	syntax.median_depth	-0.374	0.001	160	60
+woolf	an_unwritten_novel	syntax.avg_mean_dependency_distance	-0.373	<0.001	122	218
+woolf	an_unwritten_novel	syntax.avg_tokens_per_sentence	-0.357	<0.001	122	218

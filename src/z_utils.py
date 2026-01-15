@@ -8,7 +8,7 @@ from statistics import mean
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import HDBSCAN
 
-from x_configs import DEFAULT_METRIC_WINDOW_STRIDE
+from .x_configs import DEFAULT_METRIC_WINDOW_STRIDE
 
 
 

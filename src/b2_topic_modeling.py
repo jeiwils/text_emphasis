@@ -75,7 +75,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
 
-from z_utils import (
+from .z_utils import (
     analytics_path,
     encode_texts,
     hdbscan_cluster_labels,
@@ -84,7 +84,7 @@ from z_utils import (
     sliding_windows,
     text_path,
 )
-from x_configs import (
+from .x_configs import (
     DEFAULT_WINDOW_SIZE,
     DEFAULT_TOPIC_WINDOW_MULTIPLE,
     DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,

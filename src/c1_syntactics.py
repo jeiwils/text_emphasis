@@ -58,8 +58,8 @@ Output:
 
 import statistics
 
-from x_configs import DEFAULT_WINDOW_SIZE
-from z_utils import aggregate_windows, sliding_windows
+from .x_configs import DEFAULT_WINDOW_SIZE
+from .z_utils import aggregate_windows, sliding_windows
 
 
 class SyntaxAnalyzer:
@@ -241,7 +241,7 @@ class SyntaxAnalyzer:
             are averaged across numeric fields and tagged with inclusive start/end sentence indices.
 
         Example:
-            >>> from x_configs import load_spacy_model
+            >>> from .x_configs import load_spacy_model
             >>> nlp = load_spacy_model()
             >>> doc = nlp("One. Two. Three.")
             >>> SyntaxAnalyzer(nlp).analyze_document(doc)["sentences"][0]["clause_counts"]["main"]

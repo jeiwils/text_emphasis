@@ -13,8 +13,8 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     pdfplumber = None
 from bs4 import BeautifulSoup
 
-from x_configs import BOOK_CONFIGS, DEFAULT_BOOK_CONFIG, GENRES, load_spacy_model
-from z_utils import text_path
+from .x_configs import BOOK_CONFIGS, DEFAULT_BOOK_CONFIG, GENRES, load_spacy_model
+from .z_utils import text_path
 
 def _html_to_text(html: str, selector: Optional[str] = None) -> str:
     """

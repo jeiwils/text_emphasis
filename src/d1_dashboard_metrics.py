@@ -103,9 +103,9 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from x_configs import DASHBOARD_WINDOW_CONFIG
+from .x_configs import DASHBOARD_WINDOW_CONFIG
 
-from src.b2_topic_modeling import (
+from .b2_topic_modeling import (
     build_topic_window_metrics,
     collect_soft_topic_mentions,
     collect_topic_mentions,

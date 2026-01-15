@@ -86,8 +86,8 @@ import statistics
 
 import numpy as np
 
-from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
-from z_utils import sliding_windows, aggregate_windows
+from .x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
+from .z_utils import sliding_windows, aggregate_windows
 
 def _tokenize_words_from_tokens(tokens, lowercase: bool = True):
     """Tokenize using spaCy tokens for lexical diversity (MATTR)."""

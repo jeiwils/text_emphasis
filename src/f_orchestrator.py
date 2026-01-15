@@ -27,7 +27,7 @@ from spacy.tokens import Doc
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
-from x_configs import (
+from .x_configs import (
     DEFAULT_PIPELINE_TOPIC_WINDOW_STRIDE_MULTIPLE,
     DEFAULT_TOPIC_WINDOW_MULTIPLE,
     DEFAULT_WINDOW_SIZE,
@@ -36,19 +36,19 @@ from x_configs import (
     WEB_CONFIGS,
     load_spacy_model,
 )
-from a_preprocessing_cleaning import (
+from .a_preprocessing_cleaning import (
     TextPreprocessor,
     preprocess_all_pdfs,
     preprocess_web_story,
 )
-from src.b1_concept_embeddings import ConceptExtractor, generate_embeddings
-from src.b3_log_prob_metrics import WholeTextMetrics
-from src.b2_topic_modeling import run_topic_modelling
-from c1_syntactics import SyntaxAnalyzer
-from c2_lexico_semantics import LexicoSemanticsAnalyzer
-from c3_discourse import DiscourseAnalyzer
-from src.d2_dashboard import run_dashboard
-from z_utils import analytics_path, iter_dirs, text_path
+from .b1_concept_embeddings import ConceptExtractor, generate_embeddings
+from .b3_log_prob_metrics import WholeTextMetrics
+from .b2_topic_modeling import run_topic_modelling
+from .c1_syntactics import SyntaxAnalyzer
+from .c2_lexico_semantics import LexicoSemanticsAnalyzer
+from .c3_discourse import DiscourseAnalyzer
+from .d2_dashboard import run_dashboard
+from .z_utils import analytics_path, iter_dirs, text_path
 
 def run_concept_embeddings(top_n=100, use_existing=True, authors=None, encoder=None):
     """

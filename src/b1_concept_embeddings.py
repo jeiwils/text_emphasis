@@ -31,8 +31,8 @@ import nltk
 import re
 import json
 
-from x_configs import GENRES, MODEL_CONFIGS, load_spacy_model
-from z_utils import (
+from .x_configs import GENRES, MODEL_CONFIGS, load_spacy_model
+from .z_utils import (
     analytics_path,
     encode_texts,
     hdbscan_cluster_labels,

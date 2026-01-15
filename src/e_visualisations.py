@@ -16,8 +16,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import TwoSlopeNorm
 
-from src.d1_dashboard_metrics import collect_window_topic_scores
-from x_configs import (
+from .d1_dashboard_metrics import collect_window_topic_scores
+from .x_configs import (
     GENRES,
     AggregatedHeatmapConfig,
     CentralTopicWindowHeatmapConfig,
@@ -41,7 +41,7 @@ from x_configs import (
     DEFAULT_TEXT_METRIC_HEATMAP_CONFIG,
     DEFAULT_TOPIC_METRIC_HEATMAP_CONFIG,
 )
-from z_utils import analytics_path, find_topic_file, load_json, results_path
+from .z_utils import analytics_path, find_topic_file, load_json, results_path
 
 
 def _shorten_keywords(keywords: Sequence[str], max_len: int = 40) -> str:
@@ -79,11 +79,35 @@ def _format_keywords_for_table(keywords: object) -> str:
     return " | ".join(cleaned)
 
 
-def _sanitize_table_value(value: object) -> str:
+_COUNT_COLUMNS = {
+    "topic_id",
+    "windows_with_topic",
+    "windows_without_topic",
+    "windows_with_central_topic",
+    "windows_without_central_topic",
+    "n",
+    "text_count",
+    "total_windows",
+}
+_P_VALUE_COLUMNS = {"p_value"}
+_DEFAULT_FLOAT_DECIMALS = 3
+_P_VALUE_MIN_DISPLAY = 0.001
+
+
+def _format_table_value(value: object, column: str) -> str:
     if value is None:
         return ""
     if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
         return ""
+    if isinstance(value, (int, float)):
+        num = float(value)
+        if column in _COUNT_COLUMNS:
+            return str(int(num))
+        if column in _P_VALUE_COLUMNS:
+            if num < _P_VALUE_MIN_DISPLAY:
+                return f"<{_P_VALUE_MIN_DISPLAY:.3f}"
+            return f"{num:.{_DEFAULT_FLOAT_DECIMALS}f}"
+        return f"{num:.{_DEFAULT_FLOAT_DECIMALS}f}"
     text = str(value).replace("\t", " ").replace("\r", " ").replace("\n", " ")
     return " ".join(text.split())
 
@@ -95,12 +119,27 @@ def _write_tsv(path: Path, rows: Sequence[Dict[str, object]], columns: Sequence[
         writer = csv.writer(handle, delimiter="\t", quoting=csv.QUOTE_MINIMAL)
         writer.writerow(list(columns))
         for row in rows:
-            writer.writerow([_sanitize_table_value(row.get(col)) for col in columns])
+            writer.writerow([_format_table_value(row.get(col), col) for col in columns])
 
 
 def _wrap_table_cell(text: str, *, max_width: int) -> str:
     if not text or max_width <= 0:
         return text or ""
+    if "\n" in text:
+        wrapped_lines: List[str] = []
+        for line in text.splitlines():
+            if not line:
+                wrapped_lines.append("")
+                continue
+            wrapped_lines.extend(
+                textwrap.wrap(
+                    line,
+                    width=max_width,
+                    break_long_words=False,
+                    break_on_hyphens=False,
+                )
+            )
+        return "\n".join(wrapped_lines)
     return textwrap.fill(
         text,
         width=max_width,
@@ -115,9 +154,10 @@ def _render_table_png(
     columns: Sequence[str],
     *,
     title: Optional[str] = None,
-    max_col_width: int = 28,
-    max_keyword_width: int = 70,
+    max_col_width: int = 20,
+    max_keyword_width: int = 48,
     font_size: int = 8,
+    row_scale: float = 1.8,
 ) -> Optional[Path]:
     if not rows:
         return None
@@ -129,7 +169,9 @@ def _render_table_png(
         row_texts: List[str] = []
         max_lines = 1
         for col_idx, col in enumerate(columns):
-            raw_text = _sanitize_table_value(row.get(col))
+            raw_text = _format_table_value(row.get(col), col)
+            if col == "metric":
+                raw_text = raw_text.replace(".", ".\n")
             wrap_width = max_keyword_width if col == "keywords" else max_col_width
             wrapped = _wrap_table_cell(raw_text, max_width=wrap_width)
             lines = wrapped.splitlines() if wrapped else [""]
@@ -142,8 +184,8 @@ def _render_table_png(
 
     total_chars = sum(col_max_lengths) or 1
     total_lines = sum(row_line_counts) + 1
-    fig_width = max(8.0, min(26.0, 0.13 * total_chars))
-    fig_height = max(2.5, min(20.0, 0.32 * total_lines + 0.6))
+    fig_width = max(6.0, min(18.0, 0.10 * total_chars))
+    fig_height = max(2.5, min(18.0, 0.30 * total_lines + 0.5))
 
     fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     ax.axis("off")
@@ -158,6 +200,8 @@ def _render_table_png(
     )
     table.auto_set_font_size(False)
     table.set_fontsize(font_size)
+    if row_scale and row_scale > 0:
+        table.scale(1.0, row_scale)
 
     total = float(sum(col_max_lengths)) or 1.0
     for j, col_len in enumerate(col_max_lengths):
@@ -165,13 +209,14 @@ def _render_table_png(
         for i in range(len(rows) + 1):
             cell = table[(i, j)]
             cell.set_width(width)
+            cell.PAD = 0.02
             if i == 0:
                 cell.set_text_props(weight="bold")
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=200, bbox_inches="tight", pad_inches=0.2)
+    fig.savefig(output_path, dpi=200, bbox_inches="tight", pad_inches=0.1)
     plt.close(fig)
     return output_path
 
@@ -717,47 +762,35 @@ def write_top_correlation_tables(
     }
 
     topic_metric_columns = [
-        "genre",
         "author",
         "text_name",
         "metric",
         "pearson_r",
         "p_value",
         "topic_id",
-        "topic_score",
         "topic_exclusivity",
         "topic_coherence",
         "topic_prevalence",
         "topic_persistence",
         "windows_with_topic",
         "windows_without_topic",
-        "n",
-        "mean_with_topic",
-        "mean_without_topic",
-        "keywords",
     ]
     presence_columns = [
-        "genre",
         "author",
         "text_name",
         "metric",
         "pearson_r",
         "p_value",
-        "n",
-        "mean_with_topic",
-        "mean_without_topic",
         "windows_with_central_topic",
         "windows_without_central_topic",
     ]
     aggregated_columns = [
-        "genre",
         "metric",
         "pearson_r",
         "p_value",
         "text_count",
         "total_windows",
         "fisher_z",
-        "fisher_z_weight_sum",
     ]
 
     for genre in ordered_genres:
@@ -786,7 +819,6 @@ def write_top_correlation_tables(
                         "n": entry.get("n"),
                         "mean_with_topic": entry.get("mean_with_topic"),
                         "mean_without_topic": entry.get("mean_without_topic"),
-                        "keywords": _format_keywords_for_table(entry.get("keywords")),
                     }
                 )
             output_dir = _output_dir(
@@ -799,7 +831,7 @@ def write_top_correlation_tables(
             output_paths["central_topic_metrics"].append(output_path)
             if render_png:
                 png_path = output_path.with_suffix(".png")
-                title = f"Central Topic to Metrics (Top {top_n}) - {genre}"
+                title = f"Central Topic to Metrics - Top {top_n} correlations by |r| ({genre})"
                 rendered = _render_table_png(
                     png_path,
                     rows,
@@ -852,7 +884,7 @@ def write_top_correlation_tables(
                 output_paths["central_topic_presence"].append(output_path)
                 if render_png:
                     png_path = output_path.with_suffix(".png")
-                    title = f"Central Topic Presence (Top {top_n}) - {genre}"
+                    title = f"Central Topic Presence - Top {top_n} correlations by |r| ({genre})"
                     rendered = _render_table_png(
                         png_path,
                         top_entries,
@@ -898,7 +930,7 @@ def write_top_correlation_tables(
                 output_paths["central_topic_presence_aggregated"].append(output_path)
                 if render_png:
                     png_path = output_path.with_suffix(".png")
-                    title = f"Aggregated Central Topic Presence (Top {top_n}) - {genre}"
+                    title = f"Aggregated Central Topic Presence - Top {top_n} correlations by |r| ({genre})"
                     rendered = _render_table_png(
                         png_path,
                         top_entries,
