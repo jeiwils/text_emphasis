@@ -53,7 +53,7 @@ Notes:
     exclusivity_term = 1 - ((count - 1) / (num_topics - 1)), clipped to [0,1]; if num_topics <= 1, exclusivity_term = 1.
     Exclusivity is mean across the topic keywords.
 
-## Central topic presence flow
+## Central topic selection flow (topic-only)
 ```mermaid
 flowchart TD
     topic_windows[Topic windows 15 sentences] --> embed[SentenceTransformer embeddings]
@@ -64,14 +64,6 @@ flowchart TD
     scores --> sparsify[Sparsify by score threshold and top_k]
     sparsify --> stats[Topic stats: prevalence / persistence / coherence / exclusivity]
     stats --> central[Central topics: top 40 percent]
-
-    metric_windows[Metric windows 3 sentences] --> projection[Overlap weighted projection]
-    sparsify --> projection
-    central --> projection
-
-    projection --> maxscore[Per metric window: max score across central topics]
-    maxscore --> thresh[Threshold at 70th percentile of non zero max scores]
-    thresh --> present[central_present = 1 if max score >= threshold else 0]
 ```
 
 ## Window metrics and dashboard summaries
