@@ -56,22 +56,22 @@ Notes:
 ## Central topic presence flow
 ```mermaid
 flowchart TD
-    topic_windows[Topic windows (15 sentences)] --> embed[SentenceTransformer embeddings]
+    topic_windows[Topic windows 15 sentences] --> embed[SentenceTransformer embeddings]
     embed --> pca[PCA]
     pca --> hdbscan[HDBSCAN clusters]
     hdbscan --> centroids[Topic centroids]
     centroids --> scores[Soft topic scores per topic window]
-    scores --> sparsify[Sparsify by score_threshold + top_k]
+    scores --> sparsify[Sparsify by score threshold and top_k]
     sparsify --> stats[Topic stats: prevalence / persistence / coherence / exclusivity]
-    stats --> central[Central topics: >= 60th percentile]
+    stats --> central[Central topics: top 40 percent]
 
-    metric_windows[Metric windows (3 sentences)] --> projection[Overlap-weighted projection]
+    metric_windows[Metric windows 3 sentences] --> projection[Overlap weighted projection]
     sparsify --> projection
     central --> projection
 
     projection --> maxscore[Per metric window: max score across central topics]
-    maxscore --> thresh[Threshold at 70th percentile of non-zero max scores]
-    thresh --> present[central_present = 1 if max >= threshold else 0]
+    maxscore --> thresh[Threshold at 70th percentile of non zero max scores]
+    thresh --> present[central_present = 1 if max score >= threshold else 0]
 ```
 
 ## Window metrics and dashboard summaries
