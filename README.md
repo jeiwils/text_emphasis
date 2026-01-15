@@ -30,8 +30,12 @@ To run on your own texts:
 1. Install requirements: `pip install -r requirements.txt`.
 2. Add raw PDFs under `data/texts/raw/<genre>/<author>/`. If needed, add extraction/cleaning rules in
    `src/x_configs.py` (`BOOK_CONFIGS` or `WEB_CONFIGS`) and add new genres to `GENRES`.
-3. From `src/`, run the full pipeline: `python -m f_orchestrator`.
-4. From `src/`, generate figures: `python -m e_visualisations`.
+3. From repo root, run the full pipeline (ensure `PYTHONPATH=src` so both `src.*` and top-level imports resolve):
+   - PowerShell: `$env:PYTHONPATH="src"; python -m src.f_orchestrator`
+   - bash: `PYTHONPATH=src python -m src.f_orchestrator`
+4. From repo root, generate figures (same `PYTHONPATH`):
+   - PowerShell: `$env:PYTHONPATH="src"; python -m src.e_visualisations`
+   - bash: `PYTHONPATH=src python -m src.e_visualisations`
 
 Notes:
 - The orchestrator runs preprocessing, embeddings, topic modeling, corpus metrics, window metrics, and dashboard correlations.
@@ -56,7 +60,7 @@ Notes:
   - token_weighted_mean_surprisal: token-weighted mean of sentence mean_surprisal in the window.
   - token_weighted_surprisal_variance: pooled token variance using sentence mean_surprisal + sentence surprisal_variance, weighted by num_tokens.
   - max_token_surprisal: max token surprisal within the window.
-- Unexpectedness (text-level dashboard row, not currently written by w_dashboard):
+- Unexpectedness (text-level dashboard row, not currently written by `run_dashboard` in `d2_dashboard`):
   - avg_token_surprisal: token-weighted mean of sentence mean_surprisal across all sentences with num_tokens > 0.
   - max_token_surprisal: max across all token surprisals in the text.
   - surprisal_variance: pooled token variance using sentence mean_surprisal + sentence surprisal_variance, weighted by num_tokens.
@@ -70,9 +74,9 @@ Notes:
 - Structure (window-level, used in correlations):
   - clause_counts_per_token by clause type; clause_ratios by clause type.
   - avg_dependents_per_head by clause type.
-  - avg_mean_dependency_distance, median_depth, max_depth, depth_skew, punctuation_per_token.
+  - avg_tokens_per_sentence, avg_mean_dependency_distance, median_depth, max_depth, depth_skew, punctuation_per_token.
 - Structure (text-level dashboard row):
-- max_dependency_depth: max across windows of max_depth (window max_depth is the max of sentence max_depth).
+  - max_dependency_depth: max across windows of max_depth (window max_depth is the max of sentence max_depth).
   - clause_density: mean across windows of sum(clause_counts_per_token).
   - avg_dependents_per_head: mean across windows of the per-window mean across clause types.
   - clause_ratios: mean across windows.
@@ -84,7 +88,7 @@ Notes:
   - explicit_connectives_per_token, modality_per_token, connective_counts_per_token by category,
     tense_shift, entity_overlap_ratio, content_overlap_ratio, pronoun_ratio.
 - Discourse (text-level dashboard row): mean across windows of explicit_connectives_per_token, modality_per_token,
-  connective_counts_per_token, tense_shift, and entity_overlap_ratio.
+  connective_counts_per_token, tense_shift, and entity_overlap_rate.
 
 ## Correlations
 - Per text:
@@ -120,4 +124,4 @@ Notes:
 - Inputs and outputs:
   - Raw PDFs expected under `data/texts/raw/` (organized by genre/author).
   - Processed texts live under `data/texts/processed/`; analytics outputs under `data/analytics/` (corpus_analytics, topic_modelling, window_metrics, embeddings); results under `data/results/` (dashboard, figures).
-- Set `x_configs.model` to the desired causal LM before running log-prob metrics.
+- Set `MODEL_CONFIGS["causal_lm"]` in `src/x_configs.py` to the desired causal LM before running log-prob metrics.

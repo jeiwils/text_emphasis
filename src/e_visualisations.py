@@ -1,5 +1,7 @@
 """Visualization utilities for dashboard outputs."""
 
+import csv
+import textwrap
 from collections import defaultdict
 from dataclasses import replace
 import math
@@ -55,6 +57,123 @@ def _shorten_label(label: str, max_len: int) -> str:
     if len(label) <= max_len:
         return label
     return label[: max_len - 3] + "..."
+
+
+def _format_keywords_for_table(keywords: object) -> str:
+    if keywords is None:
+        return ""
+    if isinstance(keywords, str):
+        items = [keywords]
+    elif isinstance(keywords, Sequence):
+        items = list(keywords)
+    else:
+        return ""
+    cleaned: List[str] = []
+    for item in items:
+        if item is None:
+            continue
+        text = str(item).replace("\t", " ").replace("\r", " ").replace("\n", " ")
+        text = " ".join(text.split())
+        if text:
+            cleaned.append(text)
+    return " | ".join(cleaned)
+
+
+def _sanitize_table_value(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        return ""
+    text = str(value).replace("\t", " ").replace("\r", " ").replace("\n", " ")
+    return " ".join(text.split())
+
+
+def _write_tsv(path: Path, rows: Sequence[Dict[str, object]], columns: Sequence[str]) -> None:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle, delimiter="\t", quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(list(columns))
+        for row in rows:
+            writer.writerow([_sanitize_table_value(row.get(col)) for col in columns])
+
+
+def _wrap_table_cell(text: str, *, max_width: int) -> str:
+    if not text or max_width <= 0:
+        return text or ""
+    return textwrap.fill(
+        text,
+        width=max_width,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+
+
+def _render_table_png(
+    output_path: Path,
+    rows: Sequence[Dict[str, object]],
+    columns: Sequence[str],
+    *,
+    title: Optional[str] = None,
+    max_col_width: int = 28,
+    max_keyword_width: int = 70,
+    font_size: int = 8,
+) -> Optional[Path]:
+    if not rows:
+        return None
+
+    cell_text: List[List[str]] = []
+    col_max_lengths = [len(str(col)) for col in columns]
+    row_line_counts: List[int] = []
+    for row in rows:
+        row_texts: List[str] = []
+        max_lines = 1
+        for col_idx, col in enumerate(columns):
+            raw_text = _sanitize_table_value(row.get(col))
+            wrap_width = max_keyword_width if col == "keywords" else max_col_width
+            wrapped = _wrap_table_cell(raw_text, max_width=wrap_width)
+            lines = wrapped.splitlines() if wrapped else [""]
+            max_lines = max(max_lines, len(lines))
+            max_line_len = max(len(line) for line in lines)
+            col_max_lengths[col_idx] = max(col_max_lengths[col_idx], max_line_len)
+            row_texts.append(wrapped)
+        row_line_counts.append(max_lines)
+        cell_text.append(row_texts)
+
+    total_chars = sum(col_max_lengths) or 1
+    total_lines = sum(row_line_counts) + 1
+    fig_width = max(8.0, min(26.0, 0.13 * total_chars))
+    fig_height = max(2.5, min(20.0, 0.32 * total_lines + 0.6))
+
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+    ax.axis("off")
+    if title:
+        ax.set_title(title, fontsize=10, pad=12)
+
+    table = ax.table(
+        cellText=cell_text,
+        colLabels=list(columns),
+        cellLoc="left",
+        loc="center",
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(font_size)
+
+    total = float(sum(col_max_lengths)) or 1.0
+    for j, col_len in enumerate(col_max_lengths):
+        width = col_len / total
+        for i in range(len(rows) + 1):
+            cell = table[(i, j)]
+            cell.set_width(width)
+            if i == 0:
+                cell.set_text_props(weight="bold")
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=200, bbox_inches="tight", pad_inches=0.2)
+    plt.close(fig)
+    return output_path
 
 
 def _matches_selection(
@@ -214,10 +333,15 @@ def collect_central_topic_data(
                         "metric": metric,
                         "pearson_r": float(r),
                         "p_value": corr.get("p_value"),
+                        "n": corr.get("n"),
+                        "mean_with_topic": corr.get("mean_with_topic"),
+                        "mean_without_topic": corr.get("mean_without_topic"),
                         "topic_id": topic.get("topic_id"),
                         "topic_score": topic.get("score"),
                         "keywords": topic.get("keywords") or [],
                         "stats": topic.get("stats") or {},
+                        "windows_with_topic": topic.get("windows_with_topic"),
+                        "windows_without_topic": topic.get("windows_without_topic"),
                         "topic_file": topic_file,
                         "params": params,
                     }
@@ -550,6 +674,241 @@ def plot_aggregated_presence_heatmap(
     fig.savefig(output_path, dpi=200)
     plt.close(fig)
     return output_path
+
+
+def write_top_correlation_tables(
+    entries_by_genre: Optional[Dict[str, List[Dict[str, object]]]] = None,
+    presence_entries: Optional[List[Dict[str, object]]] = None,
+    *,
+    top_n: int = 10,
+    render_png: bool = True,
+    selection: Optional[DataSelectionConfig] = None,
+    output_root: Optional[Path] = None,
+) -> Dict[str, List[Path]]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    if not isinstance(top_n, int) or top_n <= 0:
+        top_n = 10
+
+    if entries_by_genre is None or presence_entries is None:
+        entries_by_genre, presence_entries = collect_central_topic_data(selection=selection)
+    else:
+        entries_by_genre = _filter_entries_by_genre(entries_by_genre, selection)
+        presence_entries = _filter_presence_entries(presence_entries, selection)
+
+    aggregated = _load_aggregated_presence_by_genre(selection=selection)
+
+    presence_by_genre: Dict[str, List[Dict[str, object]]] = defaultdict(list)
+    for entry in presence_entries:
+        genre = entry.get("genre")
+        if isinstance(genre, str):
+            presence_by_genre[genre].append(entry)
+
+    genre_set = set(entries_by_genre.keys()) | set(presence_by_genre.keys()) | set(aggregated.keys())
+    ordered_genres = _ordered_genres(genre_set)
+
+    output_paths: Dict[str, List[Path]] = {
+        "central_topic_metrics": [],
+        "central_topic_presence": [],
+        "central_topic_presence_aggregated": [],
+        "central_topic_metrics_png": [],
+        "central_topic_presence_png": [],
+        "central_topic_presence_aggregated_png": [],
+    }
+
+    topic_metric_columns = [
+        "genre",
+        "author",
+        "text_name",
+        "metric",
+        "pearson_r",
+        "p_value",
+        "topic_id",
+        "topic_score",
+        "topic_exclusivity",
+        "topic_coherence",
+        "topic_prevalence",
+        "topic_persistence",
+        "windows_with_topic",
+        "windows_without_topic",
+        "n",
+        "mean_with_topic",
+        "mean_without_topic",
+        "keywords",
+    ]
+    presence_columns = [
+        "genre",
+        "author",
+        "text_name",
+        "metric",
+        "pearson_r",
+        "p_value",
+        "n",
+        "mean_with_topic",
+        "mean_without_topic",
+        "windows_with_central_topic",
+        "windows_without_central_topic",
+    ]
+    aggregated_columns = [
+        "genre",
+        "metric",
+        "pearson_r",
+        "p_value",
+        "text_count",
+        "total_windows",
+        "fisher_z",
+        "fisher_z_weight_sum",
+    ]
+
+    for genre in ordered_genres:
+        topic_entries = entries_by_genre.get(genre, [])
+        if topic_entries:
+            top_entries = _top_n_by_abs_r(topic_entries, top_n)
+            rows = []
+            for entry in top_entries:
+                stats = entry.get("stats") or {}
+                rows.append(
+                    {
+                        "genre": genre,
+                        "author": entry.get("author") or "",
+                        "text_name": entry.get("text_name") or "",
+                        "metric": entry.get("metric") or "",
+                        "pearson_r": entry.get("pearson_r"),
+                        "p_value": entry.get("p_value"),
+                        "topic_id": entry.get("topic_id"),
+                        "topic_score": entry.get("topic_score"),
+                        "topic_exclusivity": stats.get("exclusivity"),
+                        "topic_coherence": stats.get("coherence"),
+                        "topic_prevalence": stats.get("prevalence"),
+                        "topic_persistence": stats.get("persistence"),
+                        "windows_with_topic": entry.get("windows_with_topic"),
+                        "windows_without_topic": entry.get("windows_without_topic"),
+                        "n": entry.get("n"),
+                        "mean_with_topic": entry.get("mean_with_topic"),
+                        "mean_without_topic": entry.get("mean_without_topic"),
+                        "keywords": _format_keywords_for_table(entry.get("keywords")),
+                    }
+                )
+            output_dir = _output_dir(
+                output_root, "correlation_tables", ["central_topic_metrics", genre]
+            )
+            output_path = (
+                output_dir / f"{genre}_central_topic_metric_correlations_top{top_n}.tsv"
+            )
+            _write_tsv(output_path, rows, topic_metric_columns)
+            output_paths["central_topic_metrics"].append(output_path)
+            if render_png:
+                png_path = output_path.with_suffix(".png")
+                title = f"Central Topic to Metrics (Top {top_n}) - {genre}"
+                rendered = _render_table_png(
+                    png_path,
+                    rows,
+                    topic_metric_columns,
+                    title=title,
+                )
+                if rendered:
+                    output_paths["central_topic_metrics_png"].append(rendered)
+
+        presence_entries_genre = presence_by_genre.get(genre, [])
+        if presence_entries_genre:
+            candidates: List[Dict[str, object]] = []
+            for entry in presence_entries_genre:
+                presence = entry.get("presence") or {}
+                correlations = presence.get("correlations") or {}
+                for metric, corr in correlations.items():
+                    if not isinstance(corr, dict):
+                        continue
+                    r_val = corr.get("pearson_r")
+                    if not isinstance(r_val, (int, float)):
+                        continue
+                    candidates.append(
+                        {
+                            "genre": genre,
+                            "author": entry.get("author") or "",
+                            "text_name": entry.get("text_name") or "",
+                            "metric": metric,
+                            "pearson_r": float(r_val),
+                            "p_value": corr.get("p_value"),
+                            "n": corr.get("n"),
+                            "mean_with_topic": corr.get("mean_with_topic"),
+                            "mean_without_topic": corr.get("mean_without_topic"),
+                            "windows_with_central_topic": presence.get(
+                                "windows_with_central_topic"
+                            ),
+                            "windows_without_central_topic": presence.get(
+                                "windows_without_central_topic"
+                            ),
+                        }
+                    )
+            if candidates:
+                top_entries = _top_n_by_abs_r(candidates, top_n)
+                output_dir = _output_dir(
+                    output_root, "correlation_tables", ["central_topic_presence", genre]
+                )
+                output_path = (
+                    output_dir / f"{genre}_central_topic_presence_correlations_top{top_n}.tsv"
+                )
+                _write_tsv(output_path, top_entries, presence_columns)
+                output_paths["central_topic_presence"].append(output_path)
+                if render_png:
+                    png_path = output_path.with_suffix(".png")
+                    title = f"Central Topic Presence (Top {top_n}) - {genre}"
+                    rendered = _render_table_png(
+                        png_path,
+                        top_entries,
+                        presence_columns,
+                        title=title,
+                    )
+                    if rendered:
+                        output_paths["central_topic_presence_png"].append(rendered)
+
+        aggregated_metrics = aggregated.get(genre, {})
+        if isinstance(aggregated_metrics, dict) and aggregated_metrics:
+            candidates = []
+            for metric, corr in aggregated_metrics.items():
+                if not isinstance(corr, dict):
+                    continue
+                r_val = corr.get("pearson_r")
+                if not isinstance(r_val, (int, float)):
+                    continue
+                candidates.append(
+                    {
+                        "genre": genre,
+                        "metric": metric,
+                        "pearson_r": float(r_val),
+                        "p_value": corr.get("p_value"),
+                        "text_count": corr.get("text_count"),
+                        "total_windows": corr.get("total_windows"),
+                        "fisher_z": corr.get("fisher_z"),
+                        "fisher_z_weight_sum": corr.get("fisher_z_weight_sum"),
+                    }
+                )
+            if candidates:
+                top_entries = _top_n_by_abs_r(candidates, top_n)
+                output_dir = _output_dir(
+                    output_root,
+                    "correlation_tables",
+                    ["central_topic_presence_aggregated", genre],
+                )
+                output_path = (
+                    output_dir
+                    / f"{genre}_central_topic_presence_aggregated_top{top_n}.tsv"
+                )
+                _write_tsv(output_path, top_entries, aggregated_columns)
+                output_paths["central_topic_presence_aggregated"].append(output_path)
+                if render_png:
+                    png_path = output_path.with_suffix(".png")
+                    title = f"Aggregated Central Topic Presence (Top {top_n}) - {genre}"
+                    rendered = _render_table_png(
+                        png_path,
+                        top_entries,
+                        aggregated_columns,
+                        title=title,
+                    )
+                    if rendered:
+                        output_paths["central_topic_presence_aggregated_png"].append(rendered)
+
+    return output_paths
 
 
 def plot_convergence_index(
@@ -1514,6 +1873,13 @@ def generate_all_visualisations(
         "I": plot_text_metric_heatmaps(
             presence_entries,
             config=i_config,
+            selection=selection,
+            output_root=output_root,
+        ),
+        "J": write_top_correlation_tables(
+            entries_by_genre,
+            presence_entries,
+            top_n=a_config.top_n,
             selection=selection,
             output_root=output_root,
         ),
