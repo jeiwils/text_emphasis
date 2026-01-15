@@ -26,13 +26,16 @@ flowchart LR
 
 
 ## Running
-- `python -m d_window_metrics` runs the full pipeline: preprocessing, concept embeddings, topic modeling, corpus metrics, window metrics, then run_dashboard.
-- `python -m w_dashboard` builds per-text topic correlation outputs and per-genre central topic presence correlations.
+To run on your own texts:
+1. Install requirements: `pip install -r requirements.txt`.
+2. Add raw PDFs under `data/texts/raw/<genre>/<author>/`. If needed, add extraction/cleaning rules in
+   `src/x_configs.py` (`BOOK_CONFIGS` or `WEB_CONFIGS`) and add new genres to `GENRES`.
+3. From `src/`, run the full pipeline: `python -m f_orchestrator`.
+4. From `src/`, generate figures: `python -m e_visualisations`.
 
-Note: `python -m w_dashboard` requires window metrics produced by `python -m d_window_metrics` and writes:
-- `data/results/dashboard/<category>/<name>/<name>_dashboard.json`
-- `data/results/dashboard/<category>/<name>/<name>_topic_correlations.json`
-- `data/results/dashboard/<category>/<name>/<name>_central_topic_correlations.json`
+Notes:
+- The orchestrator runs preprocessing, embeddings, topic modeling, corpus metrics, window metrics, and dashboard correlations.
+- Outputs are written under `data/analytics/` and `data/results/`.
 
 ## Central topics (top 60th percentile; capped to top_n)
 - Centrality selection:
