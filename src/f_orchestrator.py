@@ -47,7 +47,7 @@ from .b2_topic_modeling import run_topic_modelling
 from .c1_syntactics import SyntaxAnalyzer
 from .c2_lexico_semantics import LexicoSemanticsAnalyzer
 from .c3_discourse import DiscourseAnalyzer
-from .d2_dashboard import run_dashboard
+from .d2_dashboard import run_dashboard_with_config
 from .z_utils import analytics_path, iter_dirs, text_path
 
 def run_concept_embeddings(top_n=100, use_existing=True, authors=None, encoder=None):
@@ -410,7 +410,7 @@ def run_all_metrics(
         authors=authors,
     )
     tqdm.write("Stage 6/6: dashboard correlations")
-    run_dashboard(use_existing=use_existing, authors=authors)
+    run_dashboard_with_config(use_existing=use_existing, authors=authors)
     tqdm.write("All stages complete.")
 
 if __name__ == "__main__":

@@ -141,6 +141,9 @@ flowchart TD
   - Pearson r omitted when n < 2 or either variable is constant;
   - block permutation with contiguous blocks (default block_size=5, permutations=2000), two-sided on |r|;
     p = (count + 1) / (permutations + 1); RNG fixed (np.random.default_rng(42)).
+  - Blocks are fixed-length L, with the final block allowed to be shorter; blocks are permuted as units.
+  - L=5 was chosen to exceed the overlap horizon induced by the metric window and projection smoothing;
+    sensitivity checks over L in {3,5,7} did not change sign patterns.
 - Aggregation:
   - Fisher z uses r clipped to +/-0.999999; z_bar weighted by n-3; r_bar = tanh(z_bar).
   - Stouffer uses two-sided p, sign by r, weight sqrt(n-3); p clamped to [1e-15, 1-1e-15].

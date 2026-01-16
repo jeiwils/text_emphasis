@@ -4,6 +4,9 @@ from typing import Optional, Sequence, Tuple
 
 import spacy
 
+LOOP_BLOCK_SIZES_ENABLED = True
+LOOP_BLOCK_SIZES = (3, 5, 7)
+
 USE_EXISTING = True
 
 MODEL_CONFIGS = {
@@ -726,6 +729,14 @@ DASHBOARD_WINDOW_CONFIG = {
 }
 
 @dataclass(frozen=True)
+class DashboardCorrelationConfig:
+    block_size: int = 5
+    permutations: int = 2000
+    loop_enabled: bool = LOOP_BLOCK_SIZES_ENABLED
+    loop_block_sizes: Sequence[int] = LOOP_BLOCK_SIZES
+    loop_output_template: str = "dashboard_L{block_size}"
+
+@dataclass(frozen=True)
 class CentralTopicSelectionConfig:
     centrality_threshold: float = 0.6
     near_top_alpha: float = 0.85
@@ -896,6 +907,7 @@ class DataSelectionConfig:
 
 DEFAULT_CENTRAL_TOPIC_X_CONFIG = CentralTopicXBarConfig()
 DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG = CentralTopicSelectionConfig()
+DEFAULT_DASHBOARD_CORRELATION_CONFIG = DashboardCorrelationConfig()
 DEFAULT_EXEMPLAR_SCATTER_CONFIG = ExemplarScatterConfig()
 DEFAULT_PRESENCE_SLOPEGRAPH_CONFIG = PresenceSlopegraphConfig()
 DEFAULT_CONVERGENCE_INDEX_CONFIG = ConvergenceIndexConfig()

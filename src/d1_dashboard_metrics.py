@@ -64,6 +64,7 @@ Input (build_topic_correlation_report / build_central_topic_correlations / build
 
 Output (build_topic_correlation_report):
 {
+  "total_topics": 12,
   "window_count": 40,
   "metric_names": ["syntax.median_depth", "lexico_semantics.lexical_density_per_token", "..."],
   "topics": {
@@ -442,7 +443,6 @@ def _collect_centrality_rows(topics_data: Dict[str, object]) -> List[Dict[str, o
     rows: List[Dict[str, object]] = []
     for entry in entries:
         raw_stats = entry["raw_stats"]
-        percentile_stats: Dict[str, float] = {}
         raw_score: List[Optional[float]] = []
         percentile_score: List[Optional[float]] = []
         available: List[float] = []
@@ -456,7 +456,6 @@ def _collect_centrality_rows(topics_data: Dict[str, object]) -> List[Dict[str, o
             if rank is None:
                 percentile_score.append(None)
                 continue
-            percentile_stats[metric] = rank
             percentile_score.append(rank)
             available.append(rank)
         if not available:
@@ -467,8 +466,6 @@ def _collect_centrality_rows(topics_data: Dict[str, object]) -> List[Dict[str, o
                 "topic_id": entry["topic_id"],
                 "score": score,
                 "keywords": entry["keywords"],
-                "raw_stats": raw_stats,
-                "percentile_stats": percentile_stats,
                 "raw_score": raw_score,
                 "percentile_score": percentile_score,
             }
@@ -680,7 +677,11 @@ def build_topic_correlation_report(
     if effective_top_n is not None and effective_top_n <= 0:
         effective_top_n = None
 
+    topics_list = topics_data.get("topics", []) if isinstance(topics_data, dict) else []
+    total_topics = len(topics_list) if isinstance(topics_list, list) else 0
+
     return {
+        "total_topics": total_topics,
         "window_count": len(window_table),
         "metric_names": metric_names,
         topics_key: topic_reports,
@@ -746,16 +747,14 @@ def build_central_topic_correlations(
         if not isinstance(topic_id, int):
             continue
         correlation_entry = weighted_report.get("central_topics", {}).get(topic_id, {})
-        windows_with_topic: List[int] = []
-        window_scores: List[Dict[str, float]] = []
+        windows_and_scores: List[Dict[str, float]] = []
         if topic_score_windows:
             for idx, score_map in enumerate(topic_score_windows):
                 score = score_map.get(topic_id, 0.0)
                 if score > 0.0:
-                    windows_with_topic.append(idx)
-                    window_scores.append({"window": idx, "score": score})
-        windows_without_count = (
-            window_count - len(windows_with_topic)
+                    windows_and_scores.append({"window": idx, "score": score})
+        windows_without_topic = (
+            window_count - len(windows_and_scores)
             if isinstance(window_count, int)
             else None
         )
@@ -763,14 +762,11 @@ def build_central_topic_correlations(
             {
                 "topic_id": topic_id,
                 "score": row.get("score"),
-                "raw_stats": row.get("raw_stats", {}),
-                "percentile_stats": row.get("percentile_stats", {}),
                 "raw_score": row.get("raw_score", []),
                 "percentile_score": row.get("percentile_score", []),
                 "keywords": row.get("keywords", []),
-                "windows_with_topic": windows_with_topic,
-                "windows_without_topic_count": windows_without_count,
-                "window_scores": window_scores,
+                "windows_and_scores": windows_and_scores,
+                "windows_without_topic": windows_without_topic,
                 "correlations": correlation_entry.get("correlations", {}),
             }
         )

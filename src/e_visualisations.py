@@ -23,6 +23,7 @@ from .x_configs import (
     CentralTopicWindowHeatmapConfig,
     CentralTopicXBarConfig,
     ConvergenceIndexConfig,
+    DashboardCorrelationConfig,
     DataSelectionConfig,
     ExemplarScatterConfig,
     ForestPlotConfig,
@@ -34,6 +35,7 @@ from .x_configs import (
     DEFAULT_CENTRAL_TOPIC_WINDOW_HEATMAP_CONFIG,
     DEFAULT_CENTRAL_TOPIC_X_CONFIG,
     DEFAULT_CONVERGENCE_INDEX_CONFIG,
+    DEFAULT_DASHBOARD_CORRELATION_CONFIG,
     DEFAULT_DATA_SELECTION_CONFIG,
     DEFAULT_EXEMPLAR_SCATTER_CONFIG,
     DEFAULT_FOREST_PLOT_CONFIG,
@@ -77,6 +79,18 @@ def _format_keywords_for_table(keywords: object) -> str:
         if text:
             cleaned.append(text)
     return " | ".join(cleaned)
+
+
+def _scores_to_stats(order: Sequence[object], scores: object) -> Dict[str, float]:
+    if not isinstance(scores, list):
+        return {}
+    stats: Dict[str, float] = {}
+    for metric, val in zip(order, scores):
+        if isinstance(val, float) and math.isnan(val):
+            continue
+        if isinstance(val, (int, float)):
+            stats[str(metric)] = float(val)
+    return stats
 
 
 _COUNT_COLUMNS = {
@@ -353,26 +367,41 @@ def collect_central_topic_data(
     presence_entries: List[Dict[str, object]] = []
 
     for path, data in _iter_central_topic_reports(dashboard_root):
-        category = data.get("category") or ""
+        metadata = data.get("metadata")
+        report = data.get("report")
+        params = data.get("params", {})
+        if not isinstance(metadata, dict) or not isinstance(report, dict):
+            continue
+        if not isinstance(params, dict):
+            params = {}
+        category = metadata.get("category") or ""
         category_parts = [part for part in str(category).split("/") if part]
         genre = category_parts[0] if category_parts else "unknown"
         author = category_parts[1] if len(category_parts) > 1 else "unknown"
-        text_name = data.get("text_name") or path.parent.name
+        text_name = metadata.get("text_name") or path.parent.name
         if not _matches_selection(genre, author, text_name, selection):
             continue
-        topic_file = data.get("topic_file")
-        params = data.get("params") or {}
-        for topic in data.get("central_topics") or []:
+        topic_file = metadata.get("topic_file")
+        centrality_order = report.get("centrality_metrics_order")
+        if not isinstance(centrality_order, list):
+            continue
+        for topic in report.get("central_topics") or []:
+            windows_and_scores = topic.get("windows_and_scores")
+            if not isinstance(windows_and_scores, list):
+                continue
+            windows_with_topic = len(windows_and_scores)
+
+            windows_without_topic = topic.get("windows_without_topic")
+            if not isinstance(windows_without_topic, int):
+                windows_without_topic = None
+
+            stats = _scores_to_stats(centrality_order, topic.get("raw_score"))
             correlations = topic.get("correlations") or {}
             for metric, corr in correlations.items():
                 r = corr.get("pearson_r")
                 if not isinstance(r, (int, float)):
                     continue
-                n_windows = (
-                    corr.get("n_windows")
-                    if corr.get("n_windows") is not None
-                    else corr.get("n")
-                )
+                n_windows = corr.get("n_windows")
                 entries_by_genre[genre].append(
                     {
                         "genre": genre,
@@ -387,12 +416,11 @@ def collect_central_topic_data(
                         "topic_id": topic.get("topic_id"),
                         "topic_score": topic.get("score"),
                         "keywords": topic.get("keywords") or [],
-                        "stats": topic.get("raw_stats") or topic.get("stats") or {},
-                        "percentile_stats": topic.get("percentile_stats") or {},
+                        "stats": stats,
                         "raw_score": topic.get("raw_score"),
                         "percentile_score": topic.get("percentile_score"),
-                        "windows_with_topic": topic.get("windows_with_topic"),
-                        "windows_without_topic": topic.get("windows_without_topic_count"),
+                        "windows_with_topic": windows_with_topic,
+                        "windows_without_topic": windows_without_topic,
                         "topic_file": topic_file,
                         "params": params,
                     }
@@ -407,7 +435,10 @@ def collect_central_topic_data(
         if presence_path.exists():
             presence_payload = load_json(presence_path)
             if isinstance(presence_payload, dict):
-                presence = presence_payload.get("central_topic_presence") or {}
+                presence_report = presence_payload.get("report")
+                if not isinstance(presence_report, dict):
+                    continue
+                presence = presence_report.get("central_topic_presence") or {}
                 if presence.get("correlations"):
                     presence_entries.append(
                         {
@@ -461,12 +492,16 @@ def plot_central_topic_x_bars(
     top_n: Optional[int] = None,
     p_threshold: Optional[float] = None,
     selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> List[Path]:
     if selection is None:
         selection = DEFAULT_DATA_SELECTION_CONFIG
     if entries_by_genre is None:
-        entries_by_genre, _ = collect_central_topic_data(selection=selection)
+        entries_by_genre, _ = collect_central_topic_data(
+            dashboard_root=dashboard_root,
+            selection=selection,
+        )
     else:
         entries_by_genre = _filter_entries_by_genre(entries_by_genre, selection)
 
@@ -555,12 +590,16 @@ def plot_presence_slopegraphs(
     config: Optional[PresenceSlopegraphConfig] = None,
     p_threshold: Optional[float] = None,
     selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> List[Path]:
     if selection is None:
         selection = DEFAULT_DATA_SELECTION_CONFIG
     if presence_entries is None:
-        _, presence_entries = collect_central_topic_data(selection=selection)
+        _, presence_entries = collect_central_topic_data(
+            dashboard_root=dashboard_root,
+            selection=selection,
+        )
     else:
         presence_entries = _filter_presence_entries(presence_entries, selection)
 
@@ -652,6 +691,7 @@ def plot_aggregated_presence_heatmap(
     config: Optional[AggregatedHeatmapConfig] = None,
     p_threshold: Optional[float] = None,
     selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> Optional[Path]:
     if selection is None:
@@ -661,8 +701,8 @@ def plot_aggregated_presence_heatmap(
     if p_threshold is None:
         p_threshold = config.p_threshold
 
-    dashboard_root = results_path("dashboard")
-    agg_paths = sorted(dashboard_root.glob("*/00_genre_central_topic_presence_correlations.json"))
+    root = dashboard_root or results_path("dashboard")
+    agg_paths = sorted(root.glob("*/00_genre_central_topic_presence_correlations.json"))
     if not agg_paths:
         return None
 
@@ -743,6 +783,7 @@ def write_top_correlation_tables(
     top_n: int = 10,
     render_png: bool = True,
     selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> Dict[str, List[Path]]:
     if selection is None:
@@ -751,12 +792,18 @@ def write_top_correlation_tables(
         top_n = 10
 
     if entries_by_genre is None or presence_entries is None:
-        entries_by_genre, presence_entries = collect_central_topic_data(selection=selection)
+        entries_by_genre, presence_entries = collect_central_topic_data(
+            dashboard_root=dashboard_root,
+            selection=selection,
+        )
     else:
         entries_by_genre = _filter_entries_by_genre(entries_by_genre, selection)
         presence_entries = _filter_presence_entries(presence_entries, selection)
 
-    aggregated = _load_aggregated_presence_by_genre(selection=selection)
+    aggregated = _load_aggregated_presence_by_genre(
+        dashboard_root=dashboard_root,
+        selection=selection,
+    )
 
     presence_by_genre: Dict[str, List[Dict[str, object]]] = defaultdict(list)
     for entry in presence_entries:
@@ -878,11 +925,7 @@ def write_top_correlation_tables(
                             "metric": metric,
                             "pearson_r": float(r_val),
                             "p_value": corr.get("p_value"),
-                            "n_windows": (
-                                corr.get("n_windows")
-                                if corr.get("n_windows") is not None
-                                else corr.get("n")
-                            ),
+                            "n_windows": corr.get("n_windows"),
                             "mean_with_topic": corr.get("mean_with_topic"),
                             "mean_without_topic": corr.get("mean_without_topic"),
                             "windows_with_central_topic": presence.get(
@@ -971,6 +1014,7 @@ def plot_convergence_index(
     metrics: Optional[Sequence[str]] = None,
     p_threshold: Optional[float] = None,
     selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> Optional[Path]:
     if selection is None:
@@ -986,12 +1030,18 @@ def plot_convergence_index(
     if not metric_keys:
         return None
 
-    aggregated = _load_aggregated_presence_by_genre(selection=selection)
+    aggregated = _load_aggregated_presence_by_genre(
+        dashboard_root=dashboard_root,
+        selection=selection,
+    )
 
     presence_by_genre: Dict[str, List[Dict[str, object]]] = defaultdict(list)
     if "sign_agreement" in metric_keys:
         if presence_entries is None:
-            _, presence_entries = collect_central_topic_data(selection=selection)
+            _, presence_entries = collect_central_topic_data(
+                dashboard_root=dashboard_root,
+                selection=selection,
+            )
         else:
             presence_entries = _filter_presence_entries(presence_entries, selection)
         for entry in presence_entries:
@@ -1121,12 +1171,16 @@ def plot_forest_core_metrics(
     metrics: Optional[Sequence[str]] = None,
     p_threshold: Optional[float] = None,
     selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> List[Path]:
     if selection is None:
         selection = DEFAULT_DATA_SELECTION_CONFIG
     if presence_entries is None:
-        _, presence_entries = collect_central_topic_data(selection=selection)
+        _, presence_entries = collect_central_topic_data(
+            dashboard_root=dashboard_root,
+            selection=selection,
+        )
     else:
         presence_entries = _filter_presence_entries(presence_entries, selection)
 
@@ -1137,7 +1191,10 @@ def plot_forest_core_metrics(
     if p_threshold is None:
         p_threshold = config.p_threshold
 
-    aggregated = _load_aggregated_presence_by_genre(selection=selection)
+    aggregated = _load_aggregated_presence_by_genre(
+        dashboard_root=dashboard_root,
+        selection=selection,
+    )
     presence_by_genre: Dict[str, List[Dict[str, object]]] = defaultdict(list)
     for entry in presence_entries:
         genre = entry.get("genre")
@@ -1161,11 +1218,7 @@ def plot_forest_core_metrics(
                 if not isinstance(r_val, (int, float)):
                     continue
                 p_val = corr.get("p_value")
-                n_val = (
-                    corr.get("n_windows")
-                    if corr.get("n_windows") is not None
-                    else corr.get("n")
-                )
+                n_val = corr.get("n_windows")
                 n_val = int(n_val) if isinstance(n_val, (int, float)) else None
                 rows.append(
                     {
@@ -1292,12 +1345,16 @@ def plot_text_metric_heatmaps(
     config: Optional[TextMetricHeatmapConfig] = None,
     p_threshold: Optional[float] = None,
     selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> List[Path]:
     if selection is None:
         selection = DEFAULT_DATA_SELECTION_CONFIG
     if presence_entries is None:
-        _, presence_entries = collect_central_topic_data(selection=selection)
+        _, presence_entries = collect_central_topic_data(
+            dashboard_root=dashboard_root,
+            selection=selection,
+        )
     else:
         presence_entries = _filter_presence_entries(presence_entries, selection)
 
@@ -1443,16 +1500,22 @@ def plot_central_topic_window_heatmaps(
     output_paths: List[Path] = []
 
     for path, data in _iter_central_topic_reports(dashboard_root):
-        category = data.get("category") or ""
+        metadata = data.get("metadata")
+        report = data.get("report")
+        params = data.get("params", {})
+        if not isinstance(metadata, dict) or not isinstance(report, dict):
+            continue
+        if not isinstance(params, dict):
+            params = {}
+        category = metadata.get("category") or ""
         category_parts = [part for part in str(category).split("/") if part]
         genre = category_parts[0] if category_parts else "unknown"
         author = category_parts[1] if len(category_parts) > 1 else "unknown"
-        text_name = data.get("text_name") or path.parent.name
+        text_name = metadata.get("text_name") or path.parent.name
         if not _matches_selection(genre, author, text_name, selection):
             continue
 
-        params = data.get("params") or {}
-        central_topics = data.get("central_topics") or []
+        central_topics = report.get("central_topics") or []
         if not central_topics:
             continue
 
@@ -1584,6 +1647,10 @@ def _resolve_topic_path(entry: Dict[str, object]) -> Optional[Path]:
     """Resolve the topic_file path in a dashboard entry, returning None if missing or invalid."""
     raw_path = entry.get("topic_file")
     if not raw_path:
+        metadata = entry.get("metadata")
+        if isinstance(metadata, dict):
+            raw_path = metadata.get("topic_file")
+    if not raw_path:
         return None
     candidate = Path(str(raw_path))
     if candidate.exists():
@@ -1617,12 +1684,16 @@ def plot_exemplar_scatter(
     top_per_genre: Optional[int] = None,
     min_points: Optional[int] = None,
     selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> List[Path]:
     if selection is None:
         selection = DEFAULT_DATA_SELECTION_CONFIG
     if entries_by_genre is None:
-        entries_by_genre, _ = collect_central_topic_data(selection=selection)
+        entries_by_genre, _ = collect_central_topic_data(
+            dashboard_root=dashboard_root,
+            selection=selection,
+        )
     else:
         entries_by_genre = _filter_entries_by_genre(entries_by_genre, selection)
 
@@ -1842,11 +1913,15 @@ def generate_all_visualisations(
     h_config: Optional[ForestPlotConfig] = None,
     i_config: Optional[TextMetricHeatmapConfig] = None,
     selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> Dict[str, object]:
     if selection is None:
         selection = DEFAULT_DATA_SELECTION_CONFIG
-    entries_by_genre, presence_entries = collect_central_topic_data(selection=selection)
+    entries_by_genre, presence_entries = collect_central_topic_data(
+        dashboard_root=dashboard_root,
+        selection=selection,
+    )
 
     if a_config is None:
         a_config = DEFAULT_CENTRAL_TOPIC_X_CONFIG
@@ -1891,46 +1966,54 @@ def generate_all_visualisations(
             entries_by_genre,
             config=a_config,
             selection=selection,
+            dashboard_root=dashboard_root,
             output_root=output_root,
         ),
         "B": plot_central_topic_window_heatmaps(
             config=b_config,
             selection=selection,
+            dashboard_root=dashboard_root,
             output_root=output_root,
         ),
         "C": plot_exemplar_scatter(
             entries_by_genre,
             config=c_config,
             selection=selection,
+            dashboard_root=dashboard_root,
             output_root=output_root,
         ),
         "E": plot_presence_slopegraphs(
             presence_entries,
             config=e_config,
             selection=selection,
+            dashboard_root=dashboard_root,
             output_root=output_root,
         ),
         "F": plot_aggregated_presence_heatmap(
             config=f_config,
             selection=selection,
+            dashboard_root=dashboard_root,
             output_root=output_root,
         ),
         "G": plot_convergence_index(
             presence_entries,
             config=g_config,
             selection=selection,
+            dashboard_root=dashboard_root,
             output_root=output_root,
         ),
         "H": plot_forest_core_metrics(
             presence_entries,
             config=h_config,
             selection=selection,
+            dashboard_root=dashboard_root,
             output_root=output_root,
         ),
         "I": plot_text_metric_heatmaps(
             presence_entries,
             config=i_config,
             selection=selection,
+            dashboard_root=dashboard_root,
             output_root=output_root,
         ),
         "J": write_top_correlation_tables(
@@ -1938,11 +2021,97 @@ def generate_all_visualisations(
             presence_entries,
             top_n=a_config.top_n,
             selection=selection,
+            dashboard_root=dashboard_root,
             output_root=output_root,
         ),
     }
     return results
 
 
+def generate_all_visualisations_with_config(
+    *,
+    config: DashboardCorrelationConfig = DEFAULT_DASHBOARD_CORRELATION_CONFIG,
+    output_root_template: str = "figures_L{block_size}",
+    top_n: Optional[int] = None,
+    bar_p_threshold: Optional[float] = None,
+    slope_p_threshold: Optional[float] = None,
+    heatmap_p_threshold: Optional[float] = None,
+    convergence_p_threshold: Optional[float] = None,
+    forest_p_threshold: Optional[float] = None,
+    text_heatmap_p_threshold: Optional[float] = None,
+    a_config: Optional[CentralTopicXBarConfig] = None,
+    b_config: Optional[CentralTopicWindowHeatmapConfig] = None,
+    c_config: Optional[ExemplarScatterConfig] = None,
+    e_config: Optional[PresenceSlopegraphConfig] = None,
+    f_config: Optional[AggregatedHeatmapConfig] = None,
+    g_config: Optional[ConvergenceIndexConfig] = None,
+    h_config: Optional[ForestPlotConfig] = None,
+    i_config: Optional[TextMetricHeatmapConfig] = None,
+    selection: Optional[DataSelectionConfig] = None,
+) -> Dict[int, Dict[str, object]]:
+    if not config.loop_enabled:
+        results = generate_all_visualisations(
+            top_n=top_n,
+            bar_p_threshold=bar_p_threshold,
+            slope_p_threshold=slope_p_threshold,
+            heatmap_p_threshold=heatmap_p_threshold,
+            convergence_p_threshold=convergence_p_threshold,
+            forest_p_threshold=forest_p_threshold,
+            text_heatmap_p_threshold=text_heatmap_p_threshold,
+            a_config=a_config,
+            b_config=b_config,
+            c_config=c_config,
+            e_config=e_config,
+            f_config=f_config,
+            g_config=g_config,
+            h_config=h_config,
+            i_config=i_config,
+            selection=selection,
+            dashboard_root=results_path("dashboard"),
+            output_root=results_path("figures"),
+        )
+        return {config.block_size: results}
+
+    block_sizes = list(config.loop_block_sizes or ())
+    if not block_sizes:
+        block_sizes = [config.block_size]
+
+    results_by_block: Dict[int, Dict[str, object]] = {}
+    for block_size in block_sizes:
+        dashboard_root = Path("data") / "results" / config.loop_output_template.format(
+            block_size=block_size
+        )
+        if not dashboard_root.exists():
+            print(
+                f"Skipping figures for block_size={block_size}; dashboard root missing: "
+                f"{dashboard_root}"
+            )
+            continue
+        output_root = Path("data") / "results" / output_root_template.format(
+            block_size=block_size
+        )
+        results_by_block[block_size] = generate_all_visualisations(
+            top_n=top_n,
+            bar_p_threshold=bar_p_threshold,
+            slope_p_threshold=slope_p_threshold,
+            heatmap_p_threshold=heatmap_p_threshold,
+            convergence_p_threshold=convergence_p_threshold,
+            forest_p_threshold=forest_p_threshold,
+            text_heatmap_p_threshold=text_heatmap_p_threshold,
+            a_config=a_config,
+            b_config=b_config,
+            c_config=c_config,
+            e_config=e_config,
+            f_config=f_config,
+            g_config=g_config,
+            h_config=h_config,
+            i_config=i_config,
+            selection=selection,
+            dashboard_root=dashboard_root,
+            output_root=output_root,
+        )
+    return results_by_block
+
+
 if __name__ == "__main__":
-    generate_all_visualisations()
+    generate_all_visualisations_with_config()

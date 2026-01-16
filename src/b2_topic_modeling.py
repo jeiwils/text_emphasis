@@ -158,6 +158,35 @@ def load_segmented_topic_mentions(jsonl_path: Path) -> List[TopicMention]:
     return mentions
 
 
+def _is_subphrase(tokens: List[str], longer_tokens: List[str]) -> bool:
+    if len(longer_tokens) <= len(tokens):
+        return False
+    max_start = len(longer_tokens) - len(tokens)
+    for start in range(max_start + 1):
+        if longer_tokens[start : start + len(tokens)] == tokens:
+            return True
+    return False
+
+
+def _drop_subphrase_keywords(keywords: List[str], scores: np.ndarray) -> List[str]:
+    if not keywords:
+        return []
+    tokenized = [term.split() for term in keywords]
+    order = list(range(len(keywords)))
+    order.sort(key=lambda idx: (scores[idx], len(tokenized[idx])), reverse=True)
+    kept: List[int] = []
+    for idx in order:
+        tokens = tokenized[idx]
+        if any(
+            _is_subphrase(tokens, tokenized[kept_idx])
+            or _is_subphrase(tokenized[kept_idx], tokens)
+            for kept_idx in kept
+        ):
+            continue
+        kept.append(idx)
+    return [keywords[idx] for idx in kept]
+
+
 class NeuralTopicModeler:
     """
     Clusters sentence embeddings, extracts keywords, and returns
@@ -231,7 +260,9 @@ class NeuralTopicModeler:
             scores = row.toarray().ravel()
             adjusted_scores = scores * overlap_penalty
             top_indices = adjusted_scores.argsort()[::-1][:top_n]
-            keywords[label] = feature_names[top_indices].tolist()
+            top_terms = feature_names[top_indices].tolist()
+            top_scores = adjusted_scores[top_indices]
+            keywords[label] = _drop_subphrase_keywords(top_terms, top_scores)
         return keywords, vectorizer, term_topic_counts
 
     def _topic_prevalence_persistence(
