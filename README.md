@@ -38,12 +38,19 @@ To run on your own texts:
 Notes:
 - The orchestrator runs preprocessing, embeddings, topic modeling, corpus metrics, window metrics, and dashboard correlations.
 - Outputs are written under `data/analytics/` and `data/results/`.
+- Per-text dashboard outputs include:
+  - `*_topic_correlations.json`
+  - `*_central_topic_correlations.json`
+  - `*_central_topic_presence_correlations.json`
 
-## Central topics (top 60th percentile)
+## Central topics (percentile-ranked components)
 - Centrality selection:
   - Uses topic stats: coherence, exclusivity, prevalence, persistence.
-  - Min-max normalize each metric across topics; sum normalized values for a score (only metrics present for that topic).
-  - Rank by score; compute the 60th percentile threshold; keep topics with score >= threshold.
+  - Compute within-text percentile ranks for each metric across topics.
+  - Centrality score is the mean of available component percentiles.
+  - Keep topics with score at least q (default 0.6) or near-top (score >= alpha * max, default 0.85).
+  - Ensure at least one topic is kept.
+  - Optional cap via `CentralTopicSelectionConfig.max_topics` in `src/x_configs.py` (None = no cap).
 - Metric definitions (from topic modeling):
   - Prevalence (soft mean): sum of topic scores across non-noise windows / number of non-noise windows.
     - topic_scores already filtered by score_threshold/top_k at topic modeling time.
@@ -56,14 +63,17 @@ Notes:
 ## Central topic selection flow (topic-only)
 ```mermaid
 flowchart TD
-    topic_windows[Topic windows 15 sentences] --> embed[SentenceTransformer embeddings]
-    embed --> pca[PCA]
-    pca --> hdbscan[HDBSCAN clusters]
-    hdbscan --> centroids[Topic centroids]
-    centroids --> scores[Soft topic scores per topic window]
-    scores --> sparsify[Sparsify by score threshold and top_k]
+    topic_windows[Sliding windows (15 sentences, stride 6)] --> window_texts[Window text]
+    window_texts --> embed[SentenceTransformer window embeddings]
+    embed --> l2[L2 normalize embeddings]
+    l2 --> pca[PCA (optional)]
+    pca --> hdbscan[HDBSCAN clustering (noise = -1)]
+    hdbscan --> centroids[Topic centroids (mean of original embeddings)]
+    hdbscan --> labels[Topic keywords (TF-IDF + overlap penalty)]
+    centroids --> scores[Soft topic scores (cosine to centroids)]
+    scores --> sparsify[Sparsify scores (top_k + threshold)]
     sparsify --> stats[Topic stats: prevalence / persistence / coherence / exclusivity]
-    stats --> central[Central topics: top 40 percent]
+    stats --> central[Central topics: score at least q or near top]
 ```
 
 ## Window metrics and dashboard summaries
@@ -103,12 +113,13 @@ flowchart TD
 
 ## Correlations
 - Per text:
-  - Correlations are computed only for central topics (even in the "topics" report).
-  - For each central topic, correlate window metrics with soft topic scores (overlap-weighted to the metric window);
-    compute Pearson r with block permutation p-values, and binary correlations from score > 0.
-  - Central topic presence correlations use overlap-weighted central soft scores, with presence defined as
-    max central score at or above the 70th percentile of non-zero central scores within the text (set in
-    `run_dashboard` via `central_presence_percentile`, default 70).
+  - `*_topic_correlations.json` includes correlations for all topics; `*_central_topic_correlations.json` includes
+    only selected central topics.
+  - For each topic, correlate window metrics with overlap-weighted soft topic scores; compute Pearson r with block
+    permutation p-values, plus binary correlations from score > 0.
+  - Central topic presence correlations use the max overlap-weighted score across central topics per window, with
+    presence defined as max >= the percentile threshold of non-zero central max scores (default 70; set via
+    `central_presence_percentile` in `run_dashboard`).
 - Per genre:
   - Central topic presence correlations aggregated across texts via Fisher z for r (weighted by n-3; only n > 3)
     and Stouffer for p-values (weights sqrt(n-3), sign from r).

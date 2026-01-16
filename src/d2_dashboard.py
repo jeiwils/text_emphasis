@@ -21,18 +21,15 @@ from typing import Dict, List, Optional, Tuple
 from tqdm import tqdm
 
 from .d1_dashboard_metrics import (
-    build_central_report,
+    build_central_presence_report,
+    build_central_topic_correlations,
     build_topic_correlation_report,
     collect_window_tables,
-    compute_metric_variances,
-    central_topics,
     load_window_metrics,
 )
+from .x_configs import DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG
 from .z_utils import find_topic_file, find_window_metrics_files, results_path
 
-TEXT_CENTRAL_TOPIC_SCORES_FILENAME = "00_texts_central_topic_scores.json"
-GENRE_METRIC_VARIANCE_FILENAME = "00_genre_metric_variance_correlations.json"
-GENRE_TOPIC_SCORES_FILENAME = "00_genre_topic_scores.json"
 GENRE_CENTRAL_PRESENCE_FILENAME = "00_genre_central_topic_presence_correlations.json"
 
 
@@ -83,88 +80,6 @@ def _stouffer_p_value(rows: List[Tuple[float, float, int]]) -> Optional[float]:
     return 2.0 * (1.0 - normal.cdf(abs(z_combined)))
 
 
-def _build_text_central_topic_scores(
-    window_metrics_path: Path,
-    *,
-    central_top_n: Optional[int],
-) -> Optional[Dict[str, object]]:
-    topic_file = find_topic_file(window_metrics_path)
-    if not topic_file:
-        return None
-    topics_data = load_window_metrics(topic_file)
-    central_ranked = central_topics(topics_data, top_n=central_top_n)
-    if not central_ranked:
-        return None
-
-    genre = window_metrics_path.parent.parent.parent.name
-    author = window_metrics_path.parent.parent.name
-    text_name = window_metrics_path.parent.name
-    category = f"{genre}/{author}"
-
-    return {
-        "category": category,
-        "genre": genre,
-        "author": author,
-        "text_name": text_name,
-        "topic_file": str(topic_file),
-        "central_topics": central_ranked,
-    }
-
-
-def _build_text_metric_variance_entry(
-    window_metrics_path: Path,
-) -> Optional[Dict[str, object]]:
-    window_data = load_window_metrics(window_metrics_path)
-    window_table = collect_window_tables(window_data)
-    if not window_table:
-        return None
-    variances = compute_metric_variances(window_table)
-    if not variances:
-        return None
-
-    genre = window_metrics_path.parent.parent.parent.name
-    author = window_metrics_path.parent.parent.name
-    text_name = window_metrics_path.parent.name
-    category = f"{genre}/{author}"
-
-    return {
-        "category": category,
-        "genre": genre,
-        "author": author,
-        "text_name": text_name,
-        "filename": window_metrics_path.name,
-        "window_metrics_file": str(window_metrics_path),
-        "window_count": len(window_table),
-        "metric_variances": variances,
-    }
-
-
-def _summarize_metric_variances(
-    entries: List[Dict[str, object]],
-) -> Dict[str, Dict[str, float]]:
-    values_by_metric: Dict[str, List[float]] = {}
-    for entry in entries:
-        variances = entry.get("metric_variances", {})
-        if not isinstance(variances, dict):
-            continue
-        for metric, value in variances.items():
-            if isinstance(value, (int, float)):
-                values_by_metric.setdefault(metric, []).append(float(value))
-
-    summary: Dict[str, Dict[str, float]] = {}
-    for metric, values in values_by_metric.items():
-        if not values:
-            continue
-        summary[metric] = {
-            "mean_text_variance": statistics.mean(values),
-            "median_text_variance": statistics.median(values),
-            "min_text_variance": min(values),
-            "max_text_variance": max(values),
-            "text_count": len(values),
-        }
-    return summary
-
-
 def _group_by_genre(entries: List[Dict[str, object]]) -> Dict[str, List[Dict[str, object]]]:
     grouped: Dict[str, List[Dict[str, object]]] = {}
     for entry in entries:
@@ -175,105 +90,31 @@ def _group_by_genre(entries: List[Dict[str, object]]) -> Dict[str, List[Dict[str
     return grouped
 
 
-def _sorted_text_entries(entries: List[Dict[str, object]]) -> List[Dict[str, object]]:
-    return sorted(
-        entries,
-        key=lambda row: (row.get("genre", ""), row.get("author", ""), row.get("text_name", "")),
-    )
-
-
-def _write_text_central_topic_scores(
-    entries: List[Dict[str, object]],
-    *,
-    use_existing: bool,
-) -> None:
-    if not entries:
-        return
-    output_path = results_path("dashboard", filename=TEXT_CENTRAL_TOPIC_SCORES_FILENAME)
-    if use_existing and output_path.exists():
-        return
-    payload = {
-        "text_count": len(entries),
-        "texts": _sorted_text_entries(entries),
-    }
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2)
-
-
-def _write_genre_topic_scores(
-    entries: List[Dict[str, object]],
-    *,
-    use_existing: bool,
-) -> None:
-    if not entries:
-        return
-    for genre, genre_entries in _group_by_genre(entries).items():
-        output_path = results_path("dashboard", category=genre, filename=GENRE_TOPIC_SCORES_FILENAME)
-        if use_existing and output_path.exists():
-            continue
-        sorted_entries = sorted(
-            genre_entries,
-            key=lambda row: (row.get("author", ""), row.get("text_name", "")),
-        )
-        payload = {
-            "genre": genre,
-            "text_count": len(genre_entries),
-            "texts": sorted_entries,
-        }
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
-
-
-def _write_genre_metric_variances(
-    entries: List[Dict[str, object]],
-    *,
-    use_existing: bool,
-) -> None:
-    if not entries:
-        return
-    for genre, genre_entries in _group_by_genre(entries).items():
-        output_path = results_path("dashboard", category=genre, filename=GENRE_METRIC_VARIANCE_FILENAME)
-        if use_existing and output_path.exists():
-            continue
-        summary = _summarize_metric_variances(genre_entries)
-        payload = {
-            "genre": genre,
-            "text_count": len(genre_entries),
-            "metric_names": sorted(summary.keys()),
-            "metrics": summary,
-            "texts": sorted(
-                genre_entries,
-                key=lambda row: (row.get("author", ""), row.get("text_name", "")),
-            ),
-        }
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
-
-
 def _aggregate_central_presence_correlations(
     entries: List[Dict[str, object]],
 ) -> Dict[str, object]:
     metrics: Dict[str, List[Tuple[float, float, int]]] = {}
     texts: List[Dict[str, object]] = []
     for entry in entries:
-        central_report = entry.get("central_report", {})
-        if not isinstance(central_report, dict):
+        presence_report = entry.get("presence_report", {})
+        if not isinstance(presence_report, dict):
             continue
-        presence = central_report.get("central_topic_presence", {})
+        presence = presence_report.get("central_topic_presence", {})
         if not isinstance(presence, dict):
             continue
         correlations = presence.get("correlations", {})
         if not isinstance(correlations, dict) or not correlations:
             continue
 
-        window_count = _as_count(central_report.get("window_count"))
+        window_count = _as_count(presence_report.get("window_count"))
         if window_count is None:
             for corr_entry in correlations.values():
                 if isinstance(corr_entry, dict):
-                    window_count = _as_count(corr_entry.get("n"))
+                    window_count = _as_count(
+                        corr_entry.get("n_windows")
+                        if corr_entry.get("n_windows") is not None
+                        else corr_entry.get("n")
+                    )
                     if window_count is not None:
                         break
         texts.append(
@@ -292,7 +133,11 @@ def _aggregate_central_presence_correlations(
                 continue
             r_value = _as_float(corr_entry.get("pearson_r"))
             p_value = _as_float(corr_entry.get("p_value"))
-            n_value = _as_count(corr_entry.get("n"))
+            n_value = _as_count(
+                corr_entry.get("n_windows")
+                if corr_entry.get("n_windows") is not None
+                else corr_entry.get("n")
+            )
             if r_value is None or p_value is None or n_value is None:
                 continue
             metrics.setdefault(metric, []).append((r_value, p_value, n_value))
@@ -369,7 +214,6 @@ def _build_topic_dashboard_entry(
     central_top_n: Optional[int],
     block_size: int,
     permutations: int,
-    central_presence_percentile: float,
 ) -> Optional[Dict[str, object]]:
     topic_file = find_topic_file(window_metrics_path)
     if not topic_file:
@@ -390,17 +234,6 @@ def _build_topic_dashboard_entry(
     if not report:
         return None
 
-    central_report = build_central_report(
-        window_data,
-        topics_data,
-        soft_score_threshold=soft_score_threshold,
-        soft_top_k=soft_top_k,
-        central_top_n=central_top_n,
-        block_size=block_size,
-        permutations=permutations,
-        central_presence_percentile=central_presence_percentile,
-    )
-
     category = f"{window_metrics_path.parent.parent.parent.name}/{window_metrics_path.parent.parent.name}"
     text_name = window_metrics_path.parent.name
 
@@ -410,11 +243,48 @@ def _build_topic_dashboard_entry(
         "filename": window_metrics_path.name,
         "topic_file": str(topic_file),
         "report": report,
-        "central_topics": central_topics(topics_data, top_n=central_top_n),
-        "central_report": central_report,
     }
 
 def _build_central_topic_entry(
+    window_metrics_path: Path,
+    *,
+    soft_score_threshold: Optional[float],
+    soft_top_k: Optional[int],
+    central_top_n: Optional[int],
+    block_size: int,
+    permutations: int,
+) -> Optional[Dict[str, object]]:
+    topic_file = find_topic_file(window_metrics_path)
+    if not topic_file:
+        return None
+
+    window_data = load_window_metrics(window_metrics_path)
+    topics_data = load_window_metrics(topic_file)
+    central_report = build_central_topic_correlations(
+        window_data,
+        topics_data,
+        soft_score_threshold=soft_score_threshold,
+        soft_top_k=soft_top_k,
+        central_top_n=central_top_n,
+        block_size=block_size,
+        permutations=permutations,
+    )
+    if not central_report:
+        return None
+
+    category = f"{window_metrics_path.parent.parent.parent.name}/{window_metrics_path.parent.parent.name}"
+    text_name = window_metrics_path.parent.name
+
+    return {
+        "category": category,
+        "text_name": text_name,
+        "filename": window_metrics_path.name,
+        "topic_file": str(topic_file),
+        **central_report,
+    }
+
+
+def _build_central_presence_entry(
     window_metrics_path: Path,
     *,
     soft_score_threshold: Optional[float],
@@ -430,7 +300,7 @@ def _build_central_topic_entry(
 
     window_data = load_window_metrics(window_metrics_path)
     topics_data = load_window_metrics(topic_file)
-    central_report = build_central_report(
+    presence_report = build_central_presence_report(
         window_data,
         topics_data,
         soft_score_threshold=soft_score_threshold,
@@ -440,6 +310,8 @@ def _build_central_topic_entry(
         permutations=permutations,
         central_presence_percentile=central_presence_percentile,
     )
+    if not presence_report:
+        return None
 
     category = f"{window_metrics_path.parent.parent.parent.name}/{window_metrics_path.parent.parent.name}"
     text_name = window_metrics_path.parent.name
@@ -449,8 +321,7 @@ def _build_central_topic_entry(
         "text_name": text_name,
         "filename": window_metrics_path.name,
         "topic_file": str(topic_file),
-        "central_topics": central_topics(topics_data, top_n=central_top_n),
-        "central_report": central_report,
+        **presence_report,
     }
 
 def run_dashboard(
@@ -470,9 +341,16 @@ def run_dashboard(
     Outputs (per text):
       data/results/dashboard/<genre>/<author>/<text>/<text>_topic_correlations.json
       data/results/dashboard/<genre>/<author>/<text>/<text>_central_topic_correlations.json
+      data/results/dashboard/<genre>/<author>/<text>/<text>_central_topic_presence_correlations.json
     Outputs (aggregates):
       data/results/dashboard/<genre>/00_genre_central_topic_presence_correlations.json
     """
+    selection_config = DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG
+    if central_top_n is None:
+        central_top_n = selection_config.max_topics
+    if central_top_n is not None and central_top_n <= 0:
+        central_top_n = None
+
     output_root = results_path("dashboard")
     output_root.mkdir(parents=True, exist_ok=True)
 
@@ -494,6 +372,7 @@ def run_dashboard(
 
         topic_file = out_dir / f"{text_name}_topic_correlations.json"
         central_file = out_dir / f"{text_name}_central_topic_correlations.json"
+        presence_file = out_dir / f"{text_name}_central_topic_presence_correlations.json"
         topic_entry = None
         if use_existing and topic_file.exists():
             try:
@@ -502,15 +381,14 @@ def run_dashboard(
             except json.JSONDecodeError:
                 topic_entry = None
         if topic_entry is None:
-            topic_entry = _build_topic_dashboard_entry(
-                file,
-                soft_score_threshold=soft_score_threshold,
-                soft_top_k=soft_top_k,
-                central_top_n=central_top_n,
-                block_size=block_size,
-                permutations=permutations,
-                central_presence_percentile=central_presence_percentile,
-            )
+        topic_entry = _build_topic_dashboard_entry(
+            file,
+            soft_score_threshold=soft_score_threshold,
+            soft_top_k=soft_top_k,
+            central_top_n=central_top_n,
+            block_size=block_size,
+            permutations=permutations,
+        )
             if topic_entry:
                 with open(topic_file, "w", encoding="utf-8") as f:
                     json.dump(topic_entry, f, indent=2)
@@ -530,23 +408,41 @@ def run_dashboard(
                 central_top_n=central_top_n,
                 block_size=block_size,
                 permutations=permutations,
-                central_presence_percentile=central_presence_percentile,
             )
         if central_entry:
             with open(central_file, "w", encoding="utf-8") as f:
                 json.dump(central_entry, f, indent=2)
-            central_report = central_entry.get("central_report")
-            if isinstance(central_report, dict):
-                central_presence_entries.append(
-                    {
-                        "category": f"{genre}/{author}",
-                        "genre": genre,
-                        "author": author,
-                        "text_name": text_name,
-                        "filename": file.name,
-                        "central_report": central_report,
-                    }
-                )
+
+        presence_entry = None
+        if use_existing and presence_file.exists():
+            try:
+                with open(presence_file, "r", encoding="utf-8") as f:
+                    presence_entry = json.load(f)
+            except json.JSONDecodeError:
+                presence_entry = None
+        if presence_entry is None:
+            presence_entry = _build_central_presence_entry(
+                file,
+                soft_score_threshold=soft_score_threshold,
+                soft_top_k=soft_top_k,
+                central_top_n=central_top_n,
+                block_size=block_size,
+                permutations=permutations,
+                central_presence_percentile=central_presence_percentile,
+            )
+        if presence_entry:
+            with open(presence_file, "w", encoding="utf-8") as f:
+                json.dump(presence_entry, f, indent=2)
+            central_presence_entries.append(
+                {
+                    "category": f"{genre}/{author}",
+                    "genre": genre,
+                    "author": author,
+                    "text_name": text_name,
+                    "filename": file.name,
+                    "presence_report": presence_entry,
+                }
+            )
 
     _write_genre_central_presence_correlations(
         central_presence_entries,

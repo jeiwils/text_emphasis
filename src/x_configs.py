@@ -726,6 +726,14 @@ DASHBOARD_WINDOW_CONFIG = {
 }
 
 @dataclass(frozen=True)
+class CentralTopicSelectionConfig:
+    centrality_threshold: float = 0.6
+    near_top_alpha: float = 0.85
+    min_keep: int = 1
+    max_topics: Optional[int] = None
+
+
+@dataclass(frozen=True)
 class CentralTopicXBarConfig:
     top_n: int = 10
     p_threshold: float = 0.05
@@ -887,6 +895,7 @@ class DataSelectionConfig:
     exclude_categories: Optional[Sequence[str]] = None
 
 DEFAULT_CENTRAL_TOPIC_X_CONFIG = CentralTopicXBarConfig()
+DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG = CentralTopicSelectionConfig()
 DEFAULT_EXEMPLAR_SCATTER_CONFIG = ExemplarScatterConfig()
 DEFAULT_PRESENCE_SLOPEGRAPH_CONFIG = PresenceSlopegraphConfig()
 DEFAULT_CONVERGENCE_INDEX_CONFIG = ConvergenceIndexConfig()

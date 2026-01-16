@@ -361,15 +361,18 @@ def collect_central_topic_data(
         if not _matches_selection(genre, author, text_name, selection):
             continue
         topic_file = data.get("topic_file")
-        report = data.get("central_report") or {}
-        params = report.get("params") or {}
-
-        for topic in report.get("central_topics_ordered") or []:
+        params = data.get("params") or {}
+        for topic in data.get("central_topics") or []:
             correlations = topic.get("correlations") or {}
             for metric, corr in correlations.items():
                 r = corr.get("pearson_r")
                 if not isinstance(r, (int, float)):
                     continue
+                n_windows = (
+                    corr.get("n_windows")
+                    if corr.get("n_windows") is not None
+                    else corr.get("n")
+                )
                 entries_by_genre[genre].append(
                     {
                         "genre": genre,
@@ -378,30 +381,42 @@ def collect_central_topic_data(
                         "metric": metric,
                         "pearson_r": float(r),
                         "p_value": corr.get("p_value"),
-                        "n": corr.get("n"),
+                        "n_windows": n_windows,
                         "mean_with_topic": corr.get("mean_with_topic"),
                         "mean_without_topic": corr.get("mean_without_topic"),
                         "topic_id": topic.get("topic_id"),
                         "topic_score": topic.get("score"),
                         "keywords": topic.get("keywords") or [],
-                        "stats": topic.get("stats") or {},
+                        "stats": topic.get("raw_stats") or topic.get("stats") or {},
+                        "percentile_stats": topic.get("percentile_stats") or {},
+                        "raw_score": topic.get("raw_score"),
+                        "percentile_score": topic.get("percentile_score"),
                         "windows_with_topic": topic.get("windows_with_topic"),
-                        "windows_without_topic": topic.get("windows_without_topic"),
+                        "windows_without_topic": topic.get("windows_without_topic_count"),
                         "topic_file": topic_file,
                         "params": params,
                     }
                 )
 
-        presence = report.get("central_topic_presence") or {}
-        if presence.get("correlations"):
-            presence_entries.append(
-                {
-                    "genre": genre,
-                    "author": author,
-                    "text_name": text_name,
-                    "presence": presence,
-                }
+        presence_path = path.with_name(
+            path.name.replace(
+                "_central_topic_correlations.json",
+                "_central_topic_presence_correlations.json",
             )
+        )
+        if presence_path.exists():
+            presence_payload = load_json(presence_path)
+            if isinstance(presence_payload, dict):
+                presence = presence_payload.get("central_topic_presence") or {}
+                if presence.get("correlations"):
+                    presence_entries.append(
+                        {
+                            "genre": genre,
+                            "author": author,
+                            "text_name": text_name,
+                            "presence": presence,
+                        }
+                    )
 
     return entries_by_genre, presence_entries
 
@@ -774,6 +789,7 @@ def write_top_correlation_tables(
         "topic_persistence",
         "windows_with_topic",
         "windows_without_topic",
+        "n_windows",
     ]
     presence_columns = [
         "author",
@@ -783,6 +799,7 @@ def write_top_correlation_tables(
         "p_value",
         "windows_with_central_topic",
         "windows_without_central_topic",
+        "n_windows",
     ]
     aggregated_columns = [
         "metric",
@@ -816,7 +833,7 @@ def write_top_correlation_tables(
                         "topic_persistence": stats.get("persistence"),
                         "windows_with_topic": entry.get("windows_with_topic"),
                         "windows_without_topic": entry.get("windows_without_topic"),
-                        "n": entry.get("n"),
+                        "n_windows": entry.get("n_windows"),
                         "mean_with_topic": entry.get("mean_with_topic"),
                         "mean_without_topic": entry.get("mean_without_topic"),
                     }
@@ -861,7 +878,11 @@ def write_top_correlation_tables(
                             "metric": metric,
                             "pearson_r": float(r_val),
                             "p_value": corr.get("p_value"),
-                            "n": corr.get("n"),
+                            "n_windows": (
+                                corr.get("n_windows")
+                                if corr.get("n_windows") is not None
+                                else corr.get("n")
+                            ),
                             "mean_with_topic": corr.get("mean_with_topic"),
                             "mean_without_topic": corr.get("mean_without_topic"),
                             "windows_with_central_topic": presence.get(
@@ -1140,7 +1161,11 @@ def plot_forest_core_metrics(
                 if not isinstance(r_val, (int, float)):
                     continue
                 p_val = corr.get("p_value")
-                n_val = corr.get("n")
+                n_val = (
+                    corr.get("n_windows")
+                    if corr.get("n_windows") is not None
+                    else corr.get("n")
+                )
                 n_val = int(n_val) if isinstance(n_val, (int, float)) else None
                 rows.append(
                     {
@@ -1148,7 +1173,7 @@ def plot_forest_core_metrics(
                         "text_name": entry.get("text_name") or "",
                         "r": float(r_val),
                         "p": float(p_val) if isinstance(p_val, (int, float)) else None,
-                        "n": n_val,
+                        "n_windows": n_val,
                     }
                 )
 
@@ -1170,7 +1195,7 @@ def plot_forest_core_metrics(
             agg_p = agg_entry.get("p_value") if isinstance(agg_entry, dict) else None
             agg_n = agg_entry.get("total_windows") if isinstance(agg_entry, dict) else None
             if not isinstance(agg_n, (int, float)):
-                agg_n = sum(row["n"] for row in rows if row["n"])
+                agg_n = sum(row["n_windows"] for row in rows if row["n_windows"])
 
             show_agg = isinstance(agg_r, (int, float))
             total_rows = len(rows) + (1 if show_agg else 0)
@@ -1183,7 +1208,7 @@ def plot_forest_core_metrics(
             for idx, row in enumerate(rows):
                 r_val = row["r"]
                 p_val = row["p"]
-                n_val = row["n"] or 0
+                n_val = row["n_windows"] or 0
                 color = config.positive_color if r_val >= 0 else config.negative_color
                 alpha = (
                     config.alpha_significant
@@ -1426,8 +1451,8 @@ def plot_central_topic_window_heatmaps(
         if not _matches_selection(genre, author, text_name, selection):
             continue
 
-        report = data.get("central_report") or {}
-        central_topics = report.get("central_topics_ordered") or []
+        params = data.get("params") or {}
+        central_topics = data.get("central_topics") or []
         if not central_topics:
             continue
 
@@ -1474,7 +1499,7 @@ def plot_central_topic_window_heatmaps(
         if not window_entries:
             continue
 
-        threshold, top_k = _resolve_soft_params({"params": report.get("params")}, topics_data)
+        threshold, top_k = _resolve_soft_params({"params": params}, topics_data)
         scores_by_window = collect_window_topic_scores(
             topics_data,
             soft_score_threshold=threshold,
