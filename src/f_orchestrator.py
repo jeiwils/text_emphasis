@@ -20,7 +20,7 @@ Flow:
 
 import json
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from spacy.tokens import Doc
 from sentence_transformers import SentenceTransformer

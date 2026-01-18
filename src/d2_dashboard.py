@@ -31,8 +31,7 @@ Outputs (per text):
           "correlations": {
             "<metric>": {
               "pearson_r": float,
-              "p_value": float,
-              "n_windows": int
+              "p_value": float
             }
           }
         }
@@ -40,6 +39,9 @@ Outputs (per text):
     },
     "params": {
       "near_top_alpha": float,
+      "top_score_fraction": float,
+      "coherence_floor": float,
+      "exclusivity_floor": float,
       "block_size": int,
       "permutations": int
     }
@@ -67,8 +69,7 @@ Outputs (per text):
           "correlations": {
             "<metric>": {
               "pearson_r": float,
-              "p_value": float,
-              "n_windows": int
+              "p_value": float
             }
           }
         }
@@ -76,13 +77,19 @@ Outputs (per text):
     },
     "params": {
       "near_top_alpha": float,
+      "top_score_fraction": float,
+      "coherence_floor": float,
+      "exclusivity_floor": float,
       "block_size": int,
       "permutations": int
     }
   }
 
+Centrality metrics include top10_mean (mean of the top fraction of per-window topic scores).
+Central topic selection applies coherence/exclusivity percentile floors before near_top_alpha.
+
 Central topic presence uses the normalized p-norm across central topics per window
-(default p=2, dividing by K, the number of central topics).
+(default p comes from config, dividing by K, the number of central topics).
 
 - data/results/dashboard/<genre>/<author>/<text>/<text>_central_topic_presence_correlations.json
   {
@@ -100,8 +107,7 @@ Central topic presence uses the normalized p-norm across central topics per wind
         "correlations": {
           "<metric>": {
             "pearson_r": float,
-            "p_value": float,
-            "n_windows": int
+            "p_value": float
           }
         }
       }

@@ -8,6 +8,7 @@ LOOP_BLOCK_SIZES_ENABLED = False
 LOOP_BLOCK_SIZES = (3, 5, 7)
 DEFAULT_BLOCK_SIZE = 5
 DEFAULT_DASHBOARD_PERMUTATIONS: int = 1000
+DEFAULT_RNG_SEED: int = 42
 
 USE_EXISTING = True
 
@@ -22,8 +23,8 @@ DEFAULT_SPACY_DISABLE: Sequence[str] = ()
 # Shared window size (in sentences) for sliding window metrics
 DEFAULT_WINDOW_SIZE: int = 3
 # Default soft topic-score filtering for topic modelling + dashboard
-DEFAULT_SOFT_SCORE_THRESHOLD: float = 0.5
-DEFAULT_SOFT_TOP_K: int = 3
+DEFAULT_SOFT_SCORE_THRESHOLD: float = 0.3 #0.5
+DEFAULT_SOFT_TOP_K: int = 5 #3
 # Default stride (in sentences) for sliding window metrics
 DEFAULT_METRIC_WINDOW_STRIDE: int = 1
 # Topic model windows use base_window_size * multiple
@@ -673,7 +674,7 @@ BOOK_CONFIGS = {
     },
 }
 
-DEFAULT_BOOK_CONFIG = {
+DEFAULT_BOOK_CONFIG = { #### I think I can remove this? or do i need to update to some default if I want to run with another book without making configs??
     "pages": None,
     "use_text_flow": False,
     "extract_kwargs": None,
@@ -737,6 +738,9 @@ DASHBOARD_WINDOW_CONFIG = {
 
 DEFAULT_CENTRAL_PRESENCE_P = 2.0
 DEFAULT_CENTRAL_PRESENCE_NORMALIZE = True
+DEFAULT_CENTRALITY_TOP_SCORE_FRACTION = 0.1
+DEFAULT_CENTRALITY_COHERENCE_FLOOR = 0.3
+DEFAULT_CENTRALITY_EXCLUSIVITY_FLOOR = 0.3
 
 @dataclass(frozen=True)
 class DashboardCorrelationConfig:
@@ -750,6 +754,9 @@ class DashboardCorrelationConfig:
 class CentralTopicSelectionConfig:
     near_top_alpha: float = 0.85
     max_topics: Optional[int] = None
+    top_score_fraction: float = DEFAULT_CENTRALITY_TOP_SCORE_FRACTION
+    coherence_floor: float = DEFAULT_CENTRALITY_COHERENCE_FLOOR
+    exclusivity_floor: float = DEFAULT_CENTRALITY_EXCLUSIVITY_FLOOR
 
 
 @dataclass(frozen=True)

@@ -1,5 +1,5 @@
 """
-Neural topic modeling for long-form text.
+Embedding-based topic modeling for long-form text.
 
 Input (run_topic_modelling / load_segmented_topic_mentions):
 JSONL lines with:
@@ -97,6 +97,7 @@ from .x_configs import (
     MODEL_CONFIGS,
     DEFAULT_SOFT_SCORE_THRESHOLD,
     DEFAULT_SOFT_TOP_K,
+    DEFAULT_RNG_SEED,
 )
 
 @dataclass
@@ -175,8 +176,15 @@ def _is_subphrase(tokens: List[str], longer_tokens: List[str]) -> bool:
     return False
 
 
-def _drop_subphrase_keywords(keywords: List[str], scores: np.ndarray) -> List[str]:
+def _drop_subphrase_keywords(
+    keywords: List[str],
+    scores: np.ndarray,
+    *,
+    max_terms: Optional[int] = None,
+) -> List[str]:
     if not keywords:
+        return []
+    if max_terms is not None and max_terms <= 0:
         return []
     tokenized = [term.split() for term in keywords]
     order = list(range(len(keywords)))
@@ -191,10 +199,12 @@ def _drop_subphrase_keywords(keywords: List[str], scores: np.ndarray) -> List[st
         ):
             continue
         kept.append(idx)
+        if max_terms is not None and len(kept) >= max_terms:
+            break
     return [keywords[idx] for idx in kept]
 
 
-class NeuralTopicModeler:
+class EmbeddingTopicModeler:
     """
     Clusters sentence embeddings, extracts keywords, and returns
     localized mentions (sentence index + char offsets).
@@ -264,12 +274,15 @@ class NeuralTopicModeler:
             if row.nnz == 0:
                 keywords[label] = []
                 continue
-            scores = row.toarray().ravel()
-            adjusted_scores = scores * overlap_penalty
-            top_indices = adjusted_scores.argsort()[::-1][:top_n]
-            top_terms = feature_names[top_indices].tolist()
-            top_scores = adjusted_scores[top_indices]
-            keywords[label] = _drop_subphrase_keywords(top_terms, top_scores)
+            indices = row.indices
+            scores = row.data
+            adjusted_scores = scores * overlap_penalty[indices]
+            candidate_terms = feature_names[indices].tolist()
+            keywords[label] = _drop_subphrase_keywords(
+                candidate_terms,
+                adjusted_scores,
+                max_terms=top_n,
+            )
         return keywords, vectorizer, term_topic_counts
 
     def _topic_prevalence_persistence(
@@ -472,7 +485,7 @@ class NeuralTopicModeler:
         if use_pca and embeddings.size and embeddings.shape[0] > 1:
             max_components = min(pca_components, embeddings.shape[0], embeddings.shape[1])
             if max_components > 0 and max_components < embeddings.shape[1]:
-                pca = PCA(n_components=max_components, random_state=42)
+                pca = PCA(n_components=max_components, random_state=DEFAULT_RNG_SEED)
                 reduced_embeddings = pca.fit_transform(embeddings)
         if len(window_texts) < min_cluster_size:
             labels = np.zeros(len(window_texts), dtype=int)
@@ -846,7 +859,7 @@ def run_topic_modelling(
     so topic windows align to the sentence-level metrics that use window size 3.
     Output shape: data/analytics/topic_modelling/<category>/<name>/<name>_clustered_topics.json
     """
-    modeler = NeuralTopicModeler(encoder=encoder)
+    modeler = EmbeddingTopicModeler(encoder=encoder)
     normalised_root = text_path("processed", "normalised_segmented_texts")
     output_root = analytics_path("topic")
     output_root.mkdir(parents=True, exist_ok=True)

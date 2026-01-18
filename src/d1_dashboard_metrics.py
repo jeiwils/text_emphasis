@@ -72,16 +72,18 @@ Output (build_topic_correlation_report):
       "correlations": {
         "syntax.median_depth": {
           "pearson_r": 0.32,
-          "p_value": 0.04,
-          "n_windows": 40
+          "p_value": 0.04
         }
       }
     }
   },
   "params": {
-    "near_top_alpha": 0.85,
-    "block_size": 5,
-    "permutations": 1000
+    "near_top_alpha": "<config>",
+    "top_score_fraction": "<config>",
+    "coherence_floor": "<config>",
+    "exclusivity_floor": "<config>",
+    "block_size": "<config>",
+    "permutations": "<config>"
   }
 }
 """
@@ -103,6 +105,7 @@ from .x_configs import (
     DEFAULT_CENTRAL_PRESENCE_P,
     DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG,
     DEFAULT_DASHBOARD_PERMUTATIONS,
+    DEFAULT_RNG_SEED,
 )
 
 from .b2_topic_modeling import (
@@ -111,7 +114,7 @@ from .b2_topic_modeling import (
 )
 
 # Dashboard correlations use a curated subset of window metrics; full windows remain in analytics.
-CENTRALITY_METRICS = ("coherence", "exclusivity", "prevalence", "persistence")
+CENTRALITY_METRICS = ("coherence", "exclusivity", "prevalence", "persistence", "top10_mean")
 WINDOW_METRIC_DOMAINS = ("syntax", "lexico_semantics", "discourse", "log_prob")
 
 
@@ -435,10 +438,51 @@ def topic_keywords(topics_data: Dict[str, object]) -> Dict[int, List[str]]:
     return mapping
 
 
+def _collect_topic_score_lists(topics_data: Dict[str, object]) -> Dict[int, List[float]]:
+    scores_by_topic: Dict[int, List[float]] = {}
+    for window in _window_items(topics_data):
+        if window.get("is_noise"):
+            continue
+        scores = window.get("topic_scores") or []
+        for entry in scores:
+            if not isinstance(entry, dict):
+                continue
+            topic_id = entry.get("topic_id")
+            score = entry.get("score")
+            if not isinstance(topic_id, int) or not isinstance(score, (int, float)):
+                continue
+            scores_by_topic.setdefault(topic_id, []).append(float(score))
+    return scores_by_topic
+
+
+def _top_fraction_mean(scores: List[float], *, fraction: float) -> float:
+    if not scores:
+        return 0.0
+    if fraction <= 0 or fraction > 1:
+        raise ValueError("top score fraction must be in (0, 1]")
+    top_count = max(1, math.ceil(len(scores) * fraction))
+    top_scores = sorted(scores)[-top_count:]
+    return sum(top_scores) / len(top_scores)
+
+
+def _collect_top_fraction_means(
+    topics_data: Dict[str, object], *, fraction: float
+) -> Dict[int, float]:
+    if fraction <= 0 or fraction > 1:
+        raise ValueError("top score fraction must be in (0, 1]")
+    scores_by_topic = _collect_topic_score_lists(topics_data)
+    return {
+        topic_id: _top_fraction_mean(scores, fraction=fraction)
+        for topic_id, scores in scores_by_topic.items()
+    }
+
+
 def _collect_centrality_rows(topics_data: Dict[str, object]) -> List[Dict[str, object]]:
     topics = _topic_items(topics_data)
     values: Dict[str, List[float]] = {metric: [] for metric in CENTRALITY_METRICS}
     entries: List[Dict[str, object]] = []
+    top_fraction = DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG.top_score_fraction
+    top_fraction_means = _collect_top_fraction_means(topics_data, fraction=top_fraction)
     for topic in topics:
         if not isinstance(topic, dict):
             continue
@@ -449,7 +493,10 @@ def _collect_centrality_rows(topics_data: Dict[str, object]) -> List[Dict[str, o
         keywords = topic.get("keywords", [])
         raw_stats: Dict[str, float] = {}
         for metric in CENTRALITY_METRICS:
-            val = stats.get(metric)
+            if metric == "top10_mean":
+                val = top_fraction_means.get(topic_id, 0.0)
+            else:
+                val = stats.get(metric)
             if not isinstance(val, (int, float)):
                 continue
             if isinstance(val, float) and math.isnan(val):
@@ -518,18 +565,57 @@ def central_topics(
     top_n: Optional[int] = None,
     *,
     near_top_alpha: Optional[float] = None,
+    coherence_floor: Optional[float] = None,
+    exclusivity_floor: Optional[float] = None,
 ) -> List[Dict[str, object]]:
     config = DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG
     if near_top_alpha is None:
         near_top_alpha = config.near_top_alpha
     if top_n is None:
         top_n = config.max_topics
+    if coherence_floor is None:
+        coherence_floor = config.coherence_floor
+    if exclusivity_floor is None:
+        exclusivity_floor = config.exclusivity_floor
     if top_n is not None and top_n <= 0:
         top_n = None
 
     ranked = _collect_centrality_rows(topics_data)
     if not ranked:
         return []
+
+    if coherence_floor is not None or exclusivity_floor is not None:
+        try:
+            coherence_idx = CENTRALITY_METRICS.index("coherence")
+            exclusivity_idx = CENTRALITY_METRICS.index("exclusivity")
+        except ValueError:
+            coherence_idx = None
+            exclusivity_idx = None
+        filtered_ranked = []
+        for row in ranked:
+            scores = row.get("percentile_score", [])
+            if not isinstance(scores, list):
+                continue
+            if coherence_idx is not None:
+                if coherence_idx >= len(scores):
+                    continue
+                coherence_score = scores[coherence_idx]
+                if coherence_score is None:
+                    continue
+                if coherence_floor is not None and coherence_score < coherence_floor:
+                    continue
+            if exclusivity_idx is not None:
+                if exclusivity_idx >= len(scores):
+                    continue
+                exclusivity_score = scores[exclusivity_idx]
+                if exclusivity_score is None:
+                    continue
+                if exclusivity_floor is not None and exclusivity_score < exclusivity_floor:
+                    continue
+            filtered_ranked.append(row)
+        ranked = filtered_ranked
+        if not ranked:
+            return []
 
     ranked.sort(key=lambda row: row["score"], reverse=True)
     scores = [row["score"] for row in ranked]
@@ -574,7 +660,7 @@ def build_topic_correlation_report(
     keyword_map = topic_keywords(topics_data)
     topic_reports: Dict[int, Dict[str, object]] = {}
 
-    rng = np.random.default_rng(42)
+    rng = np.random.default_rng(DEFAULT_RNG_SEED)
 
     topic_score_windows = collect_window_topic_scores(
         topics_data,
@@ -614,7 +700,6 @@ def build_topic_correlation_report(
             metric_correlations[metric] = {
                 "pearson_r": corr,
                 "p_value": p_value,
-                "n_windows": len(values),
             }
 
         if metric_correlations:
@@ -636,6 +721,9 @@ def build_topic_correlation_report(
         topics_key: topic_reports,
         "params": {
             "near_top_alpha": DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG.near_top_alpha,
+            "top_score_fraction": DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG.top_score_fraction,
+            "coherence_floor": DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG.coherence_floor,
+            "exclusivity_floor": DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG.exclusivity_floor,
             "block_size": block_size,
             "permutations": permutations,
         },
@@ -753,7 +841,7 @@ def build_central_presence_report(
         return {}
 
     correlations: Dict[str, object] = {}
-    rng = np.random.default_rng(42)
+    rng = np.random.default_rng(DEFAULT_RNG_SEED)
     for metric in metric_names:
         pairs = []
         for presence, row in presence_rows:
@@ -780,7 +868,6 @@ def build_central_presence_report(
         correlations[metric] = {
             "pearson_r": corr,
             "p_value": p_value,
-            "n_windows": len(values),
         }
 
     return {

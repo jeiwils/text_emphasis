@@ -369,15 +369,7 @@ def _aggregate_central_presence_correlations(
 
         window_count = _as_count(report.get("window_count"))
         if window_count is None:
-            for corr_entry in correlations.values():
-                if isinstance(corr_entry, dict):
-                    window_count = _as_count(
-                        corr_entry.get("n_windows")
-                        if corr_entry.get("n_windows") is not None
-                        else corr_entry.get("n")
-                    )
-                    if window_count is not None:
-                        break
+            continue
         effective_window_count = _effective_n(window_count, block_size)
         texts.append(
             {
@@ -397,11 +389,7 @@ def _aggregate_central_presence_correlations(
                 continue
             r_value = _as_float(corr_entry.get("pearson_r"))
             p_value = _as_float(corr_entry.get("p_value"))
-            n_value = _as_count(
-                corr_entry.get("n_windows")
-                if corr_entry.get("n_windows") is not None
-                else corr_entry.get("n")
-            )
+            n_value = window_count
             n_eff = _effective_n(n_value, block_size)
             if r_value is None or p_value is None or n_value is None or n_eff is None:
                 continue

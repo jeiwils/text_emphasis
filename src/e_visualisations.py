@@ -424,6 +424,7 @@ def collect_central_topic_data(
         report = data.get("report")
         if not isinstance(metadata, dict) or not isinstance(report, dict):
             continue
+        window_count = report.get("window_count")
         category = metadata.get("category") or ""
         category_parts = [part for part in str(category).split("/") if part]
         genre = category_parts[0] if category_parts else "unknown"
@@ -442,7 +443,7 @@ def collect_central_topic_data(
                 r = corr.get("pearson_r")
                 if not isinstance(r, (int, float)):
                     continue
-                n_windows = corr.get("n_windows")
+                n_windows = window_count if isinstance(window_count, (int, float)) else None
                 entries_by_genre[genre].append(
                     {
                         "genre": genre,
@@ -475,6 +476,7 @@ def collect_central_topic_data(
                 presence_report = presence_payload.get("report")
                 if not isinstance(presence_report, dict):
                     continue
+                presence_window_count = presence_report.get("window_count")
                 presence = presence_report.get("central_topic_presence") or {}
                 if presence.get("correlations"):
                     presence_entries.append(
@@ -482,6 +484,7 @@ def collect_central_topic_data(
                             "genre": genre,
                             "author": author,
                             "text_name": text_name,
+                            "window_count": presence_window_count,
                             "presence": presence,
                         }
                     )
@@ -1067,7 +1070,11 @@ def write_top_correlation_tables(
                             "metric": metric,
                             "pearson_r": float(r_val),
                             "p_value": corr.get("p_value"),
-                            "n_windows": corr.get("n_windows"),
+                            "n_windows": (
+                                entry.get("window_count")
+                                if isinstance(entry.get("window_count"), (int, float))
+                                else None
+                            ),
                         }
                     )
             if candidates:
@@ -1352,7 +1359,7 @@ def plot_forest_core_metrics(
                 if not isinstance(r_val, (int, float)):
                     continue
                 p_val = corr.get("p_value")
-                n_val = corr.get("n_windows")
+                n_val = entry.get("window_count")
                 n_val = int(n_val) if isinstance(n_val, (int, float)) else None
                 rows.append(
                     {

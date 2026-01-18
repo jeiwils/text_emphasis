@@ -45,15 +45,17 @@ Notes:
 
 ## Central topics (percentile-ranked components)
 - Centrality selection:
-  - Uses topic stats: coherence, exclusivity, prevalence, persistence.
+  - Uses topic stats: coherence, exclusivity, prevalence, persistence, top10_mean.
   - Compute within-text percentile ranks for each metric across topics.
+  - Optional coherence/exclusivity percentile floors applied before near-top selection.
   - Centrality score is the mean of available component percentiles.
-  - Keep topics with score at least q (default 0.6) or near-top (score >= alpha * max, default 0.85).
+  - Keep topics with score >= near_top_alpha * max (after floors).
   - Optional cap via `CentralTopicSelectionConfig.max_topics` in `src/x_configs.py` (None = no cap).
 - Metric definitions (from topic modeling):
   - Prevalence (soft mean): sum of topic scores across non-noise windows / number of non-noise windows.
     - topic_scores already filtered by score_threshold/top_k at topic modeling time.
-  - Persistence (top-k presence): mean run length of consecutive windows where the topic appears in topic_scores (non-noise).
+  - Persistence (run length): mean run length of consecutive windows where the topic appears in topic_scores (non-noise).
+  - top10_mean: mean of the top fraction (default 10%) of per-window topic scores (non-noise).
   - Coherence: for each topic, use window texts where it appears; build binary doc-term matrix; compute NPMI for keyword pairs with co-occurrence > 0; coherence is mean NPMI (0 if none).
   - Exclusivity: term_topic_count = number of topic-docs containing the term (tfidf > 0).
     exclusivity_term = 1 - ((count - 1) / (num_topics - 1)), clipped to [0,1]; if num_topics <= 1, exclusivity_term = 1.
@@ -68,11 +70,12 @@ flowchart TD
     l2 --> pca[PCA (optional)]
     pca --> hdbscan[HDBSCAN clustering (noise = -1)]
     hdbscan --> centroids[Topic centroids (mean of original embeddings)]
-    hdbscan --> labels[Topic keywords (TF-IDF + overlap penalty)]
+    hdbscan --> labels[Topic keywords (TF-IDF + overlap penalty + subphrase filter/backfill)]
     centroids --> scores[Soft topic scores (cosine to centroids)]
     scores --> sparsify[Sparsify scores (top_k + threshold)]
-    sparsify --> stats[Topic stats: prevalence / persistence / coherence / exclusivity]
-    stats --> central[Central topics: score at least q or near top]
+    sparsify --> stats[Topic stats: prevalence / persistence / coherence / exclusivity / top10_mean]
+    stats --> floor[Coherence/exclusivity percentile floors]
+    floor --> central[Central topics: near_top_alpha of remaining]
 ```
 
 ## Window metrics and dashboard summaries
@@ -140,7 +143,7 @@ flowchart TD
 - Significance:
   - Pearson r omitted when n < 2 or either variable is constant;
   - block permutation with contiguous blocks (default block_size=5, permutations=2000), two-sided on |r|;
-    p = (count + 1) / (permutations + 1); RNG fixed (np.random.default_rng(42)).
+    p = (count + 1) / (permutations + 1); RNG fixed (DEFAULT_RNG_SEED in x_configs.py; default 42).
   - Blocks are fixed-length L, with the final block allowed to be shorter; blocks are permuted as units.
   - L=5 was chosen to exceed the overlap horizon induced by the metric window and projection smoothing;
     sensitivity checks over L in {3,5,7} did not change sign patterns.
