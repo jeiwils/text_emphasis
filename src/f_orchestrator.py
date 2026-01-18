@@ -13,10 +13,9 @@ Flow:
    plus per-text frequencies at `data/analytics/corpus_analytics/<genre>/<author>/<name>/<name>_corpus_frequencies.json`.
    Each file matches the c0 meta/sentences/windows schema (log-probs, surprisal, etc.).
 5) `run_windowed_metrics` reads those corpus JSONs, recomputes sentence-level spaCy docs
-   from cleaned-segmented texts,
-   and writes combined window metrics to `data/analytics/window_metrics/<genre>/<author>/<name>/<name>_window_metrics.json`
-   with nested blocks: meta, syntax (meta/sentences/windows + heavy), lexico_semantics (same shape),
-   discourse (same shape), log_prob (c0 windows)
+   from cleaned-segmented texts, and writes split window metrics to:
+   `data/analytics/window_metrics/<genre>/<author>/<name>/<name>_window_metrics.<domain>.json`
+   for domains: syntax, lexico_semantics, discourse, log_prob.
 """
 
 import json
@@ -248,8 +247,13 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True, authors=None):
 
             output_text_dir = out_category_dir / base_name
             output_text_dir.mkdir(parents=True, exist_ok=True)
-            output_file = output_text_dir / f"{base_name}_window_metrics.json"
-            if use_existing and output_file.exists():
+            output_files = {
+                "syntax": output_text_dir / f"{base_name}_window_metrics.syntax.json",
+                "lexico_semantics": output_text_dir / f"{base_name}_window_metrics.lexico_semantics.json",
+                "discourse": output_text_dir / f"{base_name}_window_metrics.discourse.json",
+                "log_prob": output_text_dir / f"{base_name}_window_metrics.log_prob.json",
+            }
+            if use_existing and all(path.exists() for path in output_files.values()):
                 skipped += 1
                 continue
 
@@ -299,10 +303,14 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True, authors=None):
 
             log_prob_sentences = data.get("sentences", [])
             log_prob_windows = data.get("windows", [])
-            log_prob_meta = {
+            base_meta = {
                 "filename": meta_block.get("filename", file.name),
                 "model": meta_block.get("model", ""),
-                "window_size": meta_block.get("window_size", window_size),
+                "window_size": window_size,
+                "num_sentences": num_sentences,
+            }
+            log_prob_meta = {
+                **base_meta,
                 "num_sentences": len(log_prob_sentences) if log_prob_sentences else num_sentences,
                 "avg_log_prob": meta_block.get("avg_log_prob"),
             }
@@ -312,37 +320,35 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True, authors=None):
             lex_windows = lex_metrics.get("windows", [])
             discourse_windows = discourse_metrics.get("windows", [])
 
-            result = {
-                "meta": {
-                    "filename": meta_block.get("filename", file.name),
-                    "model": meta_block.get("model", ""),
-                    "window_size": window_size,
-                    "num_sentences": num_sentences,
-                },
-                "syntax": {
-                    "meta": syntax_metrics.get("meta", {}),
-                    "sentences": syntax_metrics.get("sentences", []),
-                    "windows": syntax_windows,
-                },
-                "lexico_semantics": {
-                    "meta": lex_metrics.get("meta", {}),
-                    "sentences": lex_metrics.get("sentences", []),
-                    "windows": lex_windows,
-                },
-                "log_prob": {
-                    "meta": log_prob_meta,
-                    "sentences": log_prob_sentences,
-                    "windows": log_prob_windows,
-                },
-                "discourse": {
-                    "meta": discourse_metrics.get("meta", {}),
-                    "sentences": discourse_metrics.get("sentences", []),
-                    "windows": discourse_windows,
-                },
+            def _domain_payload(
+                metrics: Dict[str, object],
+                windows: List[Dict[str, object]],
+            ) -> Dict[str, object]:
+                meta = metrics.get("meta") if isinstance(metrics, dict) else {}
+                merged_meta = {**base_meta, **(meta if isinstance(meta, dict) else {})}
+                return {
+                    "meta": merged_meta,
+                    "sentences": metrics.get("sentences", []),
+                    "windows": windows,
+                }
+
+            syntax_payload = _domain_payload(syntax_metrics, syntax_windows)
+            lexico_payload = _domain_payload(lex_metrics, lex_windows)
+            discourse_payload = _domain_payload(discourse_metrics, discourse_windows)
+            log_prob_payload = {
+                "meta": log_prob_meta,
+                "sentences": log_prob_sentences,
+                "windows": log_prob_windows,
             }
 
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(result, f, indent=2)
+            with open(output_files["syntax"], "w", encoding="utf-8") as f:
+                json.dump(syntax_payload, f, indent=2)
+            with open(output_files["lexico_semantics"], "w", encoding="utf-8") as f:
+                json.dump(lexico_payload, f, indent=2)
+            with open(output_files["discourse"], "w", encoding="utf-8") as f:
+                json.dump(discourse_payload, f, indent=2)
+            with open(output_files["log_prob"], "w", encoding="utf-8") as f:
+                json.dump(log_prob_payload, f, indent=2)
 
             processed += 1
     tqdm.write(f"Window metrics complete: {processed} processed, {skipped} skipped.")

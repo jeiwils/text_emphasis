@@ -16,7 +16,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import TwoSlopeNorm
 
-from .d1_dashboard_metrics import collect_window_topic_scores
+from .d1_dashboard_metrics import (
+    collect_window_tables,
+    collect_window_topic_scores,
+    load_window_metrics,
+)
 from .x_configs import (
     GENRES,
     AggregatedHeatmapConfig,
@@ -28,7 +32,11 @@ from .x_configs import (
     ExemplarScatterConfig,
     ForestPlotConfig,
     PresenceSlopegraphConfig,
+    DEFAULT_BLOCK_SIZE,
+    StabilityFilterConfig,
+    StabilityStackedBarConfig,
     TextMetricHeatmapConfig,
+    TopicMetricLineConfig,
     TopicMetricHeatmapConfig,
     CONVERGENCE_METRIC_LABELS,
     DEFAULT_AGGREGATED_HEATMAP_CONFIG,
@@ -40,7 +48,10 @@ from .x_configs import (
     DEFAULT_EXEMPLAR_SCATTER_CONFIG,
     DEFAULT_FOREST_PLOT_CONFIG,
     DEFAULT_PRESENCE_SLOPEGRAPH_CONFIG,
+    DEFAULT_STABILITY_FILTER_CONFIG,
+    DEFAULT_STABILITY_STACKED_BAR_CONFIG,
     DEFAULT_TEXT_METRIC_HEATMAP_CONFIG,
+    DEFAULT_TOPIC_METRIC_LINE_CONFIG,
     DEFAULT_TOPIC_METRIC_HEATMAP_CONFIG,
 )
 from .z_utils import analytics_path, find_topic_file, load_json, results_path
@@ -95,13 +106,10 @@ def _scores_to_stats(order: Sequence[object], scores: object) -> Dict[str, float
 
 _COUNT_COLUMNS = {
     "topic_id",
-    "windows_with_topic",
-    "windows_without_topic",
-    "windows_with_central_topic",
-    "windows_without_central_topic",
     "n",
     "text_count",
     "total_windows",
+    "n_windows",
 }
 _P_VALUE_COLUMNS = {"p_value"}
 _DEFAULT_FLOAT_DECIMALS = 3
@@ -298,6 +306,25 @@ def _ordered_genres(genres: Iterable[str]) -> List[str]:
     return ordered
 
 
+def _stability_passes(
+    entry: Optional[Dict[str, object]],
+    config: StabilityFilterConfig,
+) -> bool:
+    if not isinstance(entry, dict):
+        return False
+    value = entry.get(config.metric_key)
+    if not isinstance(value, (int, float)) or (isinstance(value, float) and math.isnan(value)):
+        return False
+    if config.min_pair_count is not None:
+        pair_count = entry.get("pair_count")
+        if not isinstance(pair_count, (int, float)) or int(pair_count) < config.min_pair_count:
+            return False
+    direction = str(config.direction or "").lower()
+    if direction in {"lte", "le", "<="}:
+        return float(value) <= config.threshold
+    return float(value) >= config.threshold
+
+
 def _fisher_z_ci(value: float, n: int, *, z_value: float) -> Optional[Tuple[float, float]]:
     if n <= 3:
         return None
@@ -315,7 +342,12 @@ def _output_dir(
     category: Optional[Sequence[str]] = None,
 ) -> Path:
     if output_root is None:
-        return results_path("figures", subfolder, category)
+        return results_path(
+            "figures",
+            subfolder,
+            category,
+            block_size=DEFAULT_BLOCK_SIZE,
+        )
     path = Path(output_root) / subfolder
     if category:
         path = path.joinpath(*category)
@@ -325,7 +357,7 @@ def _output_dir(
 def _iter_central_topic_reports(
     dashboard_root: Optional[Path] = None,
 ) -> Iterable[Tuple[Path, Dict[str, object]]]:
-    root = dashboard_root or results_path("dashboard")
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
     if not root.exists():
         raise FileNotFoundError(f"Dashboard directory not found: {root}")
     for path in root.rglob("*_central_topic_correlations.json"):
@@ -340,7 +372,7 @@ def _load_aggregated_presence_by_genre(
     dashboard_root: Optional[Path] = None,
     selection: Optional[DataSelectionConfig] = None,
 ) -> Dict[str, Dict[str, Dict[str, object]]]:
-    root = dashboard_root or results_path("dashboard")
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
     if not root.exists():
         return {}
     aggregated: Dict[str, Dict[str, Dict[str, object]]] = {}
@@ -357,6 +389,27 @@ def _load_aggregated_presence_by_genre(
     return aggregated
 
 
+def _load_split_half_stability_by_genre(
+    dashboard_root: Optional[Path] = None,
+    selection: Optional[DataSelectionConfig] = None,
+) -> Dict[str, Dict[str, Dict[str, object]]]:
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
+    if not root.exists():
+        return {}
+    stability: Dict[str, Dict[str, Dict[str, object]]] = {}
+    for path in root.glob("*/00_genre_central_topic_split_half_stability.json"):
+        payload = load_json(path)
+        if not isinstance(payload, dict):
+            continue
+        genre = payload.get("genre") or path.parent.name
+        if not isinstance(genre, str) or not _matches_genre_selection(genre, selection):
+            continue
+        metrics = payload.get("metrics") or {}
+        if isinstance(metrics, dict):
+            stability[genre] = metrics
+    return stability
+
+
 def collect_central_topic_data(
     dashboard_root: Optional[Path] = None,
     selection: Optional[DataSelectionConfig] = None,
@@ -369,11 +422,8 @@ def collect_central_topic_data(
     for path, data in _iter_central_topic_reports(dashboard_root):
         metadata = data.get("metadata")
         report = data.get("report")
-        params = data.get("params", {})
         if not isinstance(metadata, dict) or not isinstance(report, dict):
             continue
-        if not isinstance(params, dict):
-            params = {}
         category = metadata.get("category") or ""
         category_parts = [part for part in str(category).split("/") if part]
         genre = category_parts[0] if category_parts else "unknown"
@@ -386,15 +436,6 @@ def collect_central_topic_data(
         if not isinstance(centrality_order, list):
             continue
         for topic in report.get("central_topics") or []:
-            windows_and_scores = topic.get("windows_and_scores")
-            if not isinstance(windows_and_scores, list):
-                continue
-            windows_with_topic = len(windows_and_scores)
-
-            windows_without_topic = topic.get("windows_without_topic")
-            if not isinstance(windows_without_topic, int):
-                windows_without_topic = None
-
             stats = _scores_to_stats(centrality_order, topic.get("raw_score"))
             correlations = topic.get("correlations") or {}
             for metric, corr in correlations.items():
@@ -411,16 +452,12 @@ def collect_central_topic_data(
                         "pearson_r": float(r),
                         "p_value": corr.get("p_value"),
                         "n_windows": n_windows,
-                        "mean_with_topic": corr.get("mean_with_topic"),
-                        "mean_without_topic": corr.get("mean_without_topic"),
                         "topic_id": topic.get("topic_id"),
                         "topic_score": topic.get("score"),
                         "keywords": topic.get("keywords") or [],
                         "stats": stats,
                         "raw_score": topic.get("raw_score"),
                         "percentile_score": topic.get("percentile_score"),
-                        "windows_with_topic": windows_with_topic,
-                        "windows_without_topic": windows_without_topic,
                         "topic_file": topic_file,
                         "params": params,
                     }
@@ -584,6 +621,128 @@ def plot_central_topic_x_bars(
     return output_paths
 
 
+def plot_central_topic_x_bars_stability_filtered(
+    entries_by_genre: Optional[Dict[str, List[Dict[str, object]]]] = None,
+    *,
+    config: Optional[CentralTopicXBarConfig] = None,
+    stability_config: Optional[StabilityFilterConfig] = None,
+    top_n: Optional[int] = None,
+    p_threshold: Optional[float] = None,
+    selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> List[Path]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    if entries_by_genre is None:
+        entries_by_genre, _ = collect_central_topic_data(
+            dashboard_root=dashboard_root,
+            selection=selection,
+        )
+    else:
+        entries_by_genre = _filter_entries_by_genre(entries_by_genre, selection)
+
+    if config is None:
+        config = DEFAULT_CENTRAL_TOPIC_X_CONFIG
+    if stability_config is None:
+        stability_config = DEFAULT_STABILITY_FILTER_CONFIG
+    if top_n is None:
+        top_n = config.top_n
+    if p_threshold is None:
+        p_threshold = config.p_threshold
+
+    stability_by_genre = _load_split_half_stability_by_genre(
+        dashboard_root=dashboard_root,
+        selection=selection,
+    )
+
+    genre_set = {genre for genre in entries_by_genre if genre}
+    ordered_genres = [genre for genre in GENRES if genre in genre_set]
+    ordered_genres += sorted(genre_set - set(ordered_genres))
+
+    output_paths: List[Path] = []
+    for genre in ordered_genres:
+        entries = entries_by_genre.get(genre, [])
+        stability_metrics = stability_by_genre.get(genre, {})
+        if not entries or not stability_metrics:
+            continue
+        filtered_entries = []
+        for entry in entries:
+            metric = entry.get("metric")
+            if not isinstance(metric, str):
+                continue
+            stability_entry = stability_metrics.get(metric)
+            if _stability_passes(stability_entry, stability_config):
+                filtered_entries.append(entry)
+
+        top_entries = _top_n_by_abs_r(filtered_entries, top_n)
+        if not top_entries:
+            continue
+
+        entries_rev = list(reversed(top_entries))
+        labels = [entry["metric"] for entry in entries_rev]
+        values = [entry["pearson_r"] for entry in entries_rev]
+        pvals = [entry.get("p_value") for entry in entries_rev]
+        colors = [
+            config.positive_color if value >= 0 else config.negative_color for value in values
+        ]
+        alphas = [
+            config.alpha_significant
+            if isinstance(p, (int, float)) and p < p_threshold
+            else config.alpha_nonsignificant
+            for p in pvals
+        ]
+
+        fig_height = max(config.min_height, config.row_height * len(labels) + 1.5)
+        fig, ax = plt.subplots(figsize=(config.fig_width, fig_height))
+        y_pos = np.arange(len(labels))
+        for idx, (value, color, alpha) in enumerate(zip(values, colors, alphas)):
+            ax.barh(y_pos[idx], value, color=color, alpha=alpha)
+
+        ax.axvline(0, color="black", linewidth=0.8)
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(labels, fontsize=8)
+        ax.set_xlabel("Pearson r")
+        direction = str(stability_config.direction or "").lower()
+        comp = "<=" if direction in {"lte", "le", "<="} else ">="
+        ax.set_title(
+            f"Central Topic to Metric Correlations (Stable {stability_config.metric_key} {comp} "
+            f"{stability_config.threshold:g}) - {genre}"
+        )
+
+        max_abs = max(abs(value) for value in values) if values else 0.0
+        span = max_abs if max_abs > 0 else 0.1
+        ax.set_xlim(-span * 1.1, span * 1.1)
+        offset = span * 0.02
+        for idx, entry in enumerate(entries_rev):
+            value = entry["pearson_r"]
+            gloss = _shorten_keywords(entry.get("keywords") or [], config.annotation_max_len)
+            topic_id = entry.get("topic_id")
+            topic_label = f"topic_id {topic_id}" if topic_id is not None else "topic_id ?"
+            annotation = f"{topic_label}: {gloss}" if gloss else topic_label
+            x_pos = value + offset if value >= 0 else offset
+            ax.text(
+                x_pos,
+                y_pos[idx],
+                annotation,
+                va="center",
+                ha="left",
+                fontsize=7,
+            )
+
+        ax.margins(y=0.02)
+        plt.tight_layout()
+
+        output_dir = _output_dir(output_root, "bar_charts_stability", [genre])
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / f"{genre}_central_topic_metric_correlations_stable_top{top_n}.png"
+        fig.savefig(output_path, dpi=200)
+        plt.close(fig)
+        output_paths.append(output_path)
+
+    return output_paths
+
+
 def plot_presence_slopegraphs(
     presence_entries: Optional[List[Dict[str, object]]] = None,
     *,
@@ -593,97 +752,8 @@ def plot_presence_slopegraphs(
     dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
 ) -> List[Path]:
-    if selection is None:
-        selection = DEFAULT_DATA_SELECTION_CONFIG
-    if presence_entries is None:
-        _, presence_entries = collect_central_topic_data(
-            dashboard_root=dashboard_root,
-            selection=selection,
-        )
-    else:
-        presence_entries = _filter_presence_entries(presence_entries, selection)
-
-    if config is None:
-        config = DEFAULT_PRESENCE_SLOPEGRAPH_CONFIG
-    if p_threshold is None:
-        p_threshold = config.p_threshold
-
-    output_paths: List[Path] = []
-    for entry in presence_entries:
-        genre = entry["genre"]
-        author = entry["author"]
-        text_name = entry["text_name"]
-        presence = entry["presence"]
-        correlations = presence.get("correlations") or {}
-
-        metrics = []
-        for metric, corr in correlations.items():
-            p_value = corr.get("p_value")
-            if not isinstance(p_value, (int, float)) or p_value >= p_threshold:
-                continue
-            mean_with = corr.get("mean_with_topic")
-            mean_without = corr.get("mean_without_topic")
-            if not isinstance(mean_with, (int, float)) or not isinstance(mean_without, (int, float)):
-                continue
-            metrics.append((metric, float(mean_without), float(mean_with)))
-
-        if not metrics:
-            continue
-
-        metrics.sort(key=lambda row: row[0])
-        y_pos = np.arange(len(metrics))
-        fig_height = max(config.min_height, config.row_height * len(metrics) + 1.5)
-        fig, ax = plt.subplots(figsize=(config.fig_width, fig_height))
-
-        for idx, (metric, mean_without, mean_with) in enumerate(metrics):
-            color = (
-                config.positive_color if mean_with >= mean_without else config.negative_color
-            )
-            ax.plot(
-                [mean_without, mean_with],
-                [y_pos[idx], y_pos[idx]],
-                color=color,
-                linewidth=1.8,
-                alpha=0.8,
-            )
-            ax.scatter(
-                [mean_without],
-                [y_pos[idx]],
-                color="white",
-                edgecolor=color,
-                s=40,
-                zorder=3,
-                marker="o",
-            )
-            ax.scatter(
-                [mean_with],
-                [y_pos[idx]],
-                color=color,
-                s=40,
-                zorder=3,
-                marker="s",
-            )
-
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels([row[0] for row in metrics], fontsize=8)
-        ax.set_xlabel("Mean metric value")
-        ax.set_title(f"Central Topic Presence - {text_name} ({genre})")
-        ax.grid(axis="x", linestyle="--", alpha=0.3)
-
-        ax.scatter([], [], color="white", edgecolor="black", label="without", marker="o")
-        ax.scatter([], [], color="black", label="with", marker="s")
-        ax.legend(loc="best", fontsize=8, frameon=False)
-
-        plt.tight_layout()
-
-        output_dir = _output_dir(output_root, "presence_slopegraphs", [genre, author])
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / f"{text_name}_slopegraph.png"
-        fig.savefig(output_path, dpi=200)
-        plt.close(fig)
-        output_paths.append(output_path)
-
-    return output_paths
+    # Slopegraphs depend on binary with/without summaries, which are no longer produced.
+    return []
 
 
 def plot_aggregated_presence_heatmap(
@@ -701,7 +771,7 @@ def plot_aggregated_presence_heatmap(
     if p_threshold is None:
         p_threshold = config.p_threshold
 
-    root = dashboard_root or results_path("dashboard")
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
     agg_paths = sorted(root.glob("*/00_genre_central_topic_presence_correlations.json"))
     if not agg_paths:
         return None
@@ -776,6 +846,86 @@ def plot_aggregated_presence_heatmap(
     return output_path
 
 
+def plot_stability_family_counts(
+    *,
+    config: Optional[StabilityStackedBarConfig] = None,
+    stability_config: Optional[StabilityFilterConfig] = None,
+    selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> Optional[Path]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    if config is None:
+        config = DEFAULT_STABILITY_STACKED_BAR_CONFIG
+    if stability_config is None:
+        stability_config = config.stability if config.stability else DEFAULT_STABILITY_FILTER_CONFIG
+
+    stability_by_genre = _load_split_half_stability_by_genre(
+        dashboard_root=dashboard_root,
+        selection=selection,
+    )
+    if not stability_by_genre:
+        return None
+
+    genres = _ordered_genres(stability_by_genre.keys())
+    family_order = list(config.family_order)
+    counts_by_family = {family: [] for family in family_order}
+
+    for genre in genres:
+        metrics = stability_by_genre.get(genre, {})
+        family_counts = {family: 0 for family in family_order}
+        for metric, entry in metrics.items():
+            if not isinstance(metric, str):
+                continue
+            family, _parts = _metric_parts(metric)
+            if family not in family_counts:
+                continue
+            if _stability_passes(entry, stability_config):
+                family_counts[family] += 1
+        for family in family_order:
+            counts_by_family[family].append(family_counts[family])
+
+    if not genres:
+        return None
+
+    fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
+    x_pos = np.arange(len(genres))
+    bottoms = np.zeros(len(genres))
+    colors = list(config.family_colors)
+    for idx, family in enumerate(family_order):
+        values = counts_by_family[family]
+        color = colors[idx % len(colors)] if colors else None
+        ax.bar(
+            x_pos,
+            values,
+            bottom=bottoms,
+            color=color,
+            alpha=config.bar_alpha,
+            label=family,
+        )
+        bottoms = bottoms + np.array(values, dtype=float)
+
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(genres, rotation=30, ha="right")
+    ax.set_ylabel("Metrics above stability threshold")
+    direction = str(stability_config.direction or "").lower()
+    comp = "<=" if direction in {"lte", "le", "<="} else ">="
+    ax.set_title(
+        f"Stable metrics by family ({stability_config.metric_key} {comp} {stability_config.threshold:g})"
+    )
+    ax.legend(loc="best", fontsize=8, frameon=False)
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    plt.tight_layout()
+    output_dir = _output_dir(output_root, "stability_family_counts")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "stability_family_counts.png"
+    fig.savefig(output_path, dpi=200)
+    plt.close(fig)
+    return output_path
+
+
 def write_top_correlation_tables(
     entries_by_genre: Optional[Dict[str, List[Dict[str, object]]]] = None,
     presence_entries: Optional[List[Dict[str, object]]] = None,
@@ -834,8 +984,6 @@ def write_top_correlation_tables(
         "topic_coherence",
         "topic_prevalence",
         "topic_persistence",
-        "windows_with_topic",
-        "windows_without_topic",
         "n_windows",
     ]
     presence_columns = [
@@ -844,8 +992,6 @@ def write_top_correlation_tables(
         "metric",
         "pearson_r",
         "p_value",
-        "windows_with_central_topic",
-        "windows_without_central_topic",
         "n_windows",
     ]
     aggregated_columns = [
@@ -878,11 +1024,7 @@ def write_top_correlation_tables(
                         "topic_coherence": stats.get("coherence"),
                         "topic_prevalence": stats.get("prevalence"),
                         "topic_persistence": stats.get("persistence"),
-                        "windows_with_topic": entry.get("windows_with_topic"),
-                        "windows_without_topic": entry.get("windows_without_topic"),
                         "n_windows": entry.get("n_windows"),
-                        "mean_with_topic": entry.get("mean_with_topic"),
-                        "mean_without_topic": entry.get("mean_without_topic"),
                     }
                 )
             output_dir = _output_dir(
@@ -926,14 +1068,6 @@ def write_top_correlation_tables(
                             "pearson_r": float(r_val),
                             "p_value": corr.get("p_value"),
                             "n_windows": corr.get("n_windows"),
-                            "mean_with_topic": corr.get("mean_with_topic"),
-                            "mean_without_topic": corr.get("mean_without_topic"),
-                            "windows_with_central_topic": presence.get(
-                                "windows_with_central_topic"
-                            ),
-                            "windows_without_central_topic": presence.get(
-                                "windows_without_central_topic"
-                            ),
                         }
                     )
             if candidates:
@@ -1537,11 +1671,7 @@ def plot_central_topic_window_heatmaps(
 
         topic_path = _resolve_topic_path(data)
         if topic_path is None:
-            window_metrics_path = analytics_path(
-                "window",
-                [genre, author, text_name],
-                f"{text_name}_window_metrics.json",
-            )
+            window_metrics_path = _window_metrics_path(genre, author, text_name)
             if window_metrics_path.exists():
                 topic_path = find_topic_file(window_metrics_path)
         if topic_path is None or not topic_path.exists():
@@ -1550,23 +1680,15 @@ def plot_central_topic_window_heatmaps(
         if not isinstance(topics_data, dict):
             continue
 
-        window_metrics_path = analytics_path(
-            "window",
-            [genre, author, text_name],
-            f"{text_name}_window_metrics.json",
-        )
-        if not window_metrics_path.exists():
+        window_data = _load_window_data(genre, author, text_name)
+        if not window_data:
             continue
-        window_data = load_json(window_metrics_path)
         window_entries = _select_window_entries(window_data)
         if not window_entries:
             continue
 
-        threshold, top_k = _resolve_soft_params({"params": params}, topics_data)
         scores_by_window = collect_window_topic_scores(
             topics_data,
-            soft_score_threshold=threshold,
-            soft_top_k=top_k,
             window_entries=window_entries,
         )
         if not scores_by_window:
@@ -1623,6 +1745,222 @@ def plot_central_topic_window_heatmaps(
     return output_paths
 
 
+def plot_topic_metric_family_lines(
+    *,
+    config: Optional[TopicMetricLineConfig] = None,
+    selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> List[Path]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    if config is None:
+        config = DEFAULT_TOPIC_METRIC_LINE_CONFIG
+
+    output_paths: List[Path] = []
+    for path, data in _iter_central_topic_reports(dashboard_root):
+        metadata = data.get("metadata")
+        report = data.get("report")
+        if not isinstance(metadata, dict) or not isinstance(report, dict):
+            continue
+        category = metadata.get("category") or ""
+        category_parts = [part for part in str(category).split("/") if part]
+        genre = category_parts[0] if category_parts else "unknown"
+        author = category_parts[1] if len(category_parts) > 1 else "unknown"
+        text_name = metadata.get("text_name") or path.parent.name
+        if not _matches_selection(genre, author, text_name, selection):
+            continue
+
+        central_topics = report.get("central_topics") or []
+        if not central_topics:
+            continue
+        valid_topics = []
+        for topic in central_topics:
+            if not isinstance(topic, dict):
+                continue
+            topic_id = topic.get("topic_id")
+            if not isinstance(topic_id, int):
+                continue
+            correlations = topic.get("correlations")
+            if not isinstance(correlations, dict) or not correlations:
+                continue
+            valid_topics.append(topic)
+        if not valid_topics:
+            continue
+
+        topic_path = _resolve_topic_path(data)
+        if topic_path is None:
+            window_metrics_path = _window_metrics_path(genre, author, text_name)
+            if window_metrics_path.exists():
+                topic_path = find_topic_file(window_metrics_path)
+        if topic_path is None or not topic_path.exists():
+            continue
+
+        topics_data = load_json(topic_path)
+        if not isinstance(topics_data, dict):
+            continue
+
+        window_data = _load_window_data(genre, author, text_name)
+        if not window_data:
+            continue
+        window_entries = _select_window_entries(window_data)
+        if not window_entries:
+            continue
+        window_table = collect_window_tables(window_data)
+        if not window_table:
+            continue
+
+        scores_by_window = collect_window_topic_scores(
+            topics_data,
+            window_entries=window_entries,
+        )
+        if not scores_by_window:
+            continue
+
+        if len(scores_by_window) != len(window_table):
+            continue
+        count = len(window_table)
+        if count < 2:
+            continue
+
+        for family in config.families:
+            prefix = f"{family}."
+            best_topic = None
+            best_r = None
+            for topic in valid_topics:
+                correlations = topic.get("correlations") or {}
+                best_for_topic = None
+                for metric, corr in correlations.items():
+                    if not isinstance(metric, str) or not metric.startswith(prefix):
+                        continue
+                    r_val = corr.get("pearson_r")
+                    if not isinstance(r_val, (int, float)):
+                        continue
+                    if config.p_threshold is not None:
+                        p_val = corr.get("p_value")
+                        if not isinstance(p_val, (int, float)) or p_val >= config.p_threshold:
+                            continue
+                    abs_r = abs(float(r_val))
+                    if best_for_topic is None or abs_r > best_for_topic:
+                        best_for_topic = abs_r
+                if best_for_topic is None:
+                    continue
+                if best_r is None or best_for_topic > best_r:
+                    best_r = best_for_topic
+                    best_topic = topic
+
+            if best_topic is None:
+                continue
+
+            correlations = best_topic.get("correlations") or {}
+            if not isinstance(correlations, dict) or not correlations:
+                continue
+
+            topic_id = best_topic.get("topic_id")
+            if not isinstance(topic_id, int):
+                continue
+            topic_scores = [scores_by_window[idx].get(topic_id, 0.0) for idx in range(count)]
+            if config.normalize:
+                topic_scores = _normalize_series(topic_scores, config.normalization)
+
+            candidates = []
+            for metric, corr in correlations.items():
+                if not isinstance(metric, str) or not metric.startswith(prefix):
+                    continue
+                r_val = corr.get("pearson_r")
+                if not isinstance(r_val, (int, float)):
+                    continue
+                if config.p_threshold is not None:
+                    p_val = corr.get("p_value")
+                    if not isinstance(p_val, (int, float)) or p_val >= config.p_threshold:
+                        continue
+                candidates.append((metric, abs(float(r_val))))
+
+            if not candidates:
+                continue
+            candidates.sort(key=lambda row: row[1], reverse=True)
+            if config.top_n_metrics and config.top_n_metrics > 0:
+                candidates = candidates[: config.top_n_metrics]
+
+            series_map: Dict[str, List[float]] = {}
+            for metric, _abs_r in candidates:
+                series = []
+                valid = True
+                for idx in range(count):
+                    value = window_table[idx].get(metric)
+                    if not isinstance(value, (int, float)) or (
+                        isinstance(value, float) and math.isnan(value)
+                    ):
+                        valid = False
+                        break
+                    series.append(float(value))
+                if not valid:
+                    continue
+                if config.normalize:
+                    series = _normalize_series(series, config.normalization)
+                series_map[metric] = series
+
+            if not series_map:
+                continue
+
+            fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
+            x_vals = np.arange(count)
+            topic_label = f"topic {topic_id} soft score"
+            if config.normalize:
+                topic_label = f"topic {topic_id} (normalized)"
+            ax.plot(
+                x_vals,
+                topic_scores,
+                color=config.topic_color,
+                linewidth=config.topic_line_width,
+                alpha=config.line_alpha,
+                label=topic_label,
+            )
+
+            colors = list(config.metric_colors)
+            for idx, (metric, series) in enumerate(series_map.items()):
+                color = colors[idx % len(colors)] if colors else None
+                label = _shorten_label(metric, config.label_max_len)
+                ax.plot(
+                    x_vals,
+                    series,
+                    color=color,
+                    linewidth=config.metric_line_width,
+                    alpha=config.line_alpha,
+                    label=label,
+                )
+
+            step = max(1, math.ceil(count / max(1, config.max_xticks)))
+            x_ticks = np.arange(0, count, step)
+            ax.set_xticks(x_ticks)
+            ax.set_xticklabels([str(int(x_tick)) for x_tick in x_ticks])
+            ax.set_xlabel("Window index")
+            if config.normalize:
+                norm_label = (
+                    "Z-score"
+                    if str(config.normalization or "").lower() == "zscore"
+                    else "Normalized value"
+                )
+                ax.set_ylabel(norm_label)
+            else:
+                ax.set_ylabel("Metric value")
+            gloss = _shorten_keywords(best_topic.get("keywords") or [], config.label_max_len)
+            topic_title = f"topic {topic_id}" + (f": {gloss}" if gloss else "")
+            ax.set_title(f"{text_name} ({genre}) - {topic_title} vs {family}")
+            ax.legend(loc="best", fontsize=8, frameon=False)
+            ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+            plt.tight_layout()
+            output_dir = _output_dir(output_root, "topic_metric_lines", [genre, author])
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / f"{text_name}__topic{topic_id}__{family}_lines.png"
+            fig.savefig(output_path, dpi=200)
+            plt.close(fig)
+            output_paths.append(output_path)
+
+    return output_paths
+
+
 def _metric_parts(metric: str) -> Tuple[str, List[str]]:
     """Split a dotted metric name into (domain, remaining path parts)."""
     parts = metric.split(".")
@@ -1643,6 +1981,24 @@ def _get_metric_value(window: Dict[str, object], parts: Sequence[str]) -> Option
     return None
 
 
+def _normalize_series(values: Sequence[float], method: str) -> List[float]:
+    if not values:
+        return []
+    arr = np.array(values, dtype=float)
+    method_key = (method or "zscore").lower()
+    if method_key == "minmax":
+        vmin = float(np.min(arr))
+        vmax = float(np.max(arr))
+        if vmax <= vmin:
+            return [0.0 for _ in values]
+        return ((arr - vmin) / (vmax - vmin)).tolist()
+    mean = float(np.mean(arr))
+    std = float(np.std(arr))
+    if std <= 0.0:
+        return [0.0 for _ in values]
+    return ((arr - mean) / std).tolist()
+
+
 def _resolve_topic_path(entry: Dict[str, object]) -> Optional[Path]:
     """Resolve the topic_file path in a dashboard entry, returning None if missing or invalid."""
     raw_path = entry.get("topic_file")
@@ -1659,22 +2015,23 @@ def _resolve_topic_path(entry: Dict[str, object]) -> Optional[Path]:
     return candidate if candidate.exists() else None
 
 
-def _resolve_soft_params(
-    entry: Dict[str, object],
-    topics_data: Dict[str, object],
-) -> Tuple[float, Optional[int]]:
-    """Return (soft_score_threshold, soft_top_k) using entry params with topic meta fallback."""
-    params = entry.get("params") or {}
-    threshold = params.get("soft_score_threshold")
-    top_k = params.get("soft_top_k")
-    meta = topics_data.get("meta") if isinstance(topics_data, dict) else {}
-    if threshold is None and isinstance(meta, dict):
-        threshold = meta.get("soft_score_threshold")
-    if threshold is None:
-        threshold = 0.5
-    if top_k is None and isinstance(meta, dict):
-        top_k = meta.get("soft_top_k") or meta.get("soft_top_k_topics")
-    return float(threshold), int(top_k) if top_k is not None else None
+def _window_metrics_path(genre: str, author: str, text_name: str) -> Path:
+    return analytics_path(
+        "window",
+        [genre, author, text_name],
+        f"{text_name}_window_metrics.syntax.json",
+    )
+
+
+def _load_window_data(
+    genre: str,
+    author: str,
+    text_name: str,
+) -> Optional[Dict[str, object]]:
+    window_metrics_path = _window_metrics_path(genre, author, text_name)
+    if not window_metrics_path.exists():
+        return None
+    return load_window_metrics(window_metrics_path)
 
 
 def plot_exemplar_scatter(
@@ -1730,24 +2087,15 @@ def plot_exemplar_scatter(
             if not text_name or not author:
                 continue
 
-            window_metrics_path = analytics_path(
-                "window",
-                [genre, author, text_name],
-                f"{text_name}_window_metrics.json",
-            )
-            if not window_metrics_path.exists():
+            window_data = _load_window_data(genre, author, text_name)
+            if not window_data:
                 continue
-
-            window_data = load_json(window_metrics_path)
             domain_windows = window_data.get(domain, {}).get("windows") or []
             if not domain_windows:
                 continue
 
-            threshold, top_k = _resolve_soft_params(entry, topics_data)
             scores_by_window = collect_window_topic_scores(
                 topics_data,
-                soft_score_threshold=threshold,
-                soft_top_k=top_k,
                 window_entries=domain_windows,
             )
             topic_id = entry.get("topic_id")
@@ -1912,6 +2260,10 @@ def generate_all_visualisations(
     g_config: Optional[ConvergenceIndexConfig] = None,
     h_config: Optional[ForestPlotConfig] = None,
     i_config: Optional[TextMetricHeatmapConfig] = None,
+    stability_config: Optional[StabilityFilterConfig] = None,
+    stability_bar_config: Optional[CentralTopicXBarConfig] = None,
+    stability_stack_config: Optional[StabilityStackedBarConfig] = None,
+    topic_line_config: Optional[TopicMetricLineConfig] = None,
     selection: Optional[DataSelectionConfig] = None,
     dashboard_root: Optional[Path] = None,
     output_root: Optional[Path] = None,
@@ -1960,6 +2312,23 @@ def generate_all_visualisations(
         i_config = DEFAULT_TEXT_METRIC_HEATMAP_CONFIG
     if text_heatmap_p_threshold is not None:
         i_config = replace(i_config, p_threshold=text_heatmap_p_threshold)
+
+    if stability_config is None:
+        stability_config = DEFAULT_STABILITY_FILTER_CONFIG
+
+    if stability_bar_config is None:
+        stability_bar_config = DEFAULT_CENTRAL_TOPIC_X_CONFIG
+    if top_n is not None:
+        stability_bar_config = replace(stability_bar_config, top_n=top_n)
+    if bar_p_threshold is not None:
+        stability_bar_config = replace(stability_bar_config, p_threshold=bar_p_threshold)
+
+    if stability_stack_config is None:
+        stability_stack_config = DEFAULT_STABILITY_STACKED_BAR_CONFIG
+    stability_stack_config = replace(stability_stack_config, stability=stability_config)
+
+    if topic_line_config is None:
+        topic_line_config = DEFAULT_TOPIC_METRIC_LINE_CONFIG
 
     results = {
         "A": plot_central_topic_x_bars(
@@ -2024,6 +2393,27 @@ def generate_all_visualisations(
             dashboard_root=dashboard_root,
             output_root=output_root,
         ),
+        "K": plot_central_topic_x_bars_stability_filtered(
+            entries_by_genre,
+            config=stability_bar_config,
+            stability_config=stability_config,
+            selection=selection,
+            dashboard_root=dashboard_root,
+            output_root=output_root,
+        ),
+        "L": plot_stability_family_counts(
+            config=stability_stack_config,
+            stability_config=stability_config,
+            selection=selection,
+            dashboard_root=dashboard_root,
+            output_root=output_root,
+        ),
+        "M": plot_topic_metric_family_lines(
+            config=topic_line_config,
+            selection=selection,
+            dashboard_root=dashboard_root,
+            output_root=output_root,
+        ),
     }
     return results
 
@@ -2047,6 +2437,10 @@ def generate_all_visualisations_with_config(
     g_config: Optional[ConvergenceIndexConfig] = None,
     h_config: Optional[ForestPlotConfig] = None,
     i_config: Optional[TextMetricHeatmapConfig] = None,
+    stability_config: Optional[StabilityFilterConfig] = None,
+    stability_bar_config: Optional[CentralTopicXBarConfig] = None,
+    stability_stack_config: Optional[StabilityStackedBarConfig] = None,
+    topic_line_config: Optional[TopicMetricLineConfig] = None,
     selection: Optional[DataSelectionConfig] = None,
 ) -> Dict[int, Dict[str, object]]:
     if not config.loop_enabled:
@@ -2066,9 +2460,13 @@ def generate_all_visualisations_with_config(
             g_config=g_config,
             h_config=h_config,
             i_config=i_config,
+            stability_config=stability_config,
+            stability_bar_config=stability_bar_config,
+            stability_stack_config=stability_stack_config,
+            topic_line_config=topic_line_config,
             selection=selection,
-            dashboard_root=results_path("dashboard"),
-            output_root=results_path("figures"),
+            dashboard_root=results_path("dashboard", block_size=config.block_size),
+            output_root=results_path("figures", block_size=config.block_size),
         )
         return {config.block_size: results}
 
@@ -2106,6 +2504,10 @@ def generate_all_visualisations_with_config(
             g_config=g_config,
             h_config=h_config,
             i_config=i_config,
+            stability_config=stability_config,
+            stability_bar_config=stability_bar_config,
+            stability_stack_config=stability_stack_config,
+            topic_line_config=topic_line_config,
             selection=selection,
             dashboard_root=dashboard_root,
             output_root=output_root,

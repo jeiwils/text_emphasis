@@ -38,7 +38,6 @@ Output (build_dashboard_row):
       "structure": [
         {"max_dependency_depth": 3.3},
         {"clause_density": 0.25},
-        {"avg_dependents_per_head": 2.1},
         {"clause_ratios": {"subordination_ratio": 0.25, "coordination_ratio": 0.1}},
         {"avg_mean_dependency_distance": 1.5},
         {"avg_median_depth": 1.8},
@@ -59,7 +58,7 @@ Output (build_dashboard_row):
 Input (build_topic_correlation_report / build_central_topic_correlations / build_central_presence_report):
 {
   "window_data": {"syntax": {"windows": [...]}, "lexico_semantics": {"windows": [...]}, ...},
-  "topics_data": {"topics": [...], "windows": [...]}
+  "topics_data": {"topics": {"items": [...]}, "windows": {"items": [...]}, "meta": {...}, "params": {...}}
 }
 
 Output (build_topic_correlation_report):
@@ -70,28 +69,19 @@ Output (build_topic_correlation_report):
   "topics": {
     "0": {
       "keywords": ["term1", "..."],
-      "windows_with_topic": 12,
-      "windows_without_topic": 28,
       "correlations": {
         "syntax.median_depth": {
           "pearson_r": 0.32,
           "p_value": 0.04,
-          "pearson_r_binary": 0.28,
-          "p_value_binary": 0.05,
-          "n_windows": 40,
-          "mean_with_topic": 2.1,
-          "mean_without_topic": 1.8
+          "n_windows": 40
         }
       }
     }
   },
   "params": {
-    "use_soft_topic_scores": true,
-    "soft_score_threshold": 0.5,
-    "soft_top_k": 3,
-    "central_top_n": null,
+    "near_top_alpha": 0.85,
     "block_size": 5,
-    "permutations": 2000
+    "permutations": 1000
   }
 }
 """
@@ -106,23 +96,58 @@ import numpy as np
 
 import bisect
 
-from .x_configs import DASHBOARD_WINDOW_CONFIG, DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG
+from .x_configs import (
+    DASHBOARD_WINDOW_CONFIG,
+    DEFAULT_BLOCK_SIZE,
+    DEFAULT_CENTRAL_PRESENCE_NORMALIZE,
+    DEFAULT_CENTRAL_PRESENCE_P,
+    DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG,
+    DEFAULT_DASHBOARD_PERMUTATIONS,
+)
 
 from .b2_topic_modeling import (
     build_topic_window_metrics,
     collect_soft_topic_mentions,
-    collect_topic_mentions,
 )
 
 # Dashboard correlations use a curated subset of window metrics; full windows remain in analytics.
 CENTRALITY_METRICS = ("coherence", "exclusivity", "prevalence", "persistence")
+WINDOW_METRIC_DOMAINS = ("syntax", "lexico_semantics", "discourse", "log_prob")
+
+
+def _window_metrics_base_name(path: Path) -> Optional[str]:
+    name = path.name
+    for domain in WINDOW_METRIC_DOMAINS:
+        suffix = f"_window_metrics.{domain}.json"
+        if name.endswith(suffix):
+            return name[: -len(suffix)]
+    return None
+
 
 def load_window_metrics(path: Path) -> Dict[str, object]:
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    if not isinstance(data, dict):
-        raise ValueError(f"Expected dict payload in {path}")
-    return data
+    base_name = _window_metrics_base_name(path)
+    if base_name is None:
+        raise ValueError(
+            f"Expected window metrics file with suffix _window_metrics.<domain>.json; got {path}"
+        )
+
+    window_data: Dict[str, object] = {}
+    base_meta: Optional[Dict[str, object]] = None
+    for domain in WINDOW_METRIC_DOMAINS:
+        domain_path = path.with_name(f"{base_name}_window_metrics.{domain}.json")
+        if not domain_path.exists():
+            raise FileNotFoundError(f"Missing window metrics file: {domain_path}")
+        with open(domain_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+        if not isinstance(payload, dict):
+            raise ValueError(f"Expected dict payload in {domain_path}")
+        window_data[domain] = payload
+        if base_meta is None:
+            meta = payload.get("meta")
+            base_meta = meta if isinstance(meta, dict) else {}
+
+    window_data["meta"] = base_meta or {}
+    return window_data
 
 
 def _prune_window_metrics(
@@ -264,17 +289,35 @@ def dashboard_metric_names(window_table: List[Dict[str, float]]) -> List[str]:
     return metric_names
 
 
+def _topic_items(topics_data: Dict[str, object]) -> List[Dict[str, object]]:
+    if not isinstance(topics_data, dict):
+        return []
+    topics_section = topics_data.get("topics")
+    if not isinstance(topics_section, dict):
+        return []
+    items = topics_section.get("items")
+    return items if isinstance(items, list) else []
+
+
+def _window_items(topics_data: Dict[str, object]) -> List[Dict[str, object]]:
+    if not isinstance(topics_data, dict):
+        return []
+    windows_section = topics_data.get("windows")
+    if not isinstance(windows_section, dict):
+        return []
+    items = windows_section.get("items")
+    return items if isinstance(items, list) else []
+
+
 def collect_window_topic_scores(
     topics_data: Dict[str, object],
     *,
-    soft_score_threshold: Optional[float],
-    soft_top_k: Optional[int],
     window_entries: List[Dict[str, object]],
 ) -> List[Dict[int, float]]:
     if not topics_data or not isinstance(topics_data, dict):
         raise ValueError("Expected topics_data dict for topic scores")
 
-    windows = topics_data.get("windows") or []
+    windows = _window_items(topics_data)
     if not window_entries:
         return []
 
@@ -299,10 +342,6 @@ def collect_window_topic_scores(
                 raise ValueError("Invalid topic_scores entry; expected int topic_id and float score")
             items.append((topic_id, float(score)))
         items.sort(key=lambda kv: kv[1], reverse=True)
-        if soft_top_k is not None and soft_top_k > 0:
-            items = items[:soft_top_k]
-        if soft_score_threshold is not None:
-            items = [(topic_id, score) for topic_id, score in items if score >= soft_score_threshold]
         if items:
             topic_windows.append((start_sentence, end_sentence, items))
 
@@ -384,7 +423,7 @@ def block_permutation_p_value(
 
 
 def topic_keywords(topics_data: Dict[str, object]) -> Dict[int, List[str]]:
-    topics = topics_data.get("topics", []) if isinstance(topics_data, dict) else []
+    topics = _topic_items(topics_data)
     mapping: Dict[int, List[str]] = {}
     for topic in topics:
         if not isinstance(topic, dict):
@@ -397,7 +436,7 @@ def topic_keywords(topics_data: Dict[str, object]) -> Dict[int, List[str]]:
 
 
 def _collect_centrality_rows(topics_data: Dict[str, object]) -> List[Dict[str, object]]:
-    topics = topics_data.get("topics", []) if isinstance(topics_data, dict) else []
+    topics = _topic_items(topics_data)
     values: Dict[str, List[float]] = {metric: [] for metric in CENTRALITY_METRICS}
     entries: List[Dict[str, object]] = []
     for topic in topics:
@@ -478,17 +517,11 @@ def central_topics(
     topics_data: Dict[str, object],
     top_n: Optional[int] = None,
     *,
-    centrality_threshold: Optional[float] = None,
     near_top_alpha: Optional[float] = None,
-    min_keep: Optional[int] = None,
 ) -> List[Dict[str, object]]:
     config = DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG
-    if centrality_threshold is None:
-        centrality_threshold = config.centrality_threshold
     if near_top_alpha is None:
         near_top_alpha = config.near_top_alpha
-    if min_keep is None:
-        min_keep = config.min_keep
     if top_n is None:
         top_n = config.max_topics
     if top_n is not None and top_n <= 0:
@@ -502,15 +535,8 @@ def central_topics(
     scores = [row["score"] for row in ranked]
     if scores:
         max_score = max(scores)
-        threshold = centrality_threshold
         near_top = near_top_alpha * max_score
-        filtered = [
-            row
-            for row in ranked
-            if row["score"] >= threshold or row["score"] >= near_top
-        ]
-        if not filtered and min_keep > 0:
-            filtered = ranked[: max(1, min_keep)]
+        filtered = [row for row in ranked if row["score"] >= near_top]
         ranked = filtered
     if top_n is None or top_n <= 0:
         return ranked
@@ -521,32 +547,11 @@ def build_topic_correlation_report(
     window_data: Dict[str, object],
     topics_data: Dict[str, object],
     *,
-    soft_score_threshold: Optional[float] = 0.5,
-    soft_top_k: Optional[int] = 3,
-    central_top_n: Optional[int] = None,
     topics_key: str = "topics",
-    use_soft_scores: Optional[bool] = None,
-    block_size: int = 5,
-    permutations: int = 2000,
+    block_size: int = DEFAULT_BLOCK_SIZE,
+    permutations: int = DEFAULT_DASHBOARD_PERMUTATIONS,
 ) -> Dict[str, object]:
-    is_topic_report = topics_key == "topics"
-    if use_soft_scores is None:
-        use_soft_scores = is_topic_report
-    if use_soft_scores:
-        score_threshold = None if is_topic_report else soft_score_threshold
-        score_top_k = None if is_topic_report else soft_top_k
-    else:
-        score_threshold = None
-        score_top_k = None
-    topic_mentions = (
-        collect_soft_topic_mentions(
-            topics_data,
-            score_threshold=score_threshold,
-            top_k=score_top_k,
-        )
-        if use_soft_scores
-        else collect_topic_mentions(topics_data)
-    )
+    topic_mentions = collect_soft_topic_mentions(topics_data)
     window_entries = window_data.get("syntax", {}).get("windows", [])
     if not topic_mentions or not window_entries:
         return {}
@@ -561,7 +566,7 @@ def build_topic_correlation_report(
     for entry in topic_metrics:
         topics.update(entry.get("topic_counts", {}).keys())
 
-    central_ranked = central_topics(topics_data, top_n=central_top_n)
+    central_ranked = central_topics(topics_data)
     central_topic_ids = {entry["topic_id"] for entry in central_ranked}
     if topics_key != "topics":
         topics = central_topic_ids
@@ -571,35 +576,19 @@ def build_topic_correlation_report(
 
     rng = np.random.default_rng(42)
 
-    topic_score_windows = (
-        collect_window_topic_scores(
-            topics_data,
-            soft_score_threshold=score_threshold,
-            soft_top_k=score_top_k,
-            window_entries=window_entries,
-        )
-        if use_soft_scores
-        else [{} for _ in range(len(window_table))]
+    topic_score_windows = collect_window_topic_scores(
+        topics_data,
+        window_entries=window_entries,
     )
 
     for topic_id in sorted(topics):
         values_by_metric: Dict[str, List[Tuple[float, float]]] = {name: [] for name in metric_names}
-        with_topic_count = 0
-        without_topic_count = 0
 
         for idx, window_row in enumerate(window_table):
-            if use_soft_scores:
-                score = 0.0
-                if idx < len(topic_score_windows):
-                    score = topic_score_windows[idx].get(topic_id, 0.0)
-                present = float(score)
-                has_topic = score > 0
-            else:
-                topic_count = topic_metrics[idx].get("topic_counts", {}).get(topic_id, 0)
-                present = 1.0 if topic_count >= 1 else 0.0
-                has_topic = present >= 1
-            with_topic_count += 1 if has_topic else 0
-            without_topic_count += 0 if has_topic else 1
+            score = 0.0
+            if idx < len(topic_score_windows):
+                score = topic_score_windows[idx].get(topic_id, 0.0)
+            present = float(score)
             for metric in metric_names:
                 val = window_row.get(metric)
                 if not isinstance(val, (int, float)):
@@ -612,8 +601,6 @@ def build_topic_correlation_report(
         for metric, pairs in values_by_metric.items():
             presences = [p for p, _ in pairs]
             values = [v for _, v in pairs]
-            values_with = [v for p, v in pairs if p > 0]
-            values_without = [v for p, v in pairs if p <= 0]
             corr = pearson_correlation(presences, values)
             if corr is None:
                 continue
@@ -624,60 +611,22 @@ def build_topic_correlation_report(
                 permutations=permutations,
                 rng=rng,
             )
-            binary_presences = [1.0 if p > 0 else 0.0 for p in presences]
-            corr_binary = pearson_correlation(binary_presences, values)
-            p_value_binary = (
-                block_permutation_p_value(
-                    binary_presences,
-                    values,
-                    block_size=block_size,
-                    permutations=permutations,
-                    rng=rng,
-                )
-                if corr_binary is not None
-                else None
-            )
-            mean_with = (
-                statistics.mean(_require_numbers(values_with, label=f"{metric}.with_topic"))
-                if values_with
-                else None
-            )
-            mean_without = (
-                statistics.mean(_require_numbers(values_without, label=f"{metric}.without_topic"))
-                if values_without
-                else None
-            )
             metric_correlations[metric] = {
                 "pearson_r": corr,
                 "p_value": p_value,
-                "pearson_r_binary": corr_binary,
-                "p_value_binary": p_value_binary,
                 "n_windows": len(values),
-                "mean_with_topic": mean_with,
-                "mean_without_topic": mean_without,
             }
 
         if metric_correlations:
             topic_reports[topic_id] = {
                 "keywords": keyword_map.get(topic_id, []),
-                "windows_with_topic": with_topic_count,
-                "windows_without_topic": without_topic_count,
                 "correlations": metric_correlations,
             }
 
     if not topic_reports:
         return {}
 
-    selection_config = DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG
-    effective_top_n = (
-        central_top_n
-        if central_top_n is not None
-        else selection_config.max_topics
-    )
-    if effective_top_n is not None and effective_top_n <= 0:
-        effective_top_n = None
-
-    topics_list = topics_data.get("topics", []) if isinstance(topics_data, dict) else []
+    topics_list = _topic_items(topics_data)
     total_topics = len(topics_list) if isinstance(topics_list, list) else 0
 
     return {
@@ -686,13 +635,7 @@ def build_topic_correlation_report(
         "metric_names": metric_names,
         topics_key: topic_reports,
         "params": {
-            "use_soft_topic_scores": use_soft_scores,
-            "soft_score_threshold": score_threshold,
-            "soft_top_k": score_top_k,
-            "central_top_n": effective_top_n,
-            "centrality_threshold": selection_config.centrality_threshold,
-            "near_top_alpha": selection_config.near_top_alpha,
-            "min_keep": selection_config.min_keep,
+            "near_top_alpha": DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG.near_top_alpha,
             "block_size": block_size,
             "permutations": permutations,
         },
@@ -703,24 +646,17 @@ def build_central_topic_correlations(
     window_data: Dict[str, object],
     topics_data: Dict[str, object],
     *,
-    soft_score_threshold: Optional[float],
-    soft_top_k: Optional[int],
-    central_top_n: Optional[int],
     block_size: int,
     permutations: int,
 ) -> Dict[str, object]:
-    central_ranked = central_topics(topics_data, top_n=central_top_n)
+    central_ranked = central_topics(topics_data)
     if not central_ranked:
         return {}
 
     weighted_report = build_topic_correlation_report(
         window_data,
         topics_data,
-        soft_score_threshold=soft_score_threshold,
-        soft_top_k=soft_top_k,
-        central_top_n=central_top_n,
         topics_key="central_topics",
-        use_soft_scores=True,
         block_size=block_size,
         permutations=permutations,
     )
@@ -731,33 +667,12 @@ def build_central_topic_correlations(
     metric_names = weighted_report.get("metric_names", [])
     params = weighted_report.get("params", {})
 
-    window_entries = window_data.get("syntax", {}).get("windows", [])
-    topic_score_windows = collect_window_topic_scores(
-        topics_data,
-        soft_score_threshold=soft_score_threshold,
-        soft_top_k=soft_top_k,
-        window_entries=window_entries,
-    )
-    if not isinstance(window_count, int) or len(topic_score_windows) != window_count:
-        topic_score_windows = []
-
     central_topics_output = []
     for row in central_ranked:
         topic_id = row.get("topic_id")
         if not isinstance(topic_id, int):
             continue
         correlation_entry = weighted_report.get("central_topics", {}).get(topic_id, {})
-        windows_and_scores: List[Dict[str, float]] = []
-        if topic_score_windows:
-            for idx, score_map in enumerate(topic_score_windows):
-                score = score_map.get(topic_id, 0.0)
-                if score > 0.0:
-                    windows_and_scores.append({"window": idx, "score": score})
-        windows_without_topic = (
-            window_count - len(windows_and_scores)
-            if isinstance(window_count, int)
-            else None
-        )
         central_topics_output.append(
             {
                 "topic_id": topic_id,
@@ -765,8 +680,6 @@ def build_central_topic_correlations(
                 "raw_score": row.get("raw_score", []),
                 "percentile_score": row.get("percentile_score", []),
                 "keywords": row.get("keywords", []),
-                "windows_and_scores": windows_and_scores,
-                "windows_without_topic": windows_without_topic,
                 "correlations": correlation_entry.get("correlations", {}),
             }
         )
@@ -784,63 +697,56 @@ def build_central_presence_report(
     window_data: Dict[str, object],
     topics_data: Dict[str, object],
     *,
-    soft_score_threshold: Optional[float],
-    soft_top_k: Optional[int],
-    central_top_n: Optional[int],
     block_size: int,
     permutations: int,
-    central_presence_percentile: float = 70.0,
 ) -> Dict[str, object]:
-    central_ranked = central_topics(topics_data, top_n=central_top_n)
+    central_ranked = central_topics(topics_data)
     central_topic_ids = {
         row["topic_id"] for row in central_ranked if isinstance(row.get("topic_id"), int)
     }
     if not central_topic_ids:
         return {}
 
+    presence_p = float(DEFAULT_CENTRAL_PRESENCE_P)
+    normalize_presence = bool(DEFAULT_CENTRAL_PRESENCE_NORMALIZE)
+    if presence_p <= 0:
+        raise ValueError("central presence p must be > 0")
+
     window_entries = window_data.get("syntax", {}).get("windows", [])
     window_table = collect_window_tables(window_data)
     if not window_table:
         return {}
 
-    if not (0 < central_presence_percentile <= 100):
-        raise ValueError("central_presence_percentile must be in (0, 100]")
-
     metric_names = dashboard_metric_names(window_table)
     topic_score_windows = collect_window_topic_scores(
         topics_data,
-        soft_score_threshold=soft_score_threshold,
-        soft_top_k=soft_top_k,
         window_entries=window_entries,
     )
     if len(topic_score_windows) != len(window_table):
         return {}
 
-    max_scores = [
-        max(
-            (score_map.get(topic_id, 0.0) for topic_id in central_topic_ids),
-            default=0.0,
-        )
-        for score_map in topic_score_windows
-    ]
-    nonzero_scores = [score for score in max_scores if score > 0.0]
-    threshold = (
-        float(np.percentile(nonzero_scores, central_presence_percentile))
-        if nonzero_scores
-        else None
-    )
+    num_central = len(central_topic_ids)
+    inv_p = 1.0 / presence_p
+    presence_scores: List[float] = []
+    for score_map in topic_score_windows:
+        powered_sum = 0.0
+        for topic_id in central_topic_ids:
+            score = score_map.get(topic_id, 0.0)
+            if score <= 0.0:
+                continue
+            powered_sum += score ** presence_p
+        if powered_sum > 0.0:
+            if normalize_presence:
+                powered_sum /= num_central
+            presence = powered_sum ** inv_p
+        else:
+            presence = 0.0
+        presence_scores.append(presence)
 
     presence_rows = []
-    presence_windows: List[int] = []
-    with_central = 0
-    without_central = 0
-    for idx, (max_score, window_row) in enumerate(zip(max_scores, window_table)):
-        has_central = threshold is not None and max_score > 0.0 and max_score >= threshold
-        presence = 1.0 if has_central else 0.0
-        if has_central:
-            presence_windows.append(idx)
-        with_central += 1 if has_central else 0
-        without_central += 0 if has_central else 1
+    for presence_score, window_row in zip(presence_scores, window_table):
+        # Soft presence uses a normalized p-norm across central topic scores.
+        presence = float(presence_score)
         presence_rows.append((presence, window_row))
 
     if not presence_rows:
@@ -861,8 +767,6 @@ def build_central_presence_report(
             continue
         presences = [p for p, _ in pairs]
         values = [v for _, v in pairs]
-        values_with = [v for p, v in pairs if p > 0]
-        values_without = [v for p, v in pairs if p <= 0]
         corr = pearson_correlation(presences, values)
         if corr is None:
             continue
@@ -873,54 +777,23 @@ def build_central_presence_report(
             permutations=permutations,
             rng=rng,
         )
-        binary_presences = [1.0 if p > 0 else 0.0 for p in presences]
-        corr_binary = pearson_correlation(binary_presences, values)
-        p_value_binary = (
-            block_permutation_p_value(
-                binary_presences,
-                values,
-                block_size=block_size,
-                permutations=permutations,
-                rng=rng,
-            )
-            if corr_binary is not None
-            else None
-        )
-        mean_with = (
-            statistics.mean(_require_numbers(values_with, label=f"{metric}.with_central"))
-            if values_with
-            else None
-        )
-        mean_without = (
-            statistics.mean(_require_numbers(values_without, label=f"{metric}.without_central"))
-            if values_without
-            else None
-        )
         correlations[metric] = {
             "pearson_r": corr,
             "p_value": p_value,
-            "pearson_r_binary": corr_binary,
-            "p_value_binary": p_value_binary,
             "n_windows": len(values),
-            "mean_with_topic": mean_with,
-            "mean_without_topic": mean_without,
         }
 
     return {
         "window_count": len(window_table),
         "metric_names": metric_names,
         "central_topic_presence": {
-            "windows_with_central_topic": with_central,
-            "windows_without_central_topic": without_central,
-            "presence_windows": presence_windows,
-            "central_max_scores": max_scores,
-            "central_presence_threshold": threshold,
+            "central_presence_scores": presence_scores,
             "correlations": correlations,
         },
         "params": {
-            "central_presence_percentile": central_presence_percentile,
-            "soft_score_threshold": soft_score_threshold,
-            "soft_top_k": soft_top_k,
+            "presence_aggregation": "p_norm",
+            "presence_p": presence_p,
+            "presence_normalized": normalize_presence,
             "block_size": block_size,
             "permutations": permutations,
         },
@@ -1046,7 +919,6 @@ def build_dashboard_row(
     syntax_windows = syntax.get("windows", []) if isinstance(syntax, dict) else []
     max_depths = []
     clauses = []
-    dependents = []
     subordination_ratios = []
     coordination_ratios = []
     avg_mean_dependency_distances = []
@@ -1062,11 +934,6 @@ def build_dashboard_row(
             raise ValueError("Expected clause_counts_per_token dict in syntax windows")
         clause_total = sum(_require_numbers(list(clause_counts_per_token.values()), label="clause_counts_per_token"))
         clauses.append(clause_total)
-        dep_per_head = window.get("avg_dependents_per_head", {})
-        if not isinstance(dep_per_head, dict):
-            raise ValueError("Expected avg_dependents_per_head dict in syntax windows")
-        dep_vals = _require_numbers(list(dep_per_head.values()), label="avg_dependents_per_head")
-        dependents.append(statistics.mean(dep_vals))
         clause_ratios = window.get("clause_ratios", {})
         if isinstance(clause_ratios, dict):
             subordination_ratio = clause_ratios.get("subordination_ratio")
@@ -1089,7 +956,6 @@ def build_dashboard_row(
             punctuation_per_tokens.append(punctuation_per_token)
     max_dependency_depth = max(_require_numbers(max_depths, label="max_depth"))
     clause_density = statistics.mean(_require_numbers(clauses, label="clause_counts_per_token"))
-    avg_dependents_per_head = statistics.mean(_require_numbers(dependents, label="avg_dependents_per_head"))
     clause_ratios = {
         "subordination_ratio": statistics.mean(
             _require_numbers(subordination_ratios, label="subordination_ratio")
@@ -1161,7 +1027,6 @@ def build_dashboard_row(
             "structure": [
                 {"max_dependency_depth": max_dependency_depth},
                 {"clause_density": clause_density},
-                {"avg_dependents_per_head": avg_dependents_per_head},
                 {"clause_ratios": clause_ratios},
                 {"avg_mean_dependency_distance": avg_mean_dependency_distance},
                 {"avg_median_depth": avg_median_depth},

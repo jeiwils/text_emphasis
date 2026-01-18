@@ -65,15 +65,11 @@ Outputs (under output_root):
         "pair_count": int,
         "sign_agreement_rate": float,
         "mean_abs_delta_r": float,
-        "median_abs_delta_r": float,
-        "soft_score_threshold": float|null,
-        "soft_top_k": int|null
+        "median_abs_delta_r": float
       }
     ],
     "params": {
-      "split_method": "odd_even",
-      "soft_score_threshold": [float],
-      "soft_top_k": [int]
+      "split_method": "odd_even"
     }
   }
 
@@ -97,9 +93,7 @@ Outputs (under output_root):
     },
     "texts": [ ... ],
     "params": {
-      "split_method": "odd_even",
-      "soft_score_threshold": [float],
-      "soft_top_k": [int]
+      "split_method": "odd_even"
     }
   }
 
@@ -124,9 +118,89 @@ Outputs (under output_root):
     },
     "texts": [ ... ],
     "params": {
-      "split_method": "odd_even",
-      "soft_score_threshold": [float],
-      "soft_top_k": [int]
+      "split_method": "odd_even"
+    }
+  }
+
+- <output_root>/00_central_topic_presence_split_half_stability.json
+  {
+    "text_count": int,
+    "pair_count": int,
+    "overall": {
+      "sign_agreement_rate": float,
+      "mean_abs_delta_r": float,
+      "median_abs_delta_r": float
+    },
+    "metrics": {
+      "<metric>": {
+        "pair_count": int,
+        "sign_agreement_rate": float,
+        "mean_abs_delta_r": float,
+        "median_abs_delta_r": float
+      }
+    },
+    "texts": [
+      {
+        "category": str,
+        "text_name": str,
+        "filename": str,
+        "pair_count": int,
+        "sign_agreement_rate": float,
+        "mean_abs_delta_r": float,
+        "median_abs_delta_r": float
+      }
+    ],
+    "params": {
+      "split_method": "odd_even"
+    }
+  }
+
+- <output_root>/<genre>/00_genre_central_topic_presence_split_half_stability.json
+  {
+    "genre": str,
+    "text_count": int,
+    "pair_count": int,
+    "overall": {
+      "sign_agreement_rate": float,
+      "mean_abs_delta_r": float,
+      "median_abs_delta_r": float
+    },
+    "metrics": {
+      "<metric>": {
+        "pair_count": int,
+        "sign_agreement_rate": float,
+        "mean_abs_delta_r": float,
+        "median_abs_delta_r": float
+      }
+    },
+    "texts": [ ... ],
+    "params": {
+      "split_method": "odd_even"
+    }
+  }
+
+- <output_root>/<genre>/<author>/<author>_central_topic_presence_split_half_stability.json
+  {
+    "genre": str,
+    "author": str,
+    "text_count": int,
+    "pair_count": int,
+    "overall": {
+      "sign_agreement_rate": float,
+      "mean_abs_delta_r": float,
+      "median_abs_delta_r": float
+    },
+    "metrics": {
+      "<metric>": {
+        "pair_count": int,
+        "sign_agreement_rate": float,
+        "mean_abs_delta_r": float,
+        "median_abs_delta_r": float
+      }
+    },
+    "texts": [ ... ],
+    "params": {
+      "split_method": "odd_even"
     }
   }
 
@@ -166,12 +240,15 @@ from .d1_dashboard_metrics import (
     collect_window_topic_scores,
     load_window_metrics,
 )
-from .z_utils import find_topic_file
+from .z_utils import find_topic_file, load_json
 
 GENRE_CENTRAL_PRESENCE_FILENAME = "00_genre_central_topic_presence_correlations.json"
 CENTRAL_TOPIC_SPLIT_HALF_FILENAME = "00_central_topic_split_half_stability.json"
 GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME = "00_genre_central_topic_split_half_stability.json"
 AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE = "{author}_central_topic_split_half_stability.json"
+CENTRAL_PRESENCE_SPLIT_HALF_FILENAME = "00_central_topic_presence_split_half_stability.json"
+GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME = "00_genre_central_topic_presence_split_half_stability.json"
+AUTHOR_CENTRAL_PRESENCE_SPLIT_HALF_TEMPLATE = "{author}_central_topic_presence_split_half_stability.json"
 CROSS_BLOCK_CONSISTENCY_FILENAME = "00_cross_block_consistency.json"
 
 
@@ -435,14 +512,11 @@ def _pearson(x: List[float], y: List[float]) -> Optional[float]:
 def _build_central_topic_split_half_entry(
     window_metrics_path: Path,
     central_entry: Dict[str, object],
-    *,
-    soft_score_threshold: Optional[float],
-    soft_top_k: Optional[int],
 ) -> Optional[Dict[str, object]]:
     extracted = _extract_central_topic_payload(central_entry)
     if extracted is None:
         return None
-    metadata, report, params = extracted
+    metadata, report, _params = extracted
     if not isinstance(metadata, dict) or not isinstance(report, dict):
         return None
 
@@ -470,11 +544,10 @@ def _build_central_topic_split_half_entry(
     if not central_ids:
         return None
 
-    score_threshold = params.get("soft_score_threshold", soft_score_threshold)
-    score_top_k = params.get("soft_top_k", soft_top_k)
-
     window_data = load_window_metrics(window_metrics_path)
-    topics_data = load_window_metrics(topic_path)
+    topics_data = load_json(topic_path)
+    if not isinstance(topics_data, dict):
+        return None
     window_entries = window_data.get("syntax", {}).get("windows", []) if isinstance(window_data, dict) else []
     window_table = collect_window_tables(window_data)
     if not window_entries or not window_table:
@@ -484,8 +557,6 @@ def _build_central_topic_split_half_entry(
 
     score_windows = collect_window_topic_scores(
         topics_data,
-        soft_score_threshold=score_threshold,
-        soft_top_k=score_top_k,
         window_entries=window_entries,
     )
     if not score_windows or len(score_windows) != len(window_table):
@@ -550,8 +621,104 @@ def _build_central_topic_split_half_entry(
         "sign_agreement_rate": statistics.mean(overall_signs),
         "mean_abs_delta_r": statistics.mean(overall_deltas),
         "median_abs_delta_r": statistics.median(overall_deltas),
-        "soft_score_threshold": score_threshold,
-        "soft_top_k": score_top_k,
+    }
+
+    return {
+        "text": text_summary,
+        "overall_signs": overall_signs,
+        "overall_deltas": overall_deltas,
+        "metrics": metric_pairs,
+    }
+
+
+def _build_central_presence_split_half_entry(
+    window_metrics_path: Path,
+    presence_entry: Dict[str, object],
+) -> Optional[Dict[str, object]]:
+    extracted = _extract_central_topic_payload(presence_entry)
+    if extracted is None:
+        return None
+    metadata, report, _params = extracted
+    if not isinstance(metadata, dict) or not isinstance(report, dict):
+        return None
+
+    metric_names = report.get("metric_names")
+    if not isinstance(metric_names, list) or not metric_names:
+        return None
+
+    presence = report.get("central_topic_presence", {})
+    if not isinstance(presence, dict):
+        return None
+
+    presence_scores = presence.get("central_presence_scores")
+    if not isinstance(presence_scores, list) or not presence_scores:
+        return None
+    if any(not _is_number(value) for value in presence_scores):
+        return None
+    presence_series = [float(value) for value in presence_scores]
+
+    window_data = load_window_metrics(window_metrics_path)
+    window_table = collect_window_tables(window_data)
+    if not window_table:
+        return None
+    if len(window_table) != len(presence_series):
+        return None
+
+    metric_series_map: Dict[str, List[float]] = {}
+    for metric in metric_names:
+        series = [row.get(metric) for row in window_table]
+        if not series or any(not _is_number(value) for value in series):
+            continue
+        metric_series_map[metric] = [float(value) for value in series]
+
+    if not metric_series_map:
+        return None
+
+    odd_idx = [idx for idx in range(len(window_table)) if idx % 2 == 1]
+    even_idx = [idx for idx in range(len(window_table)) if idx % 2 == 0]
+    if len(odd_idx) < 2 or len(even_idx) < 2:
+        return None
+
+    presence_odd = [presence_series[idx] for idx in odd_idx]
+    presence_even = [presence_series[idx] for idx in even_idx]
+
+    overall_signs: List[int] = []
+    overall_deltas: List[float] = []
+    metric_pairs: Dict[str, Dict[str, List[float]]] = {
+        metric: {"signs": [], "deltas": []} for metric in metric_series_map
+    }
+
+    for metric, metric_series in metric_series_map.items():
+        metric_odd = [metric_series[idx] for idx in odd_idx]
+        metric_even = [metric_series[idx] for idx in even_idx]
+        r_odd = _pearson(presence_odd, metric_odd)
+        r_even = _pearson(presence_even, metric_even)
+        if r_odd is None or r_even is None:
+            continue
+        sign_agree = 1 if (r_odd == 0 or r_even == 0 or (r_odd > 0) == (r_even > 0)) else 0
+        delta = abs(r_odd - r_even)
+        overall_signs.append(sign_agree)
+        overall_deltas.append(delta)
+        metric_pairs[metric]["signs"].append(sign_agree)
+        metric_pairs[metric]["deltas"].append(delta)
+
+    if not overall_signs or not overall_deltas:
+        return None
+
+    category = metadata.get("category")
+    text_name = metadata.get("text_name")
+    filename = metadata.get("filename")
+    if not isinstance(category, str) or not isinstance(text_name, str) or not isinstance(filename, str):
+        return None
+
+    text_summary = {
+        "category": category,
+        "text_name": text_name,
+        "filename": filename,
+        "pair_count": len(overall_signs),
+        "sign_agreement_rate": statistics.mean(overall_signs),
+        "mean_abs_delta_r": statistics.mean(overall_deltas),
+        "median_abs_delta_r": statistics.median(overall_deltas),
     }
 
     return {
@@ -571,8 +738,6 @@ def _summarize_split_half_entries(
     overall_deltas: List[float] = []
     metric_accum: Dict[str, Dict[str, List[float]]] = {}
     texts: List[Dict[str, object]] = []
-    score_thresholds: List[float] = []
-    score_top_ks: List[int] = []
 
     for entry in entries:
         if not isinstance(entry, dict):
@@ -580,10 +745,6 @@ def _summarize_split_half_entries(
         text = entry.get("text")
         if isinstance(text, dict):
             texts.append(text)
-            if isinstance(text.get("soft_score_threshold"), (int, float)):
-                score_thresholds.append(float(text["soft_score_threshold"]))
-            if isinstance(text.get("soft_top_k"), int):
-                score_top_ks.append(text["soft_top_k"])
         signs = entry.get("overall_signs", [])
         deltas = entry.get("overall_deltas", [])
         if isinstance(signs, list):
@@ -635,8 +796,6 @@ def _summarize_split_half_entries(
         ),
         "params": {
             "split_method": "odd_even",
-            "soft_score_threshold": sorted(set(score_thresholds)),
-            "soft_top_k": sorted(set(score_top_ks)),
         },
     }
 
@@ -710,6 +869,89 @@ def _write_author_central_topic_split_half_summary(
 
     for (genre, author), author_entries in grouped.items():
         filename = AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE.format(author=author)
+        output_path = output_root / genre / author / filename
+        if use_existing and output_path.exists():
+            continue
+        payload = _summarize_split_half_entries(author_entries)
+        if not payload:
+            continue
+        payload["genre"] = genre
+        payload["author"] = author
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+
+
+def _write_central_presence_split_half_summary(
+    entries: List[Dict[str, object]],
+    *,
+    use_existing: bool,
+    output_root: Path,
+) -> None:
+    if not entries:
+        return
+    output_path = output_root / CENTRAL_PRESENCE_SPLIT_HALF_FILENAME
+    if use_existing and output_path.exists():
+        return
+    payload = _summarize_split_half_entries(entries)
+    if not payload:
+        return
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+
+
+def _write_genre_central_presence_split_half_summary(
+    entries: List[Dict[str, object]],
+    *,
+    use_existing: bool,
+    output_root: Path,
+) -> None:
+    if not entries:
+        return
+    grouped: Dict[str, List[Dict[str, object]]] = {}
+    for entry in entries:
+        text = entry.get("text")
+        if not isinstance(text, dict):
+            continue
+        genre, _author = _parse_category(text.get("category"))
+        if not genre:
+            continue
+        grouped.setdefault(genre, []).append(entry)
+
+    for genre, genre_entries in grouped.items():
+        output_path = output_root / genre / GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME
+        if use_existing and output_path.exists():
+            continue
+        payload = _summarize_split_half_entries(genre_entries)
+        if not payload:
+            continue
+        payload["genre"] = genre
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+
+
+def _write_author_central_presence_split_half_summary(
+    entries: List[Dict[str, object]],
+    *,
+    use_existing: bool,
+    output_root: Path,
+) -> None:
+    if not entries:
+        return
+    grouped: Dict[Tuple[str, str], List[Dict[str, object]]] = {}
+    for entry in entries:
+        text = entry.get("text")
+        if not isinstance(text, dict):
+            continue
+        genre, author = _parse_category(text.get("category"))
+        if not genre or not author:
+            continue
+        grouped.setdefault((genre, author), []).append(entry)
+
+    for (genre, author), author_entries in grouped.items():
+        filename = AUTHOR_CENTRAL_PRESENCE_SPLIT_HALF_TEMPLATE.format(author=author)
         output_path = output_root / genre / author / filename
         if use_existing and output_path.exists():
             continue

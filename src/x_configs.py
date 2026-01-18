@@ -4,8 +4,10 @@ from typing import Optional, Sequence, Tuple
 
 import spacy
 
-LOOP_BLOCK_SIZES_ENABLED = True
+LOOP_BLOCK_SIZES_ENABLED = False
 LOOP_BLOCK_SIZES = (3, 5, 7)
+DEFAULT_BLOCK_SIZE = 5
+DEFAULT_DASHBOARD_PERMUTATIONS: int = 1000
 
 USE_EXISTING = True
 
@@ -19,6 +21,9 @@ DEFAULT_SPACY_MODEL = "en_core_web_sm"
 DEFAULT_SPACY_DISABLE: Sequence[str] = ()
 # Shared window size (in sentences) for sliding window metrics
 DEFAULT_WINDOW_SIZE: int = 3
+# Default soft topic-score filtering for topic modelling + dashboard
+DEFAULT_SOFT_SCORE_THRESHOLD: float = 0.5
+DEFAULT_SOFT_TOP_K: int = 3
 # Default stride (in sentences) for sliding window metrics
 DEFAULT_METRIC_WINDOW_STRIDE: int = 1
 # Topic model windows use base_window_size * multiple
@@ -685,7 +690,9 @@ DASHBOARD_WINDOW_CONFIG = {
             "connective_counts_per_token",
             "tense_shift",
             "entity_overlap_ratio",
+            "entity_overlap_per_token",
             "content_overlap_ratio",
+            "content_overlap_per_token",
             "pronoun_ratio",
         },
         "nested_keys": {"connective_counts_per_token"},
@@ -728,19 +735,20 @@ DASHBOARD_WINDOW_CONFIG = {
     },
 }
 
+DEFAULT_CENTRAL_PRESENCE_P = 2.0
+DEFAULT_CENTRAL_PRESENCE_NORMALIZE = True
+
 @dataclass(frozen=True)
 class DashboardCorrelationConfig:
-    block_size: int = 5
-    permutations: int = 2000
+    block_size: int = DEFAULT_BLOCK_SIZE
+    permutations: int = DEFAULT_DASHBOARD_PERMUTATIONS
     loop_enabled: bool = LOOP_BLOCK_SIZES_ENABLED
     loop_block_sizes: Sequence[int] = LOOP_BLOCK_SIZES
     loop_output_template: str = "dashboard_L{block_size}"
 
 @dataclass(frozen=True)
 class CentralTopicSelectionConfig:
-    centrality_threshold: float = 0.6
     near_top_alpha: float = 0.85
-    min_keep: int = 1
     max_topics: Optional[int] = None
 
 
@@ -895,6 +903,48 @@ class CentralTopicWindowHeatmapConfig:
 
 
 @dataclass(frozen=True)
+class StabilityFilterConfig:
+    metric_key: str = "sign_agreement_rate"
+    threshold: float = 0.8
+    direction: str = "gte"
+    min_pair_count: Optional[int] = None
+
+
+@dataclass(frozen=True)
+class StabilityStackedBarConfig:
+    stability: StabilityFilterConfig = StabilityFilterConfig()
+    fig_width: float = 9.0
+    fig_height: float = 4.5
+    family_order: Sequence[str] = ("syntax", "discourse", "lexico_semantics", "log_prob")
+    family_colors: Sequence[str] = ("#1b9e77", "#d95f02", "#7570b3", "#e7298a")
+    bar_alpha: float = 0.85
+
+
+@dataclass(frozen=True)
+class TopicMetricLineConfig:
+    families: Sequence[str] = ("syntax", "discourse", "lexico_semantics")
+    top_n_metrics: int = 3
+    p_threshold: Optional[float] = None
+    normalize: bool = True
+    normalization: str = "zscore"
+    fig_width: float = 11.0
+    fig_height: float = 4.0
+    topic_color: str = "#222222"
+    metric_colors: Sequence[str] = (
+        "#1b9e77",
+        "#d95f02",
+        "#7570b3",
+        "#e7298a",
+        "#66a61e",
+    )
+    topic_line_width: float = 2.2
+    metric_line_width: float = 1.4
+    line_alpha: float = 0.85
+    label_max_len: int = 45
+    max_xticks: int = 12
+
+
+@dataclass(frozen=True)
 class DataSelectionConfig:
     genres: Optional[Sequence[str]] = None
     authors: Optional[Sequence[str]] = None
@@ -916,6 +966,9 @@ DEFAULT_TOPIC_METRIC_HEATMAP_CONFIG = TopicMetricHeatmapConfig()
 DEFAULT_FOREST_PLOT_CONFIG = ForestPlotConfig()
 DEFAULT_TEXT_METRIC_HEATMAP_CONFIG = TextMetricHeatmapConfig()
 DEFAULT_CENTRAL_TOPIC_WINDOW_HEATMAP_CONFIG = CentralTopicWindowHeatmapConfig()
+DEFAULT_STABILITY_FILTER_CONFIG = StabilityFilterConfig()
+DEFAULT_STABILITY_STACKED_BAR_CONFIG = StabilityStackedBarConfig()
+DEFAULT_TOPIC_METRIC_LINE_CONFIG = TopicMetricLineConfig()
 DEFAULT_DATA_SELECTION_CONFIG = DataSelectionConfig(genres=tuple(GENRES))
 
 CONVERGENCE_METRIC_LABELS = {

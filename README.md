@@ -49,7 +49,6 @@ Notes:
   - Compute within-text percentile ranks for each metric across topics.
   - Centrality score is the mean of available component percentiles.
   - Keep topics with score at least q (default 0.6) or near-top (score >= alpha * max, default 0.85).
-  - Ensure at least one topic is kept.
   - Optional cap via `CentralTopicSelectionConfig.max_topics` in `src/x_configs.py` (None = no cap).
 - Metric definitions (from topic modeling):
   - Prevalence (soft mean): sum of topic scores across non-noise windows / number of non-noise windows.
@@ -117,9 +116,10 @@ flowchart TD
     only selected central topics.
   - For each topic, correlate window metrics with overlap-weighted soft topic scores; compute Pearson r with block
     permutation p-values, plus binary correlations from score > 0.
-  - Central topic presence correlations use the max overlap-weighted score across central topics per window, with
-    presence defined as max >= the percentile threshold of non-zero central max scores (default 70; set via
-    `central_presence_percentile` in `run_dashboard`).
+- Central topic presence correlations use a normalized p-norm across central topics per window
+  (soft score; 0 when no central topic is present). Default p=2; normalization divides by K
+  (number of central topics). Dashboard correlations do not apply extra per-window top-k/threshold
+  filtering for central topics beyond what topic modeling already stored.
 - Per genre:
   - Central topic presence correlations aggregated across texts via Fisher z for r (weighted by n-3; only n > 3)
     and Stouffer for p-values (weights sqrt(n-3), sign from r).

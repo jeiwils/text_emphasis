@@ -84,10 +84,12 @@ def results_path(
     subfolder: Optional[str] = None,
     category: Optional[Union[str, Sequence[str]]] = None,
     filename: Optional[str] = None,
+    block_size: Optional[int] = None,
 ) -> Path:
     """
     Unified helper for results outputs under data/results.
     kind: "figures" or "dashboard".
+    block_size: optional block size to target <kind>_L{block_size}.
     """
     base = Path("data") / "results"
     folder_map = {
@@ -96,7 +98,14 @@ def results_path(
     }
     if kind not in folder_map:
         raise ValueError(f"kind must be one of {list(folder_map.keys())}")
-    path = folder_map[kind]
+    if block_size is not None:
+        if not isinstance(block_size, int):
+            raise ValueError("block_size must be an int")
+        if block_size <= 0:
+            raise ValueError("block_size must be positive")
+        path = base / f"{kind}_L{block_size}"
+    else:
+        path = folder_map[kind]
     if subfolder:
         path = path / subfolder
     category_parts = _category_parts(category)
@@ -124,11 +133,11 @@ def find_topic_file(window_metrics_path: Path) -> Optional[Path]:
 
 
 def find_window_metrics_files() -> List[Path]:
-    """Return sorted window metrics JSON paths under data/analytics/window_metrics."""
+    """Return sorted syntax window metrics JSON paths under data/analytics/window_metrics."""
     root = analytics_path("window")
     if not root.exists():
         return []
-    return sorted(root.glob("*/*/*/*_window_metrics.json"))
+    return sorted(root.glob("*/*/*/*_window_metrics.syntax.json"))
 
 
 def iter_dirs(

@@ -14,11 +14,13 @@ Output (topics file):
 {
   "meta": {
     "filename": "book_normalised_segmented.jsonl",
+    "num_sentences": 120
+  },
+  "params": {
     "base_window_size": 3,
     "window_multiple": 5,
     "model_window_size": 15,
     "window_stride": 6,
-    "num_sentences": 120,
     "min_cluster_size": 5,
     "min_samples": null,
     "soft_score_threshold": 0.5,
@@ -26,39 +28,42 @@ Output (topics file):
     "use_pca": true,
     "pca_components": 50
   },
-  "topics": [
-    {
-      "topic_id": 0,
-      "keywords": ["term1", "term2", "..."],
-      "stats": {
-        "prevalence": 0.12,
-        "persistence": 2.3,
-        "coherence": 0.45,
-        "exclusivity": 0.21
-      },
-      "mentions": [
-        {
-          "sentence_index": 10,
-          "start_sentence": 10,
-          "end_sentence": 12,
-          "window_index": 4,
-          "start_char": 500,
-          "end_char": 620,
-          "text": "Window text ..."
-        }
-      ]
-    }
-  ],
-  "windows": [
-    {
-      "window_index": 0,
-      "start_sentence": 0,
-      "end_sentence": 14,
-      "topic_scores": [{"topic_id": 0, "score": 0.71}, {"topic_id": 1, "score": 0.42}],
-      "is_noise": false
-    }
-  ],
-  "mentions_per_sentence": {"0": 1, "1": 0, "...": 2}
+  "topics": {
+    "items": [
+      {
+        "topic_id": 0,
+        "keywords": ["term1", "term2", "..."],
+        "stats": {
+          "prevalence": 0.12,
+          "persistence": 2.3,
+          "coherence": 0.45,
+          "exclusivity": 0.21
+        },
+        "mentions": [
+          {
+            "sentence_index": 10,
+            "start_sentence": 10,
+            "end_sentence": 12,
+            "window_index": 4,
+            "start_char": 500,
+            "end_char": 620,
+            "text": "Window text ..."
+          }
+        ]
+      }
+    ]
+  },
+  "windows": {
+    "items": [
+      {
+        "window_index": 0,
+        "start_sentence": 0,
+        "end_sentence": 14,
+        "topic_scores": [{"topic_id": 0, "score": 0.71}, {"topic_id": 1, "score": 0.42}],
+        "is_noise": false
+      }
+    ]
+  }
 }
 """
 
@@ -90,6 +95,8 @@ from .x_configs import (
     DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
     GENRES,
     MODEL_CONFIGS,
+    DEFAULT_SOFT_SCORE_THRESHOLD,
+    DEFAULT_SOFT_TOP_K,
 )
 
 @dataclass
@@ -439,8 +446,8 @@ class NeuralTopicModeler:
         base_window_size: int = DEFAULT_WINDOW_SIZE,
         window_size: Optional[int] = None,
         window_stride: Optional[int] = None,
-        top_k_topics: Optional[int] = 5,
-        score_threshold: Optional[float] = None,
+        top_k_topics: Optional[int] = DEFAULT_SOFT_TOP_K,
+        score_threshold: Optional[float] = DEFAULT_SOFT_SCORE_THRESHOLD,
         use_pca: bool = True,
         pca_components: int = 50,
     ) -> Tuple[List[TopicResult], List[Dict[str, object]]]:
@@ -640,79 +647,17 @@ def _topic_debug_stats(
     }
 
 
-def _iter_sentence_span(mention: TopicMention):
-    start = mention.sentence_index
-    end = mention.end_sentence if mention.end_sentence is not None else mention.sentence_index
-    return range(start, end + 1)
-
-
-def count_mentions_per_sentence(topic_results: List[TopicResult]) -> Dict[int, int]:
-    """
-    Count how many topic mentions overlap each sentence index.
-    If a mention spans multiple sentences, every sentence in the span is counted.
-    """
-    counts: Dict[int, int] = {}
-    for result in topic_results:
-        for mention in result.mentions:
-            for idx in _iter_sentence_span(mention):
-                counts[idx] = counts.get(idx, 0) + 1
-    return counts
-
-
-def collect_topic_mentions(topics_data):
-    """Extract per-sentence topic mentions from a topic model result."""
-    if not topics_data:
-        return []
-
-    if isinstance(topics_data, dict):
-        topics = (
-            topics_data.get("topics")
-            or topics_data.get("topic_results")
-            or topics_data.get("results")
-            or []
-        )
-    elif isinstance(topics_data, list):
-        topics = topics_data
-    else:
-        topics = []
-
-    mentions = []
-    for topic in topics:
-        if not isinstance(topic, dict):
-            continue
-        topic_id = topic.get("topic_id", topic.get("id"))
-        for mention in topic.get("mentions", []):
-            if not isinstance(mention, dict):
-                continue
-            sentence_index = mention.get("sentence_index")
-            if sentence_index is None:
-                continue
-            start_sentence = mention.get("start_sentence", sentence_index)
-            end_sentence = mention.get("end_sentence", sentence_index)
-            mentions.append(
-                {
-                    "topic_id": topic_id,
-                    "sentence_index": sentence_index,
-                    "start_sentence": start_sentence,
-                    "end_sentence": end_sentence,
-                }
-            )
-    return mentions
-
-
-def collect_soft_topic_mentions(
-    topics_data: Optional[object],
-    score_threshold: Optional[float] = 0.5,
-    top_k: Optional[int] = None,
-):
-    """
-    Build per-sentence topic mentions from window-level soft scores.
-    Filters by optional top_k and/or score_threshold; skips noise windows.
-    """
+def collect_soft_topic_mentions(topics_data: Optional[object]):
+    """Build per-sentence topic mentions from window-level soft scores; skips noise windows."""
     if not topics_data or not isinstance(topics_data, dict):
         return []
 
-    windows = topics_data.get("windows") or []
+    windows_section = topics_data.get("windows")
+    if not isinstance(windows_section, dict):
+        return []
+    windows = windows_section.get("items")
+    if not isinstance(windows, list):
+        return []
     mentions = []
     for window in windows:
         if window.get("is_noise"):
@@ -727,10 +672,6 @@ def collect_soft_topic_mentions(
             if isinstance(topic_id, int) and isinstance(score, (int, float)):
                 items.append((topic_id, float(score)))
         items.sort(key=lambda kv: kv[1], reverse=True)
-        if top_k is not None and top_k > 0:
-            items = items[:top_k]
-        if score_threshold is not None:
-            items = [(tid, s) for tid, s in items if s >= score_threshold]
         try:
             start_sentence = int(window.get("start_sentence", 0))
             end_sentence = int(window.get("end_sentence", start_sentence))
@@ -867,109 +808,6 @@ def select_metric_groups(
     return selected
 
 
-def compute_topic_metric_report(
-    topic_metrics: List[Dict[str, object]],
-    window_metrics_by_name: Dict[str, List[Dict[str, object]]],
-    min_topic_mentions: int = 1,
-    min_windows: int = 2,
-):
-    """Compute per-topic comparisons across windowed metric values."""
-    window_table = build_window_metric_table(window_metrics_by_name)
-    metric_names = sorted(window_table[0].keys()) if window_table else []
-
-    topics = set()
-    for entry in topic_metrics:
-        for topic_id in entry.get("topic_counts", {}).keys():
-            topics.add(topic_id)
-
-    report = {
-        "window_count": len(window_table),
-        "metric_names": metric_names,
-        "topics": {},
-    }
-
-    for topic_id in sorted(topics):
-        windows_with_topic = []
-        windows_without_topic = []
-        for idx, window_row in enumerate(window_table):
-            topic_count = topic_metrics[idx].get("topic_counts", {}).get(topic_id, 0)
-            if topic_count >= min_topic_mentions:
-                windows_with_topic.append(window_row)
-            else:
-                windows_without_topic.append(window_row)
-
-        topic_entry = {
-            "window_count_with_topic": len(windows_with_topic),
-            "window_count_without_topic": len(windows_without_topic),
-            "metrics": {},
-        }
-
-        for metric in metric_names:
-            values_with = [row[metric] for row in windows_with_topic if metric in row]
-            values_without = [row[metric] for row in windows_without_topic if metric in row]
-
-            variance_with = (
-                float(np.var(values_with, ddof=1)) if len(values_with) >= min_windows else None
-            )
-            variance_without = (
-                float(np.var(values_without, ddof=1)) if len(values_without) >= min_windows else None
-            )
-            variance_delta = (
-                variance_with - variance_without
-                if variance_with is not None and variance_without is not None
-                else None
-            )
-            variance_ratio = (
-                variance_with / variance_without
-                if variance_with is not None and variance_without not in (None, 0)
-                else None
-            )
-
-            topic_entry["metrics"][metric] = {
-                "variance_with_topic": variance_with,
-                "variance_without_topic": variance_without,
-                "variance_delta": variance_delta,
-                "variance_ratio": variance_ratio,
-                "n_with_topic": len(values_with),
-                "n_without_topic": len(values_without),
-            }
-
-        report["topics"][topic_id] = topic_entry
-
-    return report
-
-
-def compute_topic_metric_report_from_window_result(
-    window_result: Dict[str, object],
-    topics_data: Optional[object] = None,
-    metric_group_names: Optional[List[str]] = None,
-    min_topic_mentions: int = 1,
-    min_windows: int = 2,
-    use_soft_topic_scores: bool = False,
-    soft_score_threshold: Optional[float] = 0.5,
-    soft_top_k: Optional[int] = None,
-):
-    """Compute a topic/metric report from a window result and topic model output."""
-    topic_mentions = (
-        collect_soft_topic_mentions(
-            topics_data,
-            score_threshold=soft_score_threshold,
-            top_k=soft_top_k,
-        )
-        if use_soft_topic_scores
-        else collect_topic_mentions(topics_data)
-    )
-    window_entries = window_result.get("syntax", {}).get("windows", [])
-    topic_metrics = build_topic_window_metrics(topic_mentions, window_entries)
-    window_metrics_by_name = select_metric_groups(window_result, metric_group_names)
-    return compute_topic_metric_report(
-        topic_metrics=topic_metrics,
-        window_metrics_by_name=window_metrics_by_name,
-        min_topic_mentions=min_topic_mentions,
-        min_windows=min_windows,
-    )
-
-
 def _window_count(num_sentences: int, window_size: int, stride: int) -> int:
     """Compute how many sliding windows a text yields."""
     if num_sentences < window_size:
@@ -994,8 +832,8 @@ def run_topic_modelling(
     authors: Optional[List[str]] = None,
     min_cluster_size: Optional[int] = None,
     min_samples: Optional[int] = None,
-    soft_score_threshold: Optional[float] = 0.5,
-    soft_top_k_topics: Optional[int] = 3,
+    soft_score_threshold: Optional[float] = DEFAULT_SOFT_SCORE_THRESHOLD,
+    soft_top_k_topics: Optional[int] = DEFAULT_SOFT_TOP_K,
     use_pca: bool = True,
     pca_components: int = 50,
     encoder: SentenceTransformer | None = None,
@@ -1006,7 +844,7 @@ def run_topic_modelling(
     Defaults: window size DEFAULT_WINDOW_SIZE * DEFAULT_TOPIC_WINDOW_MULTIPLE (15) with stride
     DEFAULT_WINDOW_SIZE * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE (6)
     so topic windows align to the sentence-level metrics that use window size 3.
-    Output shape: data/analytics/topic_modelling/<category>/<name>/<name>_topics.json
+    Output shape: data/analytics/topic_modelling/<category>/<name>/<name>_clustered_topics.json
     """
     modeler = NeuralTopicModeler(encoder=encoder)
     normalised_root = text_path("processed", "normalised_segmented_texts")
@@ -1071,11 +909,13 @@ def run_topic_modelling(
             result = {
                 "meta": {
                     "filename": file.name,
+                    "num_sentences": num_sentences,
+                },
+                "params": {
                     "base_window_size": base_window_size,
                     "window_multiple": book_window_multiple,
                     "model_window_size": effective_window_size,
                     "window_stride": book_window_stride,
-                    "num_sentences": num_sentences,
                     "min_cluster_size": book_min_cluster_size,
                     "min_samples": book_min_samples,
                     "soft_score_threshold": book_soft_score_threshold,
@@ -1083,9 +923,8 @@ def run_topic_modelling(
                     "use_pca": book_use_pca,
                     "pca_components": book_pca_components,
                 },
-                "topics": serialize_topic_results(topic_results),
-                "windows": window_topics,
-                "mentions_per_sentence": count_mentions_per_sentence(topic_results),
+                "topics": {"items": serialize_topic_results(topic_results)},
+                "windows": {"items": window_topics},
             }
             debug_stats = _topic_debug_stats(topic_results, window_topics)
             debug_stats["meta"] = {
