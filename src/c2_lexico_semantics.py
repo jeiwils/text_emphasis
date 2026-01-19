@@ -83,6 +83,7 @@ Output:
 """
 
 import statistics
+from collections import Counter
 
 import numpy as np
 
@@ -122,10 +123,16 @@ def _moving_average_type_token_ratio(tokens, window_size: int = 50) -> float:
     if total_tokens < window_size:
         return round(len(set(tokens)) / total_tokens, 3)
 
-    ttr_values = []
-    for i in range(total_tokens - window_size + 1):
-        window = tokens[i : i + window_size]
-        ttr_values.append(len(set(window)) / window_size)
+    counts = Counter(tokens[:window_size])
+    ttr_values = [len(counts) / window_size]
+    for i in range(window_size, total_tokens):
+        outgoing = tokens[i - window_size]
+        incoming = tokens[i]
+        counts[outgoing] -= 1
+        if counts[outgoing] <= 0:
+            del counts[outgoing]
+        counts[incoming] += 1
+        ttr_values.append(len(counts) / window_size)
 
     return round(statistics.mean(ttr_values), 3)
 
@@ -184,10 +191,12 @@ class LexicoSemanticsAnalyzer:
         sentences = list(doc.sents)
         if not sentences:
             return []
+        sentence_tokens = [
+            _tokenize_words_from_tokens(sent, lowercase=lowercase) for sent in sentences
+        ]
         metrics = []
-        for i, window in enumerate(sliding_windows(sentences, window_size)):
-            window_tokens = [t for sent in window for t in sent]
-            tokens = _tokenize_words_from_tokens(window_tokens, lowercase=lowercase)
+        for i, window in enumerate(sliding_windows(sentence_tokens, window_size)):
+            tokens = [token for sent_tokens in window for token in sent_tokens]
             mattr = _moving_average_type_token_ratio(tokens, window_size=mattr_window_size) if tokens else 0.0
             metrics.append({
                 "mattr_score": mattr,
@@ -464,11 +473,86 @@ class LexicoSemanticsAnalyzer:
         windows = aggregate_windows(window_inputs, window_size) if window_inputs else []
 
         if windows:
-            for window_idx, window_sents in enumerate(sliding_windows(combined_sentences, window_size)):
-                total_tokens = sum(sent.get("token_count", 0) for sent in window_sents)
-                total_content = sum(sent.get("content_count", 0) for sent in window_sents)
-                info_tokens = sum(sent.get("information_content_token_count", 0) for sent in window_sents)
-                avg_word_tokens = sum(sent.get("avg_word_freq_token_count", 0) for sent in window_sents)
+            def _prefix(values):
+                acc = [0.0]
+                running = 0.0
+                for value in values:
+                    running += float(value)
+                    acc.append(running)
+                return acc
+
+            def _range_sum(prefix, start, end):
+                if start < 0 or end < start:
+                    return 0.0
+                return prefix[end + 1] - prefix[start]
+
+            token_counts = [sent.get("token_count", 0) for sent in combined_sentences]
+            content_counts = [sent.get("content_count", 0) for sent in combined_sentences]
+            info_token_counts = [
+                sent.get("information_content_token_count", 0) for sent in combined_sentences
+            ]
+            avg_word_token_counts = [
+                sent.get("avg_word_freq_token_count", 0) for sent in combined_sentences
+            ]
+            info_contents = [
+                (sent.get("information_content") or 0.0) for sent in combined_sentences
+            ]
+            avg_word_freqs = [
+                sent.get("avg_word_freq", 0.0) for sent in combined_sentences
+            ]
+            normalized_freqs = [
+                sent.get("normalized_freq", 0.0) for sent in combined_sentences
+            ]
+            role_counts = [sent.get("role_count", 0) for sent in combined_sentences]
+            num_clauses = [sent.get("num_clauses", 0) for sent in combined_sentences]
+            num_agents = [sent.get("num_agents", 0) for sent in combined_sentences]
+            num_patients = [sent.get("num_patients", 0) for sent in combined_sentences]
+            role_keys = set()
+            for sent in combined_sentences:
+                role_keys.update((sent.get("role_counts") or {}).keys())
+            role_keys = sorted(role_keys)
+            role_counts_by_key = {
+                key: [
+                    (sent.get("role_counts") or {}).get(key, 0) for sent in combined_sentences
+                ]
+                for key in role_keys
+            }
+
+            token_prefix = _prefix(token_counts)
+            content_prefix = _prefix(content_counts)
+            info_token_prefix = _prefix(info_token_counts)
+            avg_word_token_prefix = _prefix(avg_word_token_counts)
+            info_weighted_prefix = _prefix(
+                [
+                    info_contents[idx] * info_token_counts[idx]
+                    for idx in range(len(info_contents))
+                ]
+            )
+            avg_word_weighted_prefix = _prefix(
+                [
+                    avg_word_freqs[idx] * avg_word_token_counts[idx]
+                    for idx in range(len(avg_word_freqs))
+                ]
+            )
+            normalized_weighted_prefix = _prefix(
+                [
+                    normalized_freqs[idx] * avg_word_token_counts[idx]
+                    for idx in range(len(normalized_freqs))
+                ]
+            )
+            role_count_prefix = _prefix(role_counts)
+            clause_prefix = _prefix(num_clauses)
+            agent_prefix = _prefix(num_agents)
+            patient_prefix = _prefix(num_patients)
+            role_prefixes = {key: _prefix(values) for key, values in role_counts_by_key.items()}
+
+            for window_idx, window in enumerate(windows):
+                start = int(window.get("start_sentence", 0))
+                end = int(window.get("end_sentence", start))
+                total_tokens = _range_sum(token_prefix, start, end)
+                total_content = _range_sum(content_prefix, start, end)
+                info_tokens = _range_sum(info_token_prefix, start, end)
+                avg_word_tokens = _range_sum(avg_word_token_prefix, start, end)
 
                 if total_tokens > 0:
                     token_weighted_lexical_density = total_content / total_tokens
@@ -476,38 +560,28 @@ class LexicoSemanticsAnalyzer:
                     token_weighted_lexical_density = 0.0
 
                 if info_tokens > 0:
-                    info_weighted_sum = sum(
-                        (sent.get("information_content") or 0.0)
-                        * sent.get("information_content_token_count", 0)
-                        for sent in window_sents
-                    )
+                    info_weighted_sum = _range_sum(info_weighted_prefix, start, end)
                     token_weighted_information_content = info_weighted_sum / info_tokens
                 else:
                     token_weighted_information_content = 0.0
 
                 if avg_word_tokens > 0:
-                    avg_word_weighted_sum = sum(
-                        sent.get("avg_word_freq", 0.0) * sent.get("avg_word_freq_token_count", 0)
-                        for sent in window_sents
-                    )
-                    normalized_weighted_sum = sum(
-                        sent.get("normalized_freq", 0.0) * sent.get("avg_word_freq_token_count", 0)
-                        for sent in window_sents
-                    )
+                    avg_word_weighted_sum = _range_sum(avg_word_weighted_prefix, start, end)
+                    normalized_weighted_sum = _range_sum(normalized_weighted_prefix, start, end)
                     token_weighted_avg_word_freq = avg_word_weighted_sum / avg_word_tokens
                     token_weighted_normalized_freq = normalized_weighted_sum / avg_word_tokens
                 else:
                     token_weighted_avg_word_freq = 0.0
                     token_weighted_normalized_freq = 0.0
 
-                total_role_count = sum(sent.get("role_count", 0) for sent in window_sents)
-                total_num_clauses = sum(sent.get("num_clauses", 0) for sent in window_sents)
-                total_num_agents = sum(sent.get("num_agents", 0) for sent in window_sents)
-                total_num_patients = sum(sent.get("num_patients", 0) for sent in window_sents)
-                role_counts_total = {}
-                for sent in window_sents:
-                    for key, value in sent.get("role_counts", {}).items():
-                        role_counts_total[key] = role_counts_total.get(key, 0) + value
+                total_role_count = _range_sum(role_count_prefix, start, end)
+                total_num_clauses = _range_sum(clause_prefix, start, end)
+                total_num_agents = _range_sum(agent_prefix, start, end)
+                total_num_patients = _range_sum(patient_prefix, start, end)
+                role_counts_total = {
+                    key: _range_sum(prefix, start, end)
+                    for key, prefix in role_prefixes.items()
+                }
 
                 if total_tokens > 0:
                     role_count_per_token = total_role_count / total_tokens
@@ -524,14 +598,14 @@ class LexicoSemanticsAnalyzer:
                     num_patients_per_token = 0.0
                     role_counts_per_token = {}
 
-                windows[window_idx]["token_count"] = total_tokens
-                windows[window_idx]["content_count"] = total_content
+                windows[window_idx]["token_count"] = int(total_tokens)
+                windows[window_idx]["content_count"] = int(total_content)
                 windows[window_idx]["lexical_density"] = round(
                     token_weighted_lexical_density, 6
                 )
                 windows[window_idx]["lexical_density_per_token"] = windows[window_idx]["lexical_density"]
-                windows[window_idx]["information_content_token_count"] = info_tokens
-                windows[window_idx]["avg_word_freq_token_count"] = avg_word_tokens
+                windows[window_idx]["information_content_token_count"] = int(info_tokens)
+                windows[window_idx]["avg_word_freq_token_count"] = int(avg_word_tokens)
                 windows[window_idx]["information_content"] = round(
                     token_weighted_information_content, 6
                 )
@@ -544,10 +618,10 @@ class LexicoSemanticsAnalyzer:
                 windows[window_idx]["content_function_ratio"] = round(
                     total_content / total_tokens, 6
                 ) if total_tokens else 0.0
-                windows[window_idx]["role_count"] = total_role_count
-                windows[window_idx]["num_clauses"] = total_num_clauses
-                windows[window_idx]["num_agents"] = total_num_agents
-                windows[window_idx]["num_patients"] = total_num_patients
+                windows[window_idx]["role_count"] = int(total_role_count)
+                windows[window_idx]["num_clauses"] = int(total_num_clauses)
+                windows[window_idx]["num_agents"] = int(total_num_agents)
+                windows[window_idx]["num_patients"] = int(total_num_patients)
                 windows[window_idx]["role_count_per_token"] = round(role_count_per_token, 6)
                 windows[window_idx]["num_clauses_per_token"] = round(num_clauses_per_token, 6)
                 windows[window_idx]["num_agents_per_token"] = round(num_agents_per_token, 6)

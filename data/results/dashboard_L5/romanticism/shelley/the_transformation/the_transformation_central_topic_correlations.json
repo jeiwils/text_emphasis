@@ -1,0 +1,562 @@
+{
+  "metadata": {
+    "category": "romanticism/shelley",
+    "text_name": "the_transformation",
+    "filename": "the_transformation_window_metrics.syntax.json",
+    "topic_file": "data\\analytics\\topic_modelling\\romanticism\\shelley\\the_transformation\\the_transformation_clustered_topics.json"
+  },
+  "report": {
+    "window_count": 396,
+    "metric_names": [
+      "discourse.connective_counts_per_token.Comparison",
+      "discourse.connective_counts_per_token.Contingency",
+      "discourse.connective_counts_per_token.Expansion",
+      "discourse.connective_counts_per_token.Temporal",
+      "discourse.content_overlap_per_token",
+      "discourse.content_overlap_ratio",
+      "discourse.entity_overlap_per_token",
+      "discourse.entity_overlap_ratio",
+      "discourse.explicit_connectives_per_token",
+      "discourse.modality_per_token",
+      "discourse.pronoun_ratio",
+      "discourse.tense_shift",
+      "lexico_semantics.avg_word_freq",
+      "lexico_semantics.information_content",
+      "lexico_semantics.lexical_density_per_token",
+      "lexico_semantics.lexical_diversity_mattr.mattr_score",
+      "lexico_semantics.normalized_freq",
+      "log_prob.max_token_surprisal",
+      "log_prob.token_weighted_mean_surprisal",
+      "log_prob.token_weighted_surprisal_variance",
+      "syntax.avg_dependents_per_head.coordinate_clause",
+      "syntax.avg_dependents_per_head.main_clause",
+      "syntax.avg_dependents_per_head.subordinate_clause",
+      "syntax.avg_mean_dependency_distance",
+      "syntax.avg_tokens_per_sentence",
+      "syntax.clause_counts_per_token.coordinate",
+      "syntax.clause_counts_per_token.main",
+      "syntax.clause_counts_per_token.subordinate",
+      "syntax.clause_ratios.coordination_ratio",
+      "syntax.clause_ratios.subordination_ratio",
+      "syntax.depth_skew",
+      "syntax.max_depth",
+      "syntax.median_depth",
+      "syntax.punctuation_per_token"
+    ],
+    "centrality_metrics_order": [
+      "coherence",
+      "exclusivity",
+      "prevalence",
+      "persistence",
+      "top10_mean"
+    ],
+    "central_topics": [
+      {
+        "topic_id": 8,
+        "score": 0.7999999999999999,
+        "raw_score": [
+          0.9230289390779394,
+          1.0,
+          0.2989250770560256,
+          3.6923076923076925,
+          0.9329753994941712
+        ],
+        "percentile_score": [
+          1.0,
+          1.0,
+          0.3,
+          0.2,
+          0.9
+        ],
+        "keywords": [
+          "return paris",
+          "abjure despise genoa",
+          "accept carve fortune",
+          "beggar present poverty",
+          "begin dawn mind",
+          "birth place false",
+          "bring despair train",
+          "carve fortune sword"
+        ],
+        "correlations": {
+          "discourse.connective_counts_per_token.Comparison": {
+            "pearson_r": -0.004780333709261138,
+            "p_value": 0.954045954045954
+          },
+          "discourse.connective_counts_per_token.Contingency": {
+            "pearson_r": -0.014258863150169908,
+            "p_value": 0.8421578421578422
+          },
+          "discourse.connective_counts_per_token.Expansion": {
+            "pearson_r": 0.09725291838428093,
+            "p_value": 0.19880119880119881
+          },
+          "discourse.connective_counts_per_token.Temporal": {
+            "pearson_r": 0.015582795177446792,
+            "p_value": 0.8531468531468531
+          },
+          "discourse.content_overlap_per_token": {
+            "pearson_r": 0.11134567275179337,
+            "p_value": 0.15384615384615385
+          },
+          "discourse.content_overlap_ratio": {
+            "pearson_r": 0.11448247480524266,
+            "p_value": 0.13486513486513488
+          },
+          "discourse.entity_overlap_per_token": {
+            "pearson_r": 0.12941457934245348,
+            "p_value": 0.06593406593406594
+          },
+          "discourse.entity_overlap_ratio": {
+            "pearson_r": 0.1369403055705541,
+            "p_value": 0.04595404595404595
+          },
+          "discourse.explicit_connectives_per_token": {
+            "pearson_r": 0.07051019437022196,
+            "p_value": 0.32667332667332666
+          },
+          "discourse.modality_per_token": {
+            "pearson_r": 0.022353200449879953,
+            "p_value": 0.7982017982017982
+          },
+          "discourse.pronoun_ratio": {
+            "pearson_r": 0.16906650229966227,
+            "p_value": 0.03596403596403597
+          },
+          "discourse.tense_shift": {
+            "pearson_r": -0.15628905117066189,
+            "p_value": 0.04895104895104895
+          },
+          "lexico_semantics.avg_word_freq": {
+            "pearson_r": 0.21954462410373254,
+            "p_value": 0.007992007992007992
+          },
+          "lexico_semantics.information_content": {
+            "pearson_r": -0.1417050186215537,
+            "p_value": 0.06493506493506493
+          },
+          "lexico_semantics.lexical_density_per_token": {
+            "pearson_r": -0.20141183502939722,
+            "p_value": 0.006993006993006993
+          },
+          "lexico_semantics.lexical_diversity_mattr.mattr_score": {
+            "pearson_r": -0.17582819321624094,
+            "p_value": 0.012987012987012988
+          },
+          "lexico_semantics.normalized_freq": {
+            "pearson_r": 0.21954129423487057,
+            "p_value": 0.00999000999000999
+          },
+          "log_prob.max_token_surprisal": {
+            "pearson_r": -0.006978679074132864,
+            "p_value": 0.9340659340659341
+          },
+          "log_prob.token_weighted_mean_surprisal": {
+            "pearson_r": -0.17840128086339785,
+            "p_value": 0.03496503496503497
+          },
+          "log_prob.token_weighted_surprisal_variance": {
+            "pearson_r": 0.039234858493357366,
+            "p_value": 0.6323676323676324
+          },
+          "syntax.avg_dependents_per_head.coordinate_clause": {
+            "pearson_r": 0.02175540558405929,
+            "p_value": 0.7612387612387612
+          },
+          "syntax.avg_dependents_per_head.main_clause": {
+            "pearson_r": 0.08856050823055377,
+            "p_value": 0.25574425574425574
+          },
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": 0.06956699967090028,
+            "p_value": 0.3726273726273726
+          },
+          "syntax.avg_mean_dependency_distance": {
+            "pearson_r": -0.05555660923425925,
+            "p_value": 0.5194805194805194
+          },
+          "syntax.avg_tokens_per_sentence": {
+            "pearson_r": 0.03807570457111453,
+            "p_value": 0.6483516483516484
+          },
+          "syntax.clause_counts_per_token.coordinate": {
+            "pearson_r": 0.11609954965777447,
+            "p_value": 0.11988011988011989
+          },
+          "syntax.clause_counts_per_token.main": {
+            "pearson_r": -0.08319372258008588,
+            "p_value": 0.3306693306693307
+          },
+          "syntax.clause_counts_per_token.subordinate": {
+            "pearson_r": 0.06013772886689235,
+            "p_value": 0.45254745254745254
+          },
+          "syntax.clause_ratios.coordination_ratio": {
+            "pearson_r": 0.07287879908357366,
+            "p_value": 0.3676323676323676
+          },
+          "syntax.clause_ratios.subordination_ratio": {
+            "pearson_r": 0.0029769538726489306,
+            "p_value": 0.983016983016983
+          },
+          "syntax.depth_skew": {
+            "pearson_r": 0.16729901152375612,
+            "p_value": 0.03396603396603397
+          },
+          "syntax.max_depth": {
+            "pearson_r": 0.0501821773361155,
+            "p_value": 0.5334665334665335
+          },
+          "syntax.median_depth": {
+            "pearson_r": 0.036982688564087325,
+            "p_value": 0.6533466533466533
+          },
+          "syntax.punctuation_per_token": {
+            "pearson_r": -0.17912074510995576,
+            "p_value": 0.03896103896103896
+          }
+        }
+      },
+      {
+        "topic_id": 1,
+        "score": 0.7749999999999999,
+        "raw_score": [
+          0.5440501144955113,
+          0.9861111111111112,
+          0.5992456953804772,
+          7.461538461538462,
+          0.8468518078327179
+        ],
+        "percentile_score": [
+          0.6,
+          0.7,
+          1.0,
+          0.8,
+          0.1
+        ],
+        "keywords": [
+          "window",
+          "dagger",
+          "destroy",
+          "survive care",
+          "curtain",
+          "graceful",
+          "pause",
+          "quick"
+        ],
+        "correlations": {
+          "discourse.connective_counts_per_token.Comparison": {
+            "pearson_r": -0.0042342676553113155,
+            "p_value": 0.948051948051948
+          },
+          "discourse.connective_counts_per_token.Contingency": {
+            "pearson_r": -0.1244886779007538,
+            "p_value": 0.08191808191808192
+          },
+          "discourse.connective_counts_per_token.Expansion": {
+            "pearson_r": 0.06545832254874487,
+            "p_value": 0.3756243756243756
+          },
+          "discourse.connective_counts_per_token.Temporal": {
+            "pearson_r": -0.07624129843011264,
+            "p_value": 0.28471528471528473
+          },
+          "discourse.content_overlap_per_token": {
+            "pearson_r": 0.10674532841353629,
+            "p_value": 0.16283716283716285
+          },
+          "discourse.content_overlap_ratio": {
+            "pearson_r": 0.10085557611287252,
+            "p_value": 0.13486513486513488
+          },
+          "discourse.entity_overlap_per_token": {
+            "pearson_r": 0.13259511628265674,
+            "p_value": 0.07392607392607392
+          },
+          "discourse.entity_overlap_ratio": {
+            "pearson_r": 0.13131137459366007,
+            "p_value": 0.07192807192807193
+          },
+          "discourse.explicit_connectives_per_token": {
+            "pearson_r": -0.019597249951645666,
+            "p_value": 0.7642357642357642
+          },
+          "discourse.modality_per_token": {
+            "pearson_r": 0.05935960386927779,
+            "p_value": 0.44655344655344653
+          },
+          "discourse.pronoun_ratio": {
+            "pearson_r": 0.0735950975998023,
+            "p_value": 0.36563436563436563
+          },
+          "discourse.tense_shift": {
+            "pearson_r": 0.011698087773307029,
+            "p_value": 0.8901098901098901
+          },
+          "lexico_semantics.avg_word_freq": {
+            "pearson_r": 0.012400322090420614,
+            "p_value": 0.8601398601398601
+          },
+          "lexico_semantics.information_content": {
+            "pearson_r": -0.02083559052302465,
+            "p_value": 0.7692307692307693
+          },
+          "lexico_semantics.lexical_density_per_token": {
+            "pearson_r": -0.030019818150848605,
+            "p_value": 0.6673326673326674
+          },
+          "lexico_semantics.lexical_diversity_mattr.mattr_score": {
+            "pearson_r": -0.0619811263871556,
+            "p_value": 0.35764235764235763
+          },
+          "lexico_semantics.normalized_freq": {
+            "pearson_r": 0.012395749011017832,
+            "p_value": 0.8511488511488512
+          },
+          "log_prob.max_token_surprisal": {
+            "pearson_r": 0.12644332096322664,
+            "p_value": 0.10989010989010989
+          },
+          "log_prob.token_weighted_mean_surprisal": {
+            "pearson_r": -0.003225468563969673,
+            "p_value": 0.9760239760239761
+          },
+          "log_prob.token_weighted_surprisal_variance": {
+            "pearson_r": 0.04908057126891736,
+            "p_value": 0.5944055944055944
+          },
+          "syntax.avg_dependents_per_head.coordinate_clause": {
+            "pearson_r": 0.044005975287612124,
+            "p_value": 0.5384615384615384
+          },
+          "syntax.avg_dependents_per_head.main_clause": {
+            "pearson_r": 0.1988030388291536,
+            "p_value": 0.005994005994005994
+          },
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": 0.0010208533588451994,
+            "p_value": 0.994005994005994
+          },
+          "syntax.avg_mean_dependency_distance": {
+            "pearson_r": 0.00477877032054795,
+            "p_value": 0.957042957042957
+          },
+          "syntax.avg_tokens_per_sentence": {
+            "pearson_r": 0.14959763558348163,
+            "p_value": 0.054945054945054944
+          },
+          "syntax.clause_counts_per_token.coordinate": {
+            "pearson_r": 0.12126066397987344,
+            "p_value": 0.1048951048951049
+          },
+          "syntax.clause_counts_per_token.main": {
+            "pearson_r": -0.09795345747209931,
+            "p_value": 0.2127872127872128
+          },
+          "syntax.clause_counts_per_token.subordinate": {
+            "pearson_r": 0.12262640081562884,
+            "p_value": 0.11588411588411589
+          },
+          "syntax.clause_ratios.coordination_ratio": {
+            "pearson_r": 0.153223625415526,
+            "p_value": 0.04295704295704296
+          },
+          "syntax.clause_ratios.subordination_ratio": {
+            "pearson_r": 0.15295391152683785,
+            "p_value": 0.061938061938061936
+          },
+          "syntax.depth_skew": {
+            "pearson_r": -0.035292004466967584,
+            "p_value": 0.6523476523476524
+          },
+          "syntax.max_depth": {
+            "pearson_r": 0.02173752213451845,
+            "p_value": 0.7772227772227772
+          },
+          "syntax.median_depth": {
+            "pearson_r": 0.06820146778601391,
+            "p_value": 0.37662337662337664
+          },
+          "syntax.punctuation_per_token": {
+            "pearson_r": -0.05947348873700451,
+            "p_value": 0.5024975024975025
+          }
+        }
+      },
+      {
+        "topic_id": 9,
+        "score": 0.725,
+        "raw_score": [
+          0.7533499754606289,
+          1.0,
+          0.23959022384506087,
+          9.5,
+          0.8814727365970612
+        ],
+        "percentile_score": [
+          0.8,
+          1.0,
+          0.2,
+          0.9,
+          0.4
+        ],
+        "keywords": [
+          "bar",
+          "dash",
+          "deep",
+          "promontory",
+          "thunder",
+          "vain",
+          "vessel",
+          "water"
+        ],
+        "correlations": {
+          "discourse.connective_counts_per_token.Comparison": {
+            "pearson_r": 0.053964824679750084,
+            "p_value": 0.43656343656343655
+          },
+          "discourse.connective_counts_per_token.Contingency": {
+            "pearson_r": -0.025935786259247307,
+            "p_value": 0.7242757242757243
+          },
+          "discourse.connective_counts_per_token.Expansion": {
+            "pearson_r": -0.06357414441569943,
+            "p_value": 0.41858141858141856
+          },
+          "discourse.connective_counts_per_token.Temporal": {
+            "pearson_r": -0.024762582456641667,
+            "p_value": 0.7442557442557443
+          },
+          "discourse.content_overlap_per_token": {
+            "pearson_r": 0.07599047007969191,
+            "p_value": 0.36863136863136864
+          },
+          "discourse.content_overlap_ratio": {
+            "pearson_r": 0.07926026895290982,
+            "p_value": 0.3006993006993007
+          },
+          "discourse.entity_overlap_per_token": {
+            "pearson_r": 0.012117154150906223,
+            "p_value": 0.8661338661338661
+          },
+          "discourse.entity_overlap_ratio": {
+            "pearson_r": -0.0057997435290463775,
+            "p_value": 0.948051948051948
+          },
+          "discourse.explicit_connectives_per_token": {
+            "pearson_r": -0.04069704580980757,
+            "p_value": 0.5764235764235764
+          },
+          "discourse.modality_per_token": {
+            "pearson_r": 0.07165041991696489,
+            "p_value": 0.3886113886113886
+          },
+          "discourse.pronoun_ratio": {
+            "pearson_r": 0.0048962942648098605,
+            "p_value": 0.955044955044955
+          },
+          "discourse.tense_shift": {
+            "pearson_r": 0.05519269064816397,
+            "p_value": 0.5114885114885115
+          },
+          "lexico_semantics.avg_word_freq": {
+            "pearson_r": -0.042627223229836,
+            "p_value": 0.6193806193806194
+          },
+          "lexico_semantics.information_content": {
+            "pearson_r": 0.08300542397662876,
+            "p_value": 0.27672327672327673
+          },
+          "lexico_semantics.lexical_density_per_token": {
+            "pearson_r": 0.08123458620376386,
+            "p_value": 0.3076923076923077
+          },
+          "lexico_semantics.lexical_diversity_mattr.mattr_score": {
+            "pearson_r": 0.09693265196831913,
+            "p_value": 0.1888111888111888
+          },
+          "lexico_semantics.normalized_freq": {
+            "pearson_r": -0.04262621190923063,
+            "p_value": 0.5894105894105894
+          },
+          "log_prob.max_token_surprisal": {
+            "pearson_r": -0.046497477216362985,
+            "p_value": 0.5614385614385614
+          },
+          "log_prob.token_weighted_mean_surprisal": {
+            "pearson_r": 0.10280205527883923,
+            "p_value": 0.22877122877122877
+          },
+          "log_prob.token_weighted_surprisal_variance": {
+            "pearson_r": -0.1007409044198189,
+            "p_value": 0.1958041958041958
+          },
+          "syntax.avg_dependents_per_head.coordinate_clause": {
+            "pearson_r": -0.08556938642668407,
+            "p_value": 0.26573426573426573
+          },
+          "syntax.avg_dependents_per_head.main_clause": {
+            "pearson_r": -0.07648039667173423,
+            "p_value": 0.3196803196803197
+          },
+          "syntax.avg_dependents_per_head.subordinate_clause": {
+            "pearson_r": -0.3085062020344822,
+            "p_value": 0.000999000999000999
+          },
+          "syntax.avg_mean_dependency_distance": {
+            "pearson_r": -0.2846471627662199,
+            "p_value": 0.001998001998001998
+          },
+          "syntax.avg_tokens_per_sentence": {
+            "pearson_r": -0.266129393154289,
+            "p_value": 0.001998001998001998
+          },
+          "syntax.clause_counts_per_token.coordinate": {
+            "pearson_r": -0.10905924462877088,
+            "p_value": 0.16183816183816183
+          },
+          "syntax.clause_counts_per_token.main": {
+            "pearson_r": 0.28657659554050635,
+            "p_value": 0.000999000999000999
+          },
+          "syntax.clause_counts_per_token.subordinate": {
+            "pearson_r": -0.13620639830511894,
+            "p_value": 0.0919080919080919
+          },
+          "syntax.clause_ratios.coordination_ratio": {
+            "pearson_r": -0.2029082606804666,
+            "p_value": 0.011988011988011988
+          },
+          "syntax.clause_ratios.subordination_ratio": {
+            "pearson_r": -0.19390032561544818,
+            "p_value": 0.01898101898101898
+          },
+          "syntax.depth_skew": {
+            "pearson_r": -0.07999426480980724,
+            "p_value": 0.3276723276723277
+          },
+          "syntax.max_depth": {
+            "pearson_r": -0.2966136517434769,
+            "p_value": 0.000999000999000999
+          },
+          "syntax.median_depth": {
+            "pearson_r": -0.266615808113769,
+            "p_value": 0.003996003996003996
+          },
+          "syntax.punctuation_per_token": {
+            "pearson_r": 0.2365811662033868,
+            "p_value": 0.011988011988011988
+          }
+        }
+      }
+    ]
+  },
+  "params": {
+    "near_top_alpha": 0.85,
+    "top_score_fraction": 0.1,
+    "coherence_floor": 0.3,
+    "exclusivity_floor": 0.3,
+    "block_size": 5,
+    "permutations": 1000
+  }
+}

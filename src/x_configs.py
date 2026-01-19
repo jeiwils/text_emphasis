@@ -736,6 +736,27 @@ DASHBOARD_WINDOW_CONFIG = {
     },
 }
 
+WINDOW_METRIC_DOMAINS = ("syntax", "lexico_semantics", "discourse", "log_prob")
+CENTRALITY_METRICS = ("coherence", "exclusivity", "prevalence", "persistence", "top10_mean")
+
+TOPIC_CORRELATIONS_SUFFIX = "_topic_correlations.json"
+CENTRAL_TOPIC_CORRELATIONS_SUFFIX = "_central_topic_correlations.json"
+CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX = "_central_topic_presence_correlations.json"
+
+GENRE_CENTRAL_PRESENCE_FILENAME = "00_genre_central_topic_presence_correlations.json"
+CENTRAL_TOPIC_SPLIT_HALF_FILENAME = "00_central_topic_split_half_stability.json"
+GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME = "00_genre_central_topic_split_half_stability.json"
+AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE = "{author}_central_topic_split_half_stability.json"
+CENTRAL_PRESENCE_SPLIT_HALF_FILENAME = "00_central_topic_presence_split_half_stability.json"
+GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME = "00_genre_central_topic_presence_split_half_stability.json"
+AUTHOR_CENTRAL_PRESENCE_SPLIT_HALF_TEMPLATE = "{author}_central_topic_presence_split_half_stability.json"
+CROSS_BLOCK_CONSISTENCY_FILENAME = "00_cross_block_consistency.json"
+
+TABLE_COUNT_COLUMNS = {"topic_id", "n", "text_count", "total_windows", "n_windows"}
+TABLE_P_VALUE_COLUMNS = {"p_value"}
+TABLE_DEFAULT_FLOAT_DECIMALS = 3
+TABLE_P_VALUE_MIN_DISPLAY = 0.001
+
 DEFAULT_CENTRAL_PRESENCE_P = 2.0
 DEFAULT_CENTRAL_PRESENCE_NORMALIZE = True
 DEFAULT_CENTRALITY_TOP_SCORE_FRACTION = 0.1

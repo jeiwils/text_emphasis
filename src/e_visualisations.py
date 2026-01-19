@@ -22,6 +22,8 @@ from .d1_dashboard_metrics import (
     load_window_metrics,
 )
 from .x_configs import (
+    CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
+    CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
     GENRES,
     AggregatedHeatmapConfig,
     CentralTopicWindowHeatmapConfig,
@@ -33,8 +35,14 @@ from .x_configs import (
     ForestPlotConfig,
     PresenceSlopegraphConfig,
     DEFAULT_BLOCK_SIZE,
+    GENRE_CENTRAL_PRESENCE_FILENAME,
+    GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
     StabilityFilterConfig,
     StabilityStackedBarConfig,
+    TABLE_COUNT_COLUMNS,
+    TABLE_DEFAULT_FLOAT_DECIMALS,
+    TABLE_P_VALUE_COLUMNS,
+    TABLE_P_VALUE_MIN_DISPLAY,
     TextMetricHeatmapConfig,
     TopicMetricLineConfig,
     TopicMetricHeatmapConfig,
@@ -104,18 +112,6 @@ def _scores_to_stats(order: Sequence[object], scores: object) -> Dict[str, float
     return stats
 
 
-_COUNT_COLUMNS = {
-    "topic_id",
-    "n",
-    "text_count",
-    "total_windows",
-    "n_windows",
-}
-_P_VALUE_COLUMNS = {"p_value"}
-_DEFAULT_FLOAT_DECIMALS = 3
-_P_VALUE_MIN_DISPLAY = 0.001
-
-
 def _format_table_value(value: object, column: str) -> str:
     if value is None:
         return ""
@@ -123,13 +119,13 @@ def _format_table_value(value: object, column: str) -> str:
         return ""
     if isinstance(value, (int, float)):
         num = float(value)
-        if column in _COUNT_COLUMNS:
+        if column in TABLE_COUNT_COLUMNS:
             return str(int(num))
-        if column in _P_VALUE_COLUMNS:
-            if num < _P_VALUE_MIN_DISPLAY:
-                return f"<{_P_VALUE_MIN_DISPLAY:.3f}"
-            return f"{num:.{_DEFAULT_FLOAT_DECIMALS}f}"
-        return f"{num:.{_DEFAULT_FLOAT_DECIMALS}f}"
+        if column in TABLE_P_VALUE_COLUMNS:
+            if num < TABLE_P_VALUE_MIN_DISPLAY:
+                return f"<{TABLE_P_VALUE_MIN_DISPLAY:.3f}"
+            return f"{num:.{TABLE_DEFAULT_FLOAT_DECIMALS}f}"
+        return f"{num:.{TABLE_DEFAULT_FLOAT_DECIMALS}f}"
     text = str(value).replace("\t", " ").replace("\r", " ").replace("\n", " ")
     return " ".join(text.split())
 
@@ -360,8 +356,8 @@ def _iter_central_topic_reports(
     root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
     if not root.exists():
         raise FileNotFoundError(f"Dashboard directory not found: {root}")
-    for path in root.rglob("*_central_topic_correlations.json"):
-        if path.name == "00_genre_central_topic_presence_correlations.json":
+    for path in root.rglob(f"*{CENTRAL_TOPIC_CORRELATIONS_SUFFIX}"):
+        if path.name == GENRE_CENTRAL_PRESENCE_FILENAME:
             continue
         payload = load_json(path)
         if isinstance(payload, dict):
@@ -376,7 +372,7 @@ def _load_aggregated_presence_by_genre(
     if not root.exists():
         return {}
     aggregated: Dict[str, Dict[str, Dict[str, object]]] = {}
-    for path in root.glob("*/00_genre_central_topic_presence_correlations.json"):
+    for path in root.glob(f"*/{GENRE_CENTRAL_PRESENCE_FILENAME}"):
         payload = load_json(path)
         if not isinstance(payload, dict):
             continue
@@ -397,7 +393,7 @@ def _load_split_half_stability_by_genre(
     if not root.exists():
         return {}
     stability: Dict[str, Dict[str, Dict[str, object]]] = {}
-    for path in root.glob("*/00_genre_central_topic_split_half_stability.json"):
+    for path in root.glob(f"*/{GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME}"):
         payload = load_json(path)
         if not isinstance(payload, dict):
             continue
@@ -422,8 +418,11 @@ def collect_central_topic_data(
     for path, data in _iter_central_topic_reports(dashboard_root):
         metadata = data.get("metadata")
         report = data.get("report")
+        params = data.get("params", {})
         if not isinstance(metadata, dict) or not isinstance(report, dict):
             continue
+        if not isinstance(params, dict):
+            params = {}
         window_count = report.get("window_count")
         category = metadata.get("category") or ""
         category_parts = [part for part in str(category).split("/") if part]
@@ -466,8 +465,8 @@ def collect_central_topic_data(
 
         presence_path = path.with_name(
             path.name.replace(
-                "_central_topic_correlations.json",
-                "_central_topic_presence_correlations.json",
+                CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
+                CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
             )
         )
         if presence_path.exists():
@@ -775,7 +774,7 @@ def plot_aggregated_presence_heatmap(
         p_threshold = config.p_threshold
 
     root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
-    agg_paths = sorted(root.glob("*/00_genre_central_topic_presence_correlations.json"))
+    agg_paths = sorted(root.glob(f"*/{GENRE_CENTRAL_PRESENCE_FILENAME}"))
     if not agg_paths:
         return None
 
@@ -835,7 +834,7 @@ def plot_aggregated_presence_heatmap(
     ax.set_xticklabels(genres, rotation=30, ha="right")
     ax.set_yticks(np.arange(len(metrics_list)))
     ax.set_yticklabels(metrics_list, fontsize=8)
-    ax.set_title("Aggregated Central Topic Presence - Genre x Metric (r)")
+    ax.set_title("Aggregated All-Central-Topic (p-norm) Correlations - Genre x Metric (r)")
 
     cbar = fig.colorbar(im, ax=ax, shrink=0.8)
     cbar.set_label("Pearson r")

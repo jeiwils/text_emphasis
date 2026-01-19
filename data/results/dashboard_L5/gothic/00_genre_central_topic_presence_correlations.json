@@ -1,0 +1,448 @@
+{
+  "genre": "gothic",
+  "text_count": 9,
+  "metric_names": [
+    "discourse.connective_counts_per_token.Comparison",
+    "discourse.connective_counts_per_token.Contingency",
+    "discourse.connective_counts_per_token.Expansion",
+    "discourse.connective_counts_per_token.Temporal",
+    "discourse.content_overlap_per_token",
+    "discourse.content_overlap_ratio",
+    "discourse.entity_overlap_per_token",
+    "discourse.entity_overlap_ratio",
+    "discourse.explicit_connectives_per_token",
+    "discourse.modality_per_token",
+    "discourse.pronoun_ratio",
+    "discourse.tense_shift",
+    "lexico_semantics.avg_word_freq",
+    "lexico_semantics.information_content",
+    "lexico_semantics.lexical_density_per_token",
+    "lexico_semantics.lexical_diversity_mattr.mattr_score",
+    "lexico_semantics.normalized_freq",
+    "log_prob.max_token_surprisal",
+    "log_prob.token_weighted_mean_surprisal",
+    "log_prob.token_weighted_surprisal_variance",
+    "syntax.avg_dependents_per_head.coordinate_clause",
+    "syntax.avg_dependents_per_head.main_clause",
+    "syntax.avg_dependents_per_head.subordinate_clause",
+    "syntax.avg_mean_dependency_distance",
+    "syntax.avg_tokens_per_sentence",
+    "syntax.clause_counts_per_token.coordinate",
+    "syntax.clause_counts_per_token.main",
+    "syntax.clause_counts_per_token.subordinate",
+    "syntax.clause_ratios.coordination_ratio",
+    "syntax.clause_ratios.subordination_ratio",
+    "syntax.depth_skew",
+    "syntax.max_depth",
+    "syntax.median_depth",
+    "syntax.punctuation_per_token"
+  ],
+  "metrics": {
+    "discourse.connective_counts_per_token.Comparison": {
+      "pearson_r": 0.036562303685103215,
+      "p_value": 0.12715708952675353,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.036578608952767384,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.connective_counts_per_token.Contingency": {
+      "pearson_r": 0.009641937423405274,
+      "p_value": 0.6335296618223591,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.009642236233934657,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.connective_counts_per_token.Expansion": {
+      "pearson_r": -0.015060811246794658,
+      "p_value": 0.5149606750209093,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.01506195013987401,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.connective_counts_per_token.Temporal": {
+      "pearson_r": 0.0361649793771038,
+      "p_value": 0.1394971548611923,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.036180758556187756,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.content_overlap_per_token": {
+      "pearson_r": -0.059349022734762495,
+      "p_value": 0.02350083478476428,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.05941885218689029,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.content_overlap_ratio": {
+      "pearson_r": -0.06755728565025614,
+      "p_value": 0.011028480005607522,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.0676603448686722,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.entity_overlap_per_token": {
+      "pearson_r": -0.02431617659165909,
+      "p_value": 0.368102038111378,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.024320970820078554,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.entity_overlap_ratio": {
+      "pearson_r": -0.028261591801639625,
+      "p_value": 0.2836002929267707,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.028269119752913578,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.explicit_connectives_per_token": {
+      "pearson_r": 0.02537591085737134,
+      "p_value": 0.381050224973551,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.025381359790837794,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.modality_per_token": {
+      "pearson_r": 0.025771343764424418,
+      "p_value": 0.3051730514397213,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.025777051489552096,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.pronoun_ratio": {
+      "pearson_r": 0.07370732179647527,
+      "p_value": 0.008196001197469105,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.07384123687744891,
+      "fisher_z_weight_sum": 760
+    },
+    "discourse.tense_shift": {
+      "pearson_r": -0.02448292672260015,
+      "p_value": 0.3988808868655611,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.02448782028325305,
+      "fisher_z_weight_sum": 760
+    },
+    "lexico_semantics.avg_word_freq": {
+      "pearson_r": -0.05541181229631154,
+      "p_value": 0.026143795643241097,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.055468630424303826,
+      "fisher_z_weight_sum": 760
+    },
+    "lexico_semantics.information_content": {
+      "pearson_r": -0.034112100873068006,
+      "p_value": 0.18788740544641946,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.0341253414683103,
+      "fisher_z_weight_sum": 760
+    },
+    "lexico_semantics.lexical_density_per_token": {
+      "pearson_r": -0.03327249642354733,
+      "p_value": 0.1642191729275777,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.03328478279136288,
+      "fisher_z_weight_sum": 760
+    },
+    "lexico_semantics.lexical_diversity_mattr.mattr_score": {
+      "pearson_r": 0.05311649277580554,
+      "p_value": 0.028601888586436752,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.053166531123568436,
+      "fisher_z_weight_sum": 760
+    },
+    "lexico_semantics.normalized_freq": {
+      "pearson_r": -0.05541243163349082,
+      "p_value": 0.029449323263227356,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.05546925166901702,
+      "fisher_z_weight_sum": 760
+    },
+    "log_prob.max_token_surprisal": {
+      "pearson_r": -0.034144741500501875,
+      "p_value": 0.2053706849911523,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.034158020158222814,
+      "fisher_z_weight_sum": 760
+    },
+    "log_prob.token_weighted_mean_surprisal": {
+      "pearson_r": -0.012129466172143022,
+      "p_value": 0.6134863228388525,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.012130061069648122,
+      "fisher_z_weight_sum": 760
+    },
+    "log_prob.token_weighted_surprisal_variance": {
+      "pearson_r": -0.018045881722478868,
+      "p_value": 0.48966271884971535,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.018047841008925283,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.avg_dependents_per_head.coordinate_clause": {
+      "pearson_r": -0.035093853358710556,
+      "p_value": 0.1506221201573812,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.03510827095965834,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.avg_dependents_per_head.main_clause": {
+      "pearson_r": -0.058166483887802566,
+      "p_value": 0.021718560490797012,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.05823221637093485,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.avg_dependents_per_head.subordinate_clause": {
+      "pearson_r": 0.007558133931746162,
+      "p_value": 0.7098739040156694,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.0075582778571250744,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.avg_mean_dependency_distance": {
+      "pearson_r": -0.0740481396415108,
+      "p_value": 0.005578325632700665,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.07418392509041598,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.avg_tokens_per_sentence": {
+      "pearson_r": -0.07747804963712288,
+      "p_value": 0.003932180348028336,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.077633640070511,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.clause_counts_per_token.coordinate": {
+      "pearson_r": -0.03759676212425802,
+      "p_value": 0.11811484161529817,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.03761449171147585,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.clause_counts_per_token.main": {
+      "pearson_r": 0.04032402770982438,
+      "p_value": 0.13437852183353227,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.04034590504644848,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.clause_counts_per_token.subordinate": {
+      "pearson_r": -0.002502012339540428,
+      "p_value": 0.8794060677059918,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.00250201756048062,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.clause_ratios.coordination_ratio": {
+      "pearson_r": -0.07909244398908262,
+      "p_value": 0.002586698293337797,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.07925798974065158,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.clause_ratios.subordination_ratio": {
+      "pearson_r": -0.05045491049404131,
+      "p_value": 0.06421439116239336,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.050497790330048586,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.depth_skew": {
+      "pearson_r": -0.04541927470395528,
+      "p_value": 0.06377671889789882,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.045450545384711036,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.max_depth": {
+      "pearson_r": -0.03447955869567817,
+      "p_value": 0.18229200481798102,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.03449323200938362,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.median_depth": {
+      "pearson_r": -0.044652289187903545,
+      "p_value": 0.11472142150156972,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.04468200105241931,
+      "fisher_z_weight_sum": 760
+    },
+    "syntax.punctuation_per_token": {
+      "pearson_r": 0.0035360168249055236,
+      "p_value": 0.8701962082652548,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": 0.003536031562444672,
+      "fisher_z_weight_sum": 760
+    }
+  },
+  "texts": [
+    {
+      "category": "gothic/fanu",
+      "author": "fanu",
+      "text_name": "green_tea",
+      "filename": "green_tea_window_metrics.syntax.json",
+      "window_count": 655,
+      "effective_window_count": 131,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "gothic/fanu",
+      "author": "fanu",
+      "text_name": "mr_justice_harbottle",
+      "filename": "mr_justice_harbottle_window_metrics.syntax.json",
+      "window_count": 615,
+      "effective_window_count": 123,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "gothic/fanu",
+      "author": "fanu",
+      "text_name": "the_familiar",
+      "filename": "the_familiar_window_metrics.syntax.json",
+      "window_count": 500,
+      "effective_window_count": 100,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "gothic/hoffman",
+      "author": "hoffman",
+      "text_name": "automata",
+      "filename": "automata_window_metrics.syntax.json",
+      "window_count": 529,
+      "effective_window_count": 106,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "gothic/hoffman",
+      "author": "hoffman",
+      "text_name": "counsillor_krespel",
+      "filename": "counsillor_krespel_window_metrics.syntax.json",
+      "window_count": 371,
+      "effective_window_count": 75,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "gothic/hoffman",
+      "author": "hoffman",
+      "text_name": "the_sandman",
+      "filename": "the_sandman_window_metrics.syntax.json",
+      "window_count": 633,
+      "effective_window_count": 127,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "gothic/poe",
+      "author": "poe",
+      "text_name": "the_cask_of_amontillado",
+      "filename": "the_cask_of_amontillado_window_metrics.syntax.json",
+      "window_count": 224,
+      "effective_window_count": 45,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "gothic/poe",
+      "author": "poe",
+      "text_name": "the_fall_of_the_house_of_usher",
+      "filename": "the_fall_of_the_house_of_usher_window_metrics.syntax.json",
+      "window_count": 236,
+      "effective_window_count": 48,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "gothic/poe",
+      "author": "poe",
+      "text_name": "the_telltale_heart",
+      "filename": "the_telltale_heart_window_metrics.syntax.json",
+      "window_count": 157,
+      "effective_window_count": 32,
+      "block_size": 5,
+      "metric_count": 34
+    }
+  ],
+  "params": {
+    "r_aggregation": "fisher_z",
+    "p_value_aggregation": "stouffer",
+    "r_weight": "n_eff-3",
+    "p_weight": "sqrt(n_eff-3)",
+    "n_eff_method": "ceil(n_windows / block_size), min 1",
+    "block_size": 5
+  }
+}

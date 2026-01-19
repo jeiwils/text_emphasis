@@ -39,16 +39,16 @@ Notes:
 - The orchestrator runs preprocessing, embeddings, topic modeling, corpus metrics, window metrics, and dashboard correlations.
 - Outputs are written under `data/analytics/` and `data/results/`.
 - Per-text dashboard outputs include:
-  - `*_topic_correlations.json`
-  - `*_central_topic_correlations.json`
-  - `*_central_topic_presence_correlations.json`
+  - `*_topic_correlations.json` (per-topic correlations)
+  - `*_central_topic_correlations.json` (per-central-topic correlations)
+  - `*_central_topic_presence_correlations.json` (all-central-topic p-norm correlations)
 
 ## Central topics (percentile-ranked components)
 - Centrality selection:
   - Uses topic stats: coherence, exclusivity, prevalence, persistence, top10_mean.
   - Compute within-text percentile ranks for each metric across topics.
   - Optional coherence/exclusivity percentile floors applied before near-top selection.
-  - Centrality score is the mean of available component percentiles.
+  - Centrality score is the mean of component percentiles, with persistence/top10_mean combined via max (OR).
   - Keep topics with score >= near_top_alpha * max (after floors).
   - Optional cap via `CentralTopicSelectionConfig.max_topics` in `src/x_configs.py` (None = no cap).
 - Metric definitions (from topic modeling):
@@ -116,15 +116,16 @@ flowchart TD
 ## Correlations
 - Per text:
   - `*_topic_correlations.json` includes correlations for all topics; `*_central_topic_correlations.json` includes
-    only selected central topics.
+    only selected central topics; `*_central_topic_presence_correlations.json` is the all-central-topic (p-norm)
+    aggregate.
   - For each topic, correlate window metrics with overlap-weighted soft topic scores; compute Pearson r with block
     permutation p-values, plus binary correlations from score > 0.
-- Central topic presence correlations use a normalized p-norm across central topics per window
+- All-central-topic (p-norm) correlations use a normalized p-norm across central topics per window
   (soft score; 0 when no central topic is present). Default p=2; normalization divides by K
   (number of central topics). Dashboard correlations do not apply extra per-window top-k/threshold
   filtering for central topics beyond what topic modeling already stored.
 - Per genre:
-  - Central topic presence correlations aggregated across texts via Fisher z for r (weighted by n-3; only n > 3)
+  - All-central-topic (p-norm) correlations aggregated across texts via Fisher z for r (weighted by n-3; only n > 3)
     and Stouffer for p-values (weights sqrt(n-3), sign from r).
 
 ## Notes

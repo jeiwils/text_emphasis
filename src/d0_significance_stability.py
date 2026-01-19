@@ -240,16 +240,18 @@ from .d1_dashboard_metrics import (
     collect_window_topic_scores,
     load_window_metrics,
 )
+from .x_configs import (
+    AUTHOR_CENTRAL_PRESENCE_SPLIT_HALF_TEMPLATE,
+    AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE,
+    CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
+    CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
+    CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
+    CROSS_BLOCK_CONSISTENCY_FILENAME,
+    GENRE_CENTRAL_PRESENCE_FILENAME,
+    GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
+    GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
+)
 from .z_utils import find_topic_file, load_json
-
-GENRE_CENTRAL_PRESENCE_FILENAME = "00_genre_central_topic_presence_correlations.json"
-CENTRAL_TOPIC_SPLIT_HALF_FILENAME = "00_central_topic_split_half_stability.json"
-GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME = "00_genre_central_topic_split_half_stability.json"
-AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE = "{author}_central_topic_split_half_stability.json"
-CENTRAL_PRESENCE_SPLIT_HALF_FILENAME = "00_central_topic_presence_split_half_stability.json"
-GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME = "00_genre_central_topic_presence_split_half_stability.json"
-AUTHOR_CENTRAL_PRESENCE_SPLIT_HALF_TEMPLATE = "{author}_central_topic_presence_split_half_stability.json"
-CROSS_BLOCK_CONSISTENCY_FILENAME = "00_cross_block_consistency.json"
 
 
 def _as_float(value: object) -> Optional[float]:
@@ -959,7 +961,7 @@ def _collect_central_topic_r_values(
     values: Dict[Tuple[str, str, str, int, str], float] = {}
     if not output_root.exists():
         return values
-    for path in output_root.rglob("*_central_topic_correlations.json"):
+    for path in output_root.rglob(f"*{CENTRAL_TOPIC_CORRELATIONS_SUFFIX}"):
         try:
             with open(path, "r", encoding="utf-8") as f:
                 payload = json.load(f)

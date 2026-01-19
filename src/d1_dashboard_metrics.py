@@ -99,6 +99,7 @@ import numpy as np
 import bisect
 
 from .x_configs import (
+    CENTRALITY_METRICS,
     DASHBOARD_WINDOW_CONFIG,
     DEFAULT_BLOCK_SIZE,
     DEFAULT_CENTRAL_PRESENCE_NORMALIZE,
@@ -106,16 +107,13 @@ from .x_configs import (
     DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG,
     DEFAULT_DASHBOARD_PERMUTATIONS,
     DEFAULT_RNG_SEED,
+    WINDOW_METRIC_DOMAINS,
 )
 
 from .b2_topic_modeling import (
     build_topic_window_metrics,
     collect_soft_topic_mentions,
 )
-
-# Dashboard correlations use a curated subset of window metrics; full windows remain in analytics.
-CENTRALITY_METRICS = ("coherence", "exclusivity", "prevalence", "persistence", "top10_mean")
-WINDOW_METRIC_DOMAINS = ("syntax", "lexico_semantics", "discourse", "log_prob")
 
 
 def _window_metrics_base_name(path: Path) -> Optional[str]:
@@ -292,6 +290,51 @@ def dashboard_metric_names(window_table: List[Dict[str, float]]) -> List[str]:
     return metric_names
 
 
+def _metric_matrix(
+    window_table: List[Dict[str, float]],
+    metric_names: List[str],
+) -> np.ndarray:
+    if not window_table or not metric_names:
+        return np.empty((0, 0), dtype=float)
+    matrix = np.empty((len(metric_names), len(window_table)), dtype=float)
+    for metric_idx, metric in enumerate(metric_names):
+        for row_idx, row in enumerate(window_table):
+            value = row.get(metric)
+            if not isinstance(value, (int, float)):
+                raise ValueError(f"Non-numeric metric value for {metric}")
+            if isinstance(value, float) and math.isnan(value):
+                raise ValueError(f"NaN metric value for {metric}")
+            matrix[metric_idx, row_idx] = float(value)
+    return matrix
+
+
+def _pearson_vector(x: np.ndarray, y_matrix: np.ndarray) -> np.ndarray:
+    if y_matrix.size == 0:
+        return np.array([], dtype=float)
+    x_arr = np.asarray(x, dtype=float)
+    if x_arr.size < 2 or y_matrix.shape[1] < 2:
+        return np.full(y_matrix.shape[0], np.nan, dtype=float)
+    x_centered = x_arr - np.mean(x_arr)
+    x_ss = np.sum(x_centered ** 2)
+    if x_ss == 0:
+        return np.full(y_matrix.shape[0], np.nan, dtype=float)
+    y_centered = y_matrix - np.mean(y_matrix, axis=1, keepdims=True)
+    y_ss = np.sum(y_centered ** 2, axis=1)
+    denom = np.sqrt(x_ss * y_ss)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        corrs = np.sum(y_centered * x_centered, axis=1) / denom
+    corrs[~np.isfinite(corrs)] = np.nan
+    return corrs
+
+
+def _build_blocks(x: np.ndarray, block_size: int) -> List[np.ndarray]:
+    n = len(x)
+    if n == 0:
+        return []
+    block_size = min(block_size, n)
+    return [x[i : i + block_size] for i in range(0, n, block_size)]
+
+
 def _topic_items(topics_data: Dict[str, object]) -> List[Dict[str, object]]:
     if not isinstance(topics_data, dict):
         return []
@@ -348,7 +391,10 @@ def collect_window_topic_scores(
         if items:
             topic_windows.append((start_sentence, end_sentence, items))
 
+    topic_windows.sort(key=lambda item: (item[0], item[1]))
+
     scores_by_window: List[Dict[int, float]] = []
+    topic_idx = 0
     for window in window_entries:
         try:
             metric_start = int(window.get("start_sentence", 0))
@@ -357,17 +403,22 @@ def collect_window_topic_scores(
             scores_by_window.append({})
             continue
 
+        while topic_idx < len(topic_windows) and topic_windows[topic_idx][1] < metric_start:
+            topic_idx += 1
+
         score_sums: Dict[int, float] = {}
         weight_sums: Dict[int, float] = {}
-        for start_sentence, end_sentence, items in topic_windows:
-            if end_sentence < metric_start or start_sentence > metric_end:
-                continue
+        scan_idx = topic_idx
+        while scan_idx < len(topic_windows):
+            start_sentence, end_sentence, items = topic_windows[scan_idx]
+            if start_sentence > metric_end:
+                break
             overlap = min(metric_end, end_sentence) - max(metric_start, start_sentence) + 1
-            if overlap <= 0:
-                continue
-            for topic_id, score in items:
-                score_sums[topic_id] = score_sums.get(topic_id, 0.0) + score * overlap
-                weight_sums[topic_id] = weight_sums.get(topic_id, 0.0) + overlap
+            if overlap > 0:
+                for topic_id, score in items:
+                    score_sums[topic_id] = score_sums.get(topic_id, 0.0) + score * overlap
+                    weight_sums[topic_id] = weight_sums.get(topic_id, 0.0) + overlap
+            scan_idx += 1
 
         window_scores = {
             topic_id: score_sums[topic_id] / weight_sums[topic_id]
@@ -382,11 +433,16 @@ def collect_window_topic_scores(
 def pearson_correlation(x: List[float], y: List[float]) -> Optional[float]:
     if len(x) < 2 or len(y) < 2:
         return None
-    x_arr = np.array(x, dtype=float)
-    y_arr = np.array(y, dtype=float)
-    if x_arr.std() == 0 or y_arr.std() == 0:
+    x_arr = np.asarray(x, dtype=float)
+    y_arr = np.asarray(y, dtype=float)
+    if x_arr.size < 2 or y_arr.size < 2:
         return None
-    corr = float(np.corrcoef(x_arr, y_arr)[0, 1])
+    x_centered = x_arr - np.mean(x_arr)
+    y_centered = y_arr - np.mean(y_arr)
+    denom = math.sqrt(float(np.sum(x_centered ** 2) * np.sum(y_centered ** 2)))
+    if denom == 0.0:
+        return None
+    corr = float(np.sum(x_centered * y_centered) / denom)
     if math.isnan(corr):
         return None
     return corr
@@ -399,25 +455,32 @@ def block_permutation_p_value(
     block_size: int,
     permutations: int,
     rng: np.random.Generator,
+    observed: Optional[float] = None,
+    blocks: Optional[List[np.ndarray]] = None,
 ) -> Optional[float]:
     if len(x) < 2 or len(y) < 2:
         return None
     if block_size <= 0 or permutations <= 0:
         return None
-    observed = pearson_correlation(x, y)
+    x_arr = np.asarray(x, dtype=float)
+    y_arr = np.asarray(y, dtype=float)
+    if x_arr.size < 2 or y_arr.size < 2:
+        return None
+    if observed is None:
+        observed = pearson_correlation(x_arr, y_arr)
     if observed is None:
         return None
-    n = len(x)
+    n = x_arr.size
     block_size = min(block_size, n)
-    blocks = [x[i : i + block_size] for i in range(0, n, block_size)]
+    if blocks is None:
+        blocks = _build_blocks(x_arr, block_size)
     if not blocks:
         return None
     counts = 0
     for _ in range(permutations):
         perm_blocks = rng.permutation(len(blocks))
-        shuffled = [val for idx in perm_blocks for val in blocks[idx]]
-        shuffled = shuffled[:n]
-        corr = pearson_correlation(shuffled, y)
+        shuffled = np.concatenate([blocks[idx] for idx in perm_blocks])[:n]
+        corr = pearson_correlation(shuffled, y_arr)
         if corr is None:
             continue
         if abs(corr) >= abs(observed):
@@ -532,6 +595,8 @@ def _collect_centrality_rows(topics_data: Dict[str, object]) -> List[Dict[str, o
         raw_score: List[Optional[float]] = []
         percentile_score: List[Optional[float]] = []
         available: List[float] = []
+        persistence_rank: Optional[float] = None
+        top10_rank: Optional[float] = None
         for metric in CENTRALITY_METRICS:
             val = raw_stats.get(metric)
             raw_score.append(val if val is not None else None)
@@ -543,7 +608,21 @@ def _collect_centrality_rows(topics_data: Dict[str, object]) -> List[Dict[str, o
                 percentile_score.append(None)
                 continue
             percentile_score.append(rank)
-            available.append(rank)
+            if metric == "persistence":
+                persistence_rank = rank
+            elif metric == "top10_mean":
+                top10_rank = rank
+            else:
+                available.append(rank)
+        if persistence_rank is not None or top10_rank is not None:
+            # Treat persistence/top10 as an OR: keep only the stronger signal.
+            available.append(
+                max(
+                    rank
+                    for rank in (persistence_rank, top10_rank)
+                    if rank is not None
+                )
+            )
         if not available:
             continue
         score = sum(available) / len(available)
@@ -648,6 +727,9 @@ def build_topic_correlation_report(
         return {}
 
     metric_names = dashboard_metric_names(window_table)
+    if not metric_names:
+        return {}
+    metric_matrix = _metric_matrix(window_table, metric_names)
     topics = set()
     for entry in topic_metrics:
         topics.update(entry.get("topic_counts", {}).keys())
@@ -666,39 +748,32 @@ def build_topic_correlation_report(
         topics_data,
         window_entries=window_entries,
     )
+    window_count = len(window_table)
 
     for topic_id in sorted(topics):
-        values_by_metric: Dict[str, List[Tuple[float, float]]] = {name: [] for name in metric_names}
-
-        for idx, window_row in enumerate(window_table):
-            score = 0.0
-            if idx < len(topic_score_windows):
-                score = topic_score_windows[idx].get(topic_id, 0.0)
-            present = float(score)
-            for metric in metric_names:
-                val = window_row.get(metric)
-                if not isinstance(val, (int, float)):
-                    raise ValueError(f"Non-numeric metric value for {metric}")
-                if isinstance(val, float) and math.isnan(val):
-                    raise ValueError(f"NaN metric value for {metric}")
-                values_by_metric[metric].append((present, float(val)))
-
+        presence_scores = np.zeros(window_count, dtype=float)
+        for idx, score_map in enumerate(topic_score_windows[:window_count]):
+            presence_scores[idx] = score_map.get(topic_id, 0.0)
+        corrs = _pearson_vector(presence_scores, metric_matrix)
+        if corrs.size == 0:
+            continue
+        blocks = _build_blocks(presence_scores, block_size) if block_size > 0 else None
         metric_correlations: Dict[str, object] = {}
-        for metric, pairs in values_by_metric.items():
-            presences = [p for p, _ in pairs]
-            values = [v for _, v in pairs]
-            corr = pearson_correlation(presences, values)
-            if corr is None:
+        for metric_idx, metric in enumerate(metric_names):
+            corr = corrs[metric_idx]
+            if not np.isfinite(corr):
                 continue
             p_value = block_permutation_p_value(
-                presences,
-                values,
+                presence_scores,
+                metric_matrix[metric_idx],
                 block_size=block_size,
                 permutations=permutations,
                 rng=rng,
+                observed=float(corr),
+                blocks=blocks,
             )
             metric_correlations[metric] = {
-                "pearson_r": corr,
+                "pearson_r": float(corr),
                 "p_value": p_value,
             }
 
@@ -806,6 +881,9 @@ def build_central_presence_report(
         return {}
 
     metric_names = dashboard_metric_names(window_table)
+    if not metric_names:
+        return {}
+    metric_matrix = _metric_matrix(window_table, metric_names)
     topic_score_windows = collect_window_topic_scores(
         topics_data,
         window_entries=window_entries,
@@ -831,42 +909,26 @@ def build_central_presence_report(
             presence = 0.0
         presence_scores.append(presence)
 
-    presence_rows = []
-    for presence_score, window_row in zip(presence_scores, window_table):
-        # Soft presence uses a normalized p-norm across central topic scores.
-        presence = float(presence_score)
-        presence_rows.append((presence, window_row))
-
-    if not presence_rows:
-        return {}
-
     correlations: Dict[str, object] = {}
     rng = np.random.default_rng(DEFAULT_RNG_SEED)
-    for metric in metric_names:
-        pairs = []
-        for presence, row in presence_rows:
-            value = row.get(metric)
-            if not isinstance(value, (int, float)):
-                raise ValueError(f"Non-numeric metric value for {metric}")
-            if isinstance(value, float) and math.isnan(value):
-                raise ValueError(f"NaN metric value for {metric}")
-            pairs.append((presence, float(value)))
-        if not pairs:
-            continue
-        presences = [p for p, _ in pairs]
-        values = [v for _, v in pairs]
-        corr = pearson_correlation(presences, values)
-        if corr is None:
+    presence_array = np.asarray(presence_scores, dtype=float)
+    corrs = _pearson_vector(presence_array, metric_matrix)
+    blocks = _build_blocks(presence_array, block_size) if block_size > 0 else None
+    for metric_idx, metric in enumerate(metric_names):
+        corr = corrs[metric_idx]
+        if not np.isfinite(corr):
             continue
         p_value = block_permutation_p_value(
-            presences,
-            values,
+            presence_array,
+            metric_matrix[metric_idx],
             block_size=block_size,
             permutations=permutations,
             rng=rng,
+            observed=float(corr),
+            blocks=blocks,
         )
         correlations[metric] = {
-            "pearson_r": corr,
+            "pearson_r": float(corr),
             "p_value": p_value,
         }
 

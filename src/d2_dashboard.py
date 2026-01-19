@@ -88,7 +88,7 @@ Outputs (per text):
 Centrality metrics include top10_mean (mean of the top fraction of per-window topic scores).
 Central topic selection applies coherence/exclusivity percentile floors before near_top_alpha.
 
-Central topic presence uses the normalized p-norm across central topics per window
+All-central-topic (p-norm) correlations use the normalized p-norm across central topics per window
 (default p comes from config, dividing by K, the number of central topics).
 
 - data/results/dashboard/<genre>/<author>/<text>/<text>_central_topic_presence_correlations.json
@@ -355,12 +355,6 @@ from typing import Callable, Dict, List, Optional, Tuple
 from tqdm import tqdm
 
 from .d0_significance_stability import (
-    AUTHOR_CENTRAL_PRESENCE_SPLIT_HALF_TEMPLATE,
-    AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE,
-    CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
-    CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
-    GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
-    GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
     _build_central_presence_split_half_entry,
     _build_central_topic_split_half_entry,
     _write_author_central_presence_split_half_summary,
@@ -379,9 +373,18 @@ from .d1_dashboard_metrics import (
     load_window_metrics,
 )
 from .x_configs import (
+    AUTHOR_CENTRAL_PRESENCE_SPLIT_HALF_TEMPLATE,
+    AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE,
+    CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
+    CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
+    CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
+    CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
     DEFAULT_BLOCK_SIZE,
     DEFAULT_DASHBOARD_CORRELATION_CONFIG,
     DEFAULT_DASHBOARD_PERMUTATIONS,
+    GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
+    GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
+    TOPIC_CORRELATIONS_SUFFIX,
     DashboardCorrelationConfig,
 )
 from .z_utils import find_topic_file, find_window_metrics_files, load_json, results_path
@@ -566,9 +569,9 @@ def run_dashboard(
         out_dir = output_root / genre / author / text_name
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        topic_file = out_dir / f"{text_name}_topic_correlations.json"
-        central_file = out_dir / f"{text_name}_central_topic_correlations.json"
-        presence_file = out_dir / f"{text_name}_central_topic_presence_correlations.json"
+        topic_file = out_dir / f"{text_name}{TOPIC_CORRELATIONS_SUFFIX}"
+        central_file = out_dir / f"{text_name}{CENTRAL_TOPIC_CORRELATIONS_SUFFIX}"
+        presence_file = out_dir / f"{text_name}{CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX}"
         topic_entry = None
         if use_existing and topic_file.exists():
             try:

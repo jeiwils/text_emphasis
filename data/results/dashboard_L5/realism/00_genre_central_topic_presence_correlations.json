@@ -1,0 +1,448 @@
+{
+  "genre": "realism",
+  "text_count": 9,
+  "metric_names": [
+    "discourse.connective_counts_per_token.Comparison",
+    "discourse.connective_counts_per_token.Contingency",
+    "discourse.connective_counts_per_token.Expansion",
+    "discourse.connective_counts_per_token.Temporal",
+    "discourse.content_overlap_per_token",
+    "discourse.content_overlap_ratio",
+    "discourse.entity_overlap_per_token",
+    "discourse.entity_overlap_ratio",
+    "discourse.explicit_connectives_per_token",
+    "discourse.modality_per_token",
+    "discourse.pronoun_ratio",
+    "discourse.tense_shift",
+    "lexico_semantics.avg_word_freq",
+    "lexico_semantics.information_content",
+    "lexico_semantics.lexical_density_per_token",
+    "lexico_semantics.lexical_diversity_mattr.mattr_score",
+    "lexico_semantics.normalized_freq",
+    "log_prob.max_token_surprisal",
+    "log_prob.token_weighted_mean_surprisal",
+    "log_prob.token_weighted_surprisal_variance",
+    "syntax.avg_dependents_per_head.coordinate_clause",
+    "syntax.avg_dependents_per_head.main_clause",
+    "syntax.avg_dependents_per_head.subordinate_clause",
+    "syntax.avg_mean_dependency_distance",
+    "syntax.avg_tokens_per_sentence",
+    "syntax.clause_counts_per_token.coordinate",
+    "syntax.clause_counts_per_token.main",
+    "syntax.clause_counts_per_token.subordinate",
+    "syntax.clause_ratios.coordination_ratio",
+    "syntax.clause_ratios.subordination_ratio",
+    "syntax.depth_skew",
+    "syntax.max_depth",
+    "syntax.median_depth",
+    "syntax.punctuation_per_token"
+  ],
+  "metrics": {
+    "discourse.connective_counts_per_token.Comparison": {
+      "pearson_r": 0.0006330693664756749,
+      "p_value": 0.9922944058266088,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.0006330694510488716,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.connective_counts_per_token.Contingency": {
+      "pearson_r": -0.03529343489047269,
+      "p_value": 0.22252838633231864,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.03530809999885365,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.connective_counts_per_token.Expansion": {
+      "pearson_r": 0.03052215055028359,
+      "p_value": 0.2968114817847678,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.03053163401391902,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.connective_counts_per_token.Temporal": {
+      "pearson_r": 0.0064989903841205544,
+      "p_value": 0.7293571746505678,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.006499081885456425,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.content_overlap_per_token": {
+      "pearson_r": -0.04414199982109199,
+      "p_value": 0.08889293359453543,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.04417070385322299,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.content_overlap_ratio": {
+      "pearson_r": -0.04652572736330239,
+      "p_value": 0.07017726478357456,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.04655934156654596,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.entity_overlap_per_token": {
+      "pearson_r": -0.047546326935906845,
+      "p_value": 0.07032025939157815,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.0475822041975815,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.entity_overlap_ratio": {
+      "pearson_r": -0.06201898026418095,
+      "p_value": 0.014465641363222481,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.06209867992619777,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.explicit_connectives_per_token": {
+      "pearson_r": 0.004553908075494178,
+      "p_value": 0.818478958479929,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.004553939555653994,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.modality_per_token": {
+      "pearson_r": 0.013436016275502475,
+      "p_value": 0.523721630078468,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.01343682488223604,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.pronoun_ratio": {
+      "pearson_r": 0.013720635462488775,
+      "p_value": 0.5382348956805711,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.01372149655632775,
+      "fisher_z_weight_sum": 651
+    },
+    "discourse.tense_shift": {
+      "pearson_r": -0.040076541717093066,
+      "p_value": 0.16604224319273087,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.04009801845211745,
+      "fisher_z_weight_sum": 651
+    },
+    "lexico_semantics.avg_word_freq": {
+      "pearson_r": 0.04653842656876811,
+      "p_value": 0.11172369520982528,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.046572068328431776,
+      "fisher_z_weight_sum": 651
+    },
+    "lexico_semantics.information_content": {
+      "pearson_r": -0.09704624854785725,
+      "p_value": 0.0005459285147926263,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.0973526414742778,
+      "fisher_z_weight_sum": 651
+    },
+    "lexico_semantics.lexical_density_per_token": {
+      "pearson_r": 0.041166887656569826,
+      "p_value": 0.127360610740322,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.04119016668018952,
+      "fisher_z_weight_sum": 651
+    },
+    "lexico_semantics.lexical_diversity_mattr.mattr_score": {
+      "pearson_r": -0.006389108441138253,
+      "p_value": 0.7953994545099812,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.006389195379241446,
+      "fisher_z_weight_sum": 651
+    },
+    "lexico_semantics.normalized_freq": {
+      "pearson_r": 0.04653986101025537,
+      "p_value": 0.11320894228025735,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.046573505883507935,
+      "fisher_z_weight_sum": 651
+    },
+    "log_prob.max_token_surprisal": {
+      "pearson_r": 0.004951012445641882,
+      "p_value": 0.8665954015473574,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.004951052900174393,
+      "fisher_z_weight_sum": 651
+    },
+    "log_prob.token_weighted_mean_surprisal": {
+      "pearson_r": -0.01994039053027367,
+      "p_value": 0.4975002606146237,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.01994303405484592,
+      "fisher_z_weight_sum": 651
+    },
+    "log_prob.token_weighted_surprisal_variance": {
+      "pearson_r": -0.021706856743386804,
+      "p_value": 0.4518849552044648,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.021710267041698518,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.avg_dependents_per_head.coordinate_clause": {
+      "pearson_r": 0.06567371903938667,
+      "p_value": 0.014149817283408694,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.06576838186585768,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.avg_dependents_per_head.main_clause": {
+      "pearson_r": 0.014725553452104653,
+      "p_value": 0.6127148992783313,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.014726617963056264,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.avg_dependents_per_head.subordinate_clause": {
+      "pearson_r": 0.01999262903049887,
+      "p_value": 0.39743251739937824,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.01999529338886818,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.avg_mean_dependency_distance": {
+      "pearson_r": 0.056109904947891275,
+      "p_value": 0.0915965139260626,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.056168900435563905,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.avg_tokens_per_sentence": {
+      "pearson_r": 0.03052978182771861,
+      "p_value": 0.4255290797636264,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.03053927240907506,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.clause_counts_per_token.coordinate": {
+      "pearson_r": 0.05422398149953447,
+      "p_value": 0.09395949137563919,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.05427721929313561,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.clause_counts_per_token.main": {
+      "pearson_r": -0.06475248237601697,
+      "p_value": 0.086427642500428,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.06484321061528749,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.clause_counts_per_token.subordinate": {
+      "pearson_r": 0.02995974920682656,
+      "p_value": 0.22741352222498157,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.029968717860276207,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.clause_ratios.coordination_ratio": {
+      "pearson_r": 0.02317232763460321,
+      "p_value": 0.36949848545284203,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.02317647648405488,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.clause_ratios.subordination_ratio": {
+      "pearson_r": 0.04783291609332527,
+      "p_value": 0.18665183293750176,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.04786944663245356,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.depth_skew": {
+      "pearson_r": -0.018474995748154997,
+      "p_value": 0.45749717243601085,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.018477098174261436,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.max_depth": {
+      "pearson_r": 0.04604890111731536,
+      "p_value": 0.2708640666103421,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.046081491510294496,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.median_depth": {
+      "pearson_r": 0.05671495494028328,
+      "p_value": 0.1797275809910337,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.056775882082189644,
+      "fisher_z_weight_sum": 651
+    },
+    "syntax.punctuation_per_token": {
+      "pearson_r": -0.06947220681176132,
+      "p_value": 0.05132462557358464,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.06958429818639336,
+      "fisher_z_weight_sum": 651
+    }
+  },
+  "texts": [
+    {
+      "category": "realism/chopin",
+      "author": "chopin",
+      "text_name": "a_pair_of_silk_stockings",
+      "filename": "a_pair_of_silk_stockings_window_metrics.syntax.json",
+      "window_count": 104,
+      "effective_window_count": 21,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "realism/chopin",
+      "author": "chopin",
+      "text_name": "desirees_baby",
+      "filename": "desirees_baby_window_metrics.syntax.json",
+      "window_count": 138,
+      "effective_window_count": 28,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "realism/chopin",
+      "author": "chopin",
+      "text_name": "the_story_of_an_hour",
+      "filename": "the_story_of_an_hour_window_metrics.syntax.json",
+      "window_count": 65,
+      "effective_window_count": 13,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "realism/james",
+      "author": "james",
+      "text_name": "the_author_of_beltraffio",
+      "filename": "the_author_of_beltraffio_window_metrics.syntax.json",
+      "window_count": 910,
+      "effective_window_count": 182,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "realism/james",
+      "author": "james",
+      "text_name": "the_figure_in_the_carpet",
+      "filename": "the_figure_in_the_carpet_window_metrics.syntax.json",
+      "window_count": 793,
+      "effective_window_count": 159,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "realism/james",
+      "author": "james",
+      "text_name": "the_real_thing",
+      "filename": "the_real_thing_window_metrics.syntax.json",
+      "window_count": 280,
+      "effective_window_count": 56,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "realism/maupassant",
+      "author": "maupassant",
+      "text_name": "a_piece_of_string",
+      "filename": "a_piece_of_string_window_metrics.syntax.json",
+      "window_count": 174,
+      "effective_window_count": 35,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "realism/maupassant",
+      "author": "maupassant",
+      "text_name": "boule-de-suif",
+      "filename": "boule-de-suif_window_metrics.syntax.json",
+      "window_count": 688,
+      "effective_window_count": 138,
+      "block_size": 5,
+      "metric_count": 34
+    },
+    {
+      "category": "realism/maupassant",
+      "author": "maupassant",
+      "text_name": "the_necklace",
+      "filename": "the_necklace_window_metrics.syntax.json",
+      "window_count": 228,
+      "effective_window_count": 46,
+      "block_size": 5,
+      "metric_count": 34
+    }
+  ],
+  "params": {
+    "r_aggregation": "fisher_z",
+    "p_value_aggregation": "stouffer",
+    "r_weight": "n_eff-3",
+    "p_weight": "sqrt(n_eff-3)",
+    "n_eff_method": "ceil(n_windows / block_size), min 1",
+    "block_size": 5
+  }
+}

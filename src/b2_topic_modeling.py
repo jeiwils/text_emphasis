@@ -37,7 +37,8 @@ Output (topics file):
           "prevalence": 0.12,
           "persistence": 2.3,
           "coherence": 0.45,
-          "exclusivity": 0.21
+          "exclusivity": 0.21,
+          "top10_mean": 0.67
         },
         "mentions": [
           {
@@ -68,6 +69,7 @@ Output (topics file):
 """
 
 import json
+import math
 from dataclasses import dataclass
 from itertools import combinations
 from pathlib import Path
@@ -98,6 +100,7 @@ from .x_configs import (
     DEFAULT_SOFT_SCORE_THRESHOLD,
     DEFAULT_SOFT_TOP_K,
     DEFAULT_RNG_SEED,
+    DEFAULT_CENTRALITY_TOP_SCORE_FRACTION,
 )
 
 @dataclass
@@ -342,6 +345,37 @@ class EmbeddingTopicModeler:
             }
         return stats
 
+    def _topic_top_fraction_means(
+        self,
+        window_topics: List[Dict[str, object]],
+        topic_ids: List[int],
+        *,
+        fraction: float,
+    ) -> Dict[int, float]:
+        if fraction <= 0 or fraction > 1:
+            raise ValueError("top score fraction must be in (0, 1]")
+        scores_by_topic: Dict[int, List[float]] = {topic_id: [] for topic_id in topic_ids}
+        for window in window_topics:
+            if window.get("is_noise"):
+                continue
+            scores = window.get("topic_scores") or []
+            for entry in scores:
+                if not isinstance(entry, dict):
+                    continue
+                topic_id = entry.get("topic_id")
+                score = entry.get("score")
+                if topic_id in scores_by_topic and isinstance(score, (int, float)):
+                    scores_by_topic[topic_id].append(float(score))
+        means: Dict[int, float] = {}
+        for topic_id, scores in scores_by_topic.items():
+            if not scores:
+                means[topic_id] = 0.0
+                continue
+            top_count = max(1, math.ceil(len(scores) * fraction))
+            scores.sort()
+            means[topic_id] = sum(scores[-top_count:]) / top_count
+        return means
+
     def _topic_coherence_exclusivity(
         self,
         keywords: Dict[int, List[str]],
@@ -545,6 +579,11 @@ class EmbeddingTopicModeler:
             )
 
         prevalence_stats = self._topic_prevalence_persistence(window_topics, cluster_labels)
+        top_fraction_means = self._topic_top_fraction_means(
+            window_topics,
+            cluster_labels,
+            fraction=DEFAULT_CENTRALITY_TOP_SCORE_FRACTION,
+        )
         topic_window_texts = {topic_id: [] for topic_id in cluster_labels}
         for idx, window in enumerate(window_topics):
             if window.get("is_noise"):
@@ -570,6 +609,7 @@ class EmbeddingTopicModeler:
             stats = {}
             stats.update(prevalence_stats.get(label, {}))
             stats.update(coherence_exclusivity.get(label, {}))
+            stats["top10_mean"] = top_fraction_means.get(label, 0.0)
             results.append(
                 TopicResult(
                     topic_id=int(label),

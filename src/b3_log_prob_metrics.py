@@ -74,7 +74,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from .x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
-from .z_utils import aggregate_windows, sliding_windows
+from .z_utils import aggregate_windows
 
 
 class WholeTextMetrics:
@@ -337,45 +337,85 @@ class WholeTextMetrics:
         windows = aggregate_windows(window_inputs, window_size) if window_inputs else []
 
         if windows:
-            for window_idx, window_sents in enumerate(sliding_windows(window_inputs, window_size)):
-                log_prob_tokens = [
-                    sent.get("sentence_log_prob_metrics", {}) for sent in window_sents
+            def _prefix(values):
+                acc = [0.0]
+                running = 0.0
+                for value in values:
+                    running += float(value)
+                    acc.append(running)
+                return acc
+
+            def _range_sum(prefix, start, end):
+                if start < 0 or end < start:
+                    return 0.0
+                return prefix[end + 1] - prefix[start]
+
+            token_counts = [
+                metrics.get("num_tokens", 0) for metrics in sentence_log_prob_metrics
+            ]
+            sum_log_probs = [
+                metrics.get("sum_log_prob", 0.0) for metrics in sentence_log_prob_metrics
+            ]
+            mean_surprisals = [
+                metrics.get("mean_surprisal", 0.0) for metrics in surprisal_metrics
+            ]
+            surprisal_variances = [
+                metrics.get("surprisal_variance", 0.0) for metrics in surprisal_metrics
+            ]
+            max_surprisal_per_sentence = []
+            for sent_log_probs in sentence_log_probs:
+                if not isinstance(sent_log_probs, list) or not sent_log_probs:
+                    max_surprisal_per_sentence.append(0.0)
+                    continue
+                max_surprisal = 0.0
+                for lp in sent_log_probs:
+                    if isinstance(lp, (int, float)) and not (
+                        isinstance(lp, float) and math.isnan(lp)
+                    ):
+                        max_surprisal = max(max_surprisal, -float(lp))
+                max_surprisal_per_sentence.append(max_surprisal)
+
+            token_prefix = _prefix(token_counts)
+            sum_log_prob_prefix = _prefix(sum_log_probs)
+            surprisal_sum_prefix = _prefix(
+                [
+                    mean * count for mean, count in zip(mean_surprisals, token_counts)
                 ]
-                surprisal_tokens = [
-                    sent.get("sentence_surprisal_metrics", {}) for sent in window_sents
+            )
+            surprisal_sq_prefix = _prefix(
+                [
+                    (mean ** 2) * count for mean, count in zip(mean_surprisals, token_counts)
                 ]
-                window_log_probs = sentence_log_probs[window_idx : window_idx + len(window_sents)]
-                token_surprisals = []
-                for sent_log_probs in window_log_probs:
-                    if not isinstance(sent_log_probs, list):
-                        continue
-                    for lp in sent_log_probs:
-                        if isinstance(lp, (int, float)) and not (
-                            isinstance(lp, float) and math.isnan(lp)
-                        ):
-                            token_surprisals.append(-float(lp))
-                max_token_surprisal = max(token_surprisals) if token_surprisals else 0.0
-                total_tokens = sum(metrics.get("num_tokens", 0) for metrics in log_prob_tokens)
-                sum_log_prob = sum(metrics.get("sum_log_prob", 0.0) for metrics in log_prob_tokens)
+            )
+            surprisal_var_prefix = _prefix(
+                [
+                    var * count for var, count in zip(surprisal_variances, token_counts)
+                ]
+            )
+
+            for window_idx, window in enumerate(windows):
+                start = int(window.get("start_sentence", 0))
+                end = int(window.get("end_sentence", start))
+                total_tokens = _range_sum(token_prefix, start, end)
+                sum_log_prob = _range_sum(sum_log_prob_prefix, start, end)
+                max_token_surprisal = (
+                    max(max_surprisal_per_sentence[start : end + 1])
+                    if start <= end
+                    else 0.0
+                )
 
                 if total_tokens > 0:
                     token_weighted_mean_log_prob = sum_log_prob / total_tokens
                     token_weighted_perplexity = math.exp(-token_weighted_mean_log_prob)
-                    sum_surprisal = sum(
-                        metrics.get("mean_surprisal", 0.0) * metrics.get("num_tokens", 0)
-                        for metrics in surprisal_tokens
-                    )
+                    sum_surprisal = _range_sum(surprisal_sum_prefix, start, end)
                     token_weighted_mean_surprisal = sum_surprisal / total_tokens
-                    pooled_variance = 0.0
-                    for metrics in surprisal_tokens:
-                        token_count = metrics.get("num_tokens", 0)
-                        if token_count <= 0:
-                            continue
-                        mean_surprisal = metrics.get("mean_surprisal", 0.0)
-                        var_surprisal = metrics.get("surprisal_variance", 0.0)
-                        pooled_variance += token_count * var_surprisal
-                        pooled_variance += token_count * (mean_surprisal - token_weighted_mean_surprisal) ** 2
-
+                    pooled_variance = _range_sum(surprisal_var_prefix, start, end)
+                    mean_sq_sum = _range_sum(surprisal_sq_prefix, start, end)
+                    pooled_variance += (
+                        mean_sq_sum
+                        - 2 * token_weighted_mean_surprisal * sum_surprisal
+                        + (token_weighted_mean_surprisal ** 2) * total_tokens
+                    )
                     token_weighted_surprisal_variance = pooled_variance / total_tokens
                 else:
                     token_weighted_mean_log_prob = 0.0
@@ -400,12 +440,12 @@ class WholeTextMetrics:
                     "sum_log_prob": round(sum_log_prob, 6),
                     "mean_log_prob": round(token_weighted_mean_log_prob, 6),
                     "perplexity": round(token_weighted_perplexity, 6),
-                    "num_tokens": total_tokens,
+                    "num_tokens": int(total_tokens),
                 }
                 windows[window_idx]["sentence_surprisal_metrics"] = {
                     "mean_surprisal": round(token_weighted_mean_surprisal, 6),
                     "surprisal_variance": round(token_weighted_surprisal_variance, 6),
-                    "num_tokens": total_tokens,
+                    "num_tokens": int(total_tokens),
                 }
                 windows[window_idx]["mean_log_prob_per_token"] = windows[window_idx][
                     "token_weighted_mean_log_prob"
@@ -419,7 +459,7 @@ class WholeTextMetrics:
                 windows[window_idx]["surprisal_variance_per_token"] = windows[window_idx][
                     "token_weighted_surprisal_variance"
                 ]
-                windows[window_idx]["token_count"] = total_tokens
+                windows[window_idx]["token_count"] = int(total_tokens)
 
         return {
             "meta": {
