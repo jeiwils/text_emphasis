@@ -13,7 +13,14 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
     pdfplumber = None
 from bs4 import BeautifulSoup
 
-from .x_configs import BOOK_CONFIGS, DEFAULT_BOOK_CONFIG, GENRES, load_spacy_model
+from .x_configs import (
+    BOOK_CONFIGS,
+    DEFAULT_BOOK_CONFIG,
+    DEFAULT_SPACY_MODEL,
+    DEFAULT_USE_EXISTING,
+    GENRES,
+    load_spacy_model,
+)
 from .z_utils import text_path
 
 def _html_to_text(html: str, selector: Optional[str] = None) -> str:
@@ -85,7 +92,7 @@ def preprocess_web_story(
     story_key: str,
     preproc: "TextPreprocessor",
     config: dict,
-    use_existing: bool = True,
+    use_existing: bool = DEFAULT_USE_EXISTING,
     category_override: Optional[str] = None,
 ):
     """
@@ -165,7 +172,7 @@ def preprocess_web_story(
 
 
 class TextPreprocessor:
-    def __init__(self, language: str = "en_core_web_sm"):
+    def __init__(self, language: str = DEFAULT_SPACY_MODEL):
         """Initialize the preprocessor with specified language model."""
         self.nlp = load_spacy_model(language)
 
@@ -533,7 +540,7 @@ def preprocess_pdf(
     config: Optional[dict] = None,
     book_name: Optional[str] = None,
     allow_default_config: bool = True,
-    use_existing: bool = True,
+    use_existing: bool = DEFAULT_USE_EXISTING,
     category_override: Optional[str] = None,
 ):
     """Extract, clean, and save a single PDF with optional page and boilerplate filtering."""
@@ -642,7 +649,7 @@ def preprocess_pdf(
 
 def preprocess_all_pdfs(
     process_unknown: bool = True,
-    use_existing: bool = True,
+    use_existing: bool = DEFAULT_USE_EXISTING,
     authors: Optional[List[str]] = None,
 ):
     preproc = TextPreprocessor()

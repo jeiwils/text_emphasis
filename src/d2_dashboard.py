@@ -357,14 +357,18 @@ from tqdm import tqdm
 from .d0_significance_stability import (
     _build_central_presence_split_half_entry,
     _build_central_topic_split_half_entry,
+    _build_topic_split_half_entry,
     _write_author_central_presence_split_half_summary,
     _write_author_central_topic_split_half_summary,
+    _write_author_topic_split_half_summary,
     _write_central_presence_split_half_summary,
     _write_central_topic_split_half_summary,
+    _write_topic_split_half_summary,
     _write_cross_block_consistency_summary,
     _write_genre_central_presence_correlations,
     _write_genre_central_presence_split_half_summary,
     _write_genre_central_topic_split_half_summary,
+    _write_genre_topic_split_half_summary,
 )
 from .d1_dashboard_metrics import (
     build_central_presence_report,
@@ -375,16 +379,20 @@ from .d1_dashboard_metrics import (
 from .x_configs import (
     AUTHOR_CENTRAL_PRESENCE_SPLIT_HALF_TEMPLATE,
     AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE,
+    AUTHOR_TOPIC_SPLIT_HALF_TEMPLATE,
     CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
     CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
     CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
     CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
+    DEFAULT_USE_EXISTING,
     DEFAULT_BLOCK_SIZE,
     DEFAULT_DASHBOARD_CORRELATION_CONFIG,
     DEFAULT_DASHBOARD_PERMUTATIONS,
     GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
     GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
+    GENRE_TOPIC_SPLIT_HALF_FILENAME,
     TOPIC_CORRELATIONS_SUFFIX,
+    TOPIC_SPLIT_HALF_FILENAME,
     DashboardCorrelationConfig,
 )
 from .z_utils import find_topic_file, find_window_metrics_files, load_json, results_path
@@ -487,15 +495,17 @@ def _build_central_presence_entry(
     )
 
 def run_dashboard(
-    use_existing: bool = False,
+    use_existing: bool = DEFAULT_USE_EXISTING,
     *,
     block_size: int = DEFAULT_BLOCK_SIZE,
     permutations: int = DEFAULT_DASHBOARD_PERMUTATIONS,
     output_root: Optional[Path] = None,
     authors: Optional[List[str]] = None,
+    texts: Optional[List[str]] = None,
 ) -> List[Dict[str, object]]:
     """
     Build topic correlation outputs from window metrics and write JSON outputs.
+    Optionally filter by author or text name for targeted runs.
 
     Outputs (per text):
       data/results/dashboard/<genre>/<author>/<text>/<text>_topic_correlations.json
@@ -510,14 +520,20 @@ def run_dashboard(
     output_root.mkdir(parents=True, exist_ok=True)
 
     window_metric_files = find_window_metrics_files()
+    text_filter = set(texts) if texts else None
     if authors:
         window_metric_files = [
             file for file in window_metric_files if file.parent.parent.name in authors
+        ]
+    if text_filter:
+        window_metric_files = [
+            file for file in window_metric_files if file.parent.name in text_filter
         ]
     if not window_metric_files:
         return []
 
     skip_topic_split_half = False
+    skip_all_topic_split_half = False
     skip_presence_split_half = False
     if use_existing:
         genre_author_pairs = {
@@ -541,6 +557,23 @@ def run_dashboard(
             and all(path.exists() for path in topic_genre_outputs)
             and all(path.exists() for path in topic_author_outputs)
         )
+        all_topic_split_half_output_path = output_root / TOPIC_SPLIT_HALF_FILENAME
+        all_topic_genre_outputs = {
+            output_root / genre / GENRE_TOPIC_SPLIT_HALF_FILENAME
+            for genre, _author in genre_author_pairs
+        }
+        all_topic_author_outputs = {
+            output_root
+            / genre
+            / author
+            / AUTHOR_TOPIC_SPLIT_HALF_TEMPLATE.format(author=author)
+            for genre, author in genre_author_pairs
+        }
+        skip_all_topic_split_half = (
+            all_topic_split_half_output_path.exists()
+            and all(path.exists() for path in all_topic_genre_outputs)
+            and all(path.exists() for path in all_topic_author_outputs)
+        )
         presence_split_half_output_path = output_root / CENTRAL_PRESENCE_SPLIT_HALF_FILENAME
         presence_genre_outputs = {
             output_root / genre / GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME
@@ -559,6 +592,7 @@ def run_dashboard(
             and all(path.exists() for path in presence_author_outputs)
         )
     central_presence_entries: List[Dict[str, object]] = []
+    topic_split_half_entries: List[Dict[str, object]] = []
     split_half_entries: List[Dict[str, object]] = []
     presence_split_half_entries: List[Dict[str, object]] = []
 
@@ -588,6 +622,13 @@ def run_dashboard(
             if topic_entry:
                 with open(topic_file, "w", encoding="utf-8") as f:
                     json.dump(topic_entry, f, indent=2)
+        if topic_entry and not skip_all_topic_split_half:
+            topic_split_half_entry = _build_topic_split_half_entry(
+                file,
+                topic_entry,
+            )
+            if topic_split_half_entry:
+                topic_split_half_entries.append(topic_split_half_entry)
 
         central_entry = None
         if use_existing and central_file.exists():
@@ -652,6 +693,22 @@ def run_dashboard(
         use_existing=use_existing,
         output_root=output_root,
     )
+    if not skip_all_topic_split_half:
+        _write_topic_split_half_summary(
+            topic_split_half_entries,
+            use_existing=use_existing,
+            output_root=output_root,
+        )
+        _write_genre_topic_split_half_summary(
+            topic_split_half_entries,
+            use_existing=use_existing,
+            output_root=output_root,
+        )
+        _write_author_topic_split_half_summary(
+            topic_split_half_entries,
+            use_existing=use_existing,
+            output_root=output_root,
+        )
     if not skip_topic_split_half:
         _write_central_topic_split_half_summary(
             split_half_entries,
@@ -688,9 +745,10 @@ def run_dashboard(
     return []
 
 def run_dashboard_with_config(
-    use_existing: bool = False,
+    use_existing: bool = DEFAULT_USE_EXISTING,
     *,
     authors: Optional[List[str]] = None,
+    texts: Optional[List[str]] = None,
     config: DashboardCorrelationConfig = DEFAULT_DASHBOARD_CORRELATION_CONFIG,
 ) -> List[Dict[str, object]]:
     if config.loop_enabled:
@@ -711,6 +769,7 @@ def run_dashboard_with_config(
                 permutations=config.permutations,
                 output_root=output_root,
                 authors=authors,
+                texts=texts,
             )
         _write_cross_block_consistency_summary(
             output_roots,
@@ -724,6 +783,7 @@ def run_dashboard_with_config(
         block_size=config.block_size,
         permutations=config.permutations,
         authors=authors,
+        texts=texts,
     )
 
 if __name__ == "__main__":

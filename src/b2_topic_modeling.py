@@ -20,10 +20,10 @@ Output (topics file):
     "base_window_size": 3,
     "window_multiple": 5,
     "model_window_size": 15,
-    "window_stride": 6,
+    "window_stride": 3,
     "min_cluster_size": 5,
     "min_samples": null,
-    "soft_score_threshold": 0.5,
+    "soft_score_threshold": 0.35,
     "soft_top_k_topics": 3,
     "use_pca": true,
     "pca_components": 50
@@ -92,15 +92,26 @@ from .z_utils import (
     text_path,
 )
 from .x_configs import (
-    DEFAULT_WINDOW_SIZE,
-    DEFAULT_TOPIC_WINDOW_MULTIPLE,
-    DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
-    GENRES,
-    MODEL_CONFIGS,
+    DEFAULT_CENTRALITY_TOP_SCORE_FRACTION,
+    DEFAULT_PCA_COMPONENTS,
+    DEFAULT_RNG_SEED,
+    DEFAULT_SHORT_TEXT_MIN_CLUSTER_SIZE,
+    DEFAULT_SHORT_TEXT_MIN_SAMPLES,
+    DEFAULT_SHORT_TEXT_SOFT_SCORE_THRESHOLD,
+    DEFAULT_SHORT_TEXT_SOFT_TOP_K,
+    DEFAULT_SHORT_TEXT_WINDOW_COUNT,
+    DEFAULT_SHORT_TEXT_WINDOW_MULTIPLE,
     DEFAULT_SOFT_SCORE_THRESHOLD,
     DEFAULT_SOFT_TOP_K,
-    DEFAULT_RNG_SEED,
-    DEFAULT_CENTRALITY_TOP_SCORE_FRACTION,
+    DEFAULT_TOPIC_KEYWORD_NGRAM_RANGE,
+    DEFAULT_TOPIC_KEYWORD_TOP_N,
+    DEFAULT_TOPIC_WINDOW_MULTIPLE,
+    DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
+    DEFAULT_USE_EXISTING,
+    DEFAULT_USE_PCA,
+    DEFAULT_WINDOW_SIZE,
+    GENRES,
+    MODEL_CONFIGS,
 )
 
 @dataclass
@@ -256,8 +267,8 @@ class EmbeddingTopicModeler:
         self,
         cluster_docs: List[str],
         labels: List[int],
-        top_n: int = 8,
-        ngram_range: Tuple[int, int] = (1, 3),
+        top_n: int = DEFAULT_TOPIC_KEYWORD_TOP_N,
+        ngram_range: Tuple[int, int] = DEFAULT_TOPIC_KEYWORD_NGRAM_RANGE,
     ) -> Tuple[Dict[int, List[str]], TfidfVectorizer, np.ndarray]:
         """Build TF-IDF keywords for each topic cluster."""
         vectorizer = TfidfVectorizer(
@@ -487,24 +498,23 @@ class EmbeddingTopicModeler:
         sentences: List[TopicMention],
         min_cluster_size: Optional[int] = None,
         min_samples: Optional[int] = None,
-        top_n: int = 8,
-        ngram_range: Tuple[int, int] = (1, 3),
+        top_n: int = DEFAULT_TOPIC_KEYWORD_TOP_N,
+        ngram_range: Tuple[int, int] = DEFAULT_TOPIC_KEYWORD_NGRAM_RANGE,
         window_multiple: int = DEFAULT_TOPIC_WINDOW_MULTIPLE,
         base_window_size: int = DEFAULT_WINDOW_SIZE,
         window_size: Optional[int] = None,
         window_stride: Optional[int] = None,
         top_k_topics: Optional[int] = DEFAULT_SOFT_TOP_K,
         score_threshold: Optional[float] = DEFAULT_SOFT_SCORE_THRESHOLD,
-        use_pca: bool = True,
-        pca_components: int = 50,
+        use_pca: bool = DEFAULT_USE_PCA,
+        pca_components: int = DEFAULT_PCA_COMPONENTS,
     ) -> Tuple[List[TopicResult], List[Dict[str, object]]]:
         """
         Main entrypoint: consumes pre-segmented sentences with offsets and returns clustered topics.
 
         Sentences are grouped into sliding windows of size
         `base_window_size * window_multiple` (default DEFAULT_WINDOW_SIZE * DEFAULT_TOPIC_WINDOW_MULTIPLE = 15)
-        with stride `base_window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE` (default 6) so that topic windows
-        align to the sentence-scale metrics built on window size 3.
+        with stride `base_window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE` (default 6).
         """
         if not sentences:
             return [], []
@@ -872,31 +882,31 @@ def _auto_cluster_params(window_count: int) -> Tuple[int, int]:
     """Choose HDBSCAN params based on window count with short-text guardrails."""
     if window_count < 40:
         return 3, 2
-    min_cluster_size = max(3, round(0.03 * window_count))
+    min_cluster_size = max(3, round(0.02 * window_count))
     min_samples = max(2, min(min_cluster_size - 1, 4))
     return min_cluster_size, min_samples
 
 
 def run_topic_modelling(
-    use_existing: bool = True,
+    use_existing: bool = DEFAULT_USE_EXISTING,
     window_multiple: int = DEFAULT_TOPIC_WINDOW_MULTIPLE,
     base_window_size: int = DEFAULT_WINDOW_SIZE,
     window_stride: Optional[int] = None,
     authors: Optional[List[str]] = None,
+    texts: Optional[List[str]] = None,
     min_cluster_size: Optional[int] = None,
     min_samples: Optional[int] = None,
     soft_score_threshold: Optional[float] = DEFAULT_SOFT_SCORE_THRESHOLD,
     soft_top_k_topics: Optional[int] = DEFAULT_SOFT_TOP_K,
-    use_pca: bool = True,
-    pca_components: int = 50,
+    use_pca: bool = DEFAULT_USE_PCA,
+    pca_components: int = DEFAULT_PCA_COMPONENTS,
     encoder: SentenceTransformer | None = None,
 ):
     """
     Batch topic modelling across normalised, segmented text files.
 
     Defaults: window size DEFAULT_WINDOW_SIZE * DEFAULT_TOPIC_WINDOW_MULTIPLE (15) with stride
-    DEFAULT_WINDOW_SIZE * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE (6)
-    so topic windows align to the sentence-level metrics that use window size 3.
+    DEFAULT_WINDOW_SIZE * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE (6).
     Output shape: data/analytics/topic_modelling/<category>/<name>/<name>_clustered_topics.json
     """
     modeler = EmbeddingTopicModeler(encoder=encoder)
@@ -906,6 +916,7 @@ def run_topic_modelling(
     stride = window_stride or (base_window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE)
 
     categories = list(iter_dirs(normalised_root, genres=GENRES, authors=authors, depth=2))
+    text_filter = set(texts) if texts else None
     processed = 0
     skipped = 0
     for category_key, subdir in tqdm(categories, desc="Topic modelling", ascii=True):
@@ -916,6 +927,8 @@ def run_topic_modelling(
         files = sorted(subdir.glob("*.jsonl"))
         for file in tqdm(files, desc=f"Topic modelling: {genre}/{author}", leave=False, ascii=True):
             base_name = file.stem.replace("_normalised_segmented", "")
+            if text_filter and base_name not in text_filter:
+                continue
             text_dir = out_subdir / base_name
             text_dir.mkdir(parents=True, exist_ok=True)
             clustered_output_file = text_dir / f"{base_name}_clustered_topics.json"
@@ -933,15 +946,37 @@ def run_topic_modelling(
             window_count = _window_count(
                 sentence_count, effective_window_size, book_window_stride
             )
+            is_short_text = window_count <= DEFAULT_SHORT_TEXT_WINDOW_COUNT
+            if is_short_text and DEFAULT_SHORT_TEXT_WINDOW_MULTIPLE > 0:
+                book_window_multiple = DEFAULT_SHORT_TEXT_WINDOW_MULTIPLE
+                effective_window_size = base_window_size * book_window_multiple
+                window_count = _window_count(
+                    sentence_count, effective_window_size, book_window_stride
+                )
+                is_short_text = window_count <= DEFAULT_SHORT_TEXT_WINDOW_COUNT
             auto_min_cluster_size, auto_min_samples = _auto_cluster_params(window_count)
             book_min_cluster_size = (
                 auto_min_cluster_size if min_cluster_size is None else min_cluster_size
             )
             book_min_samples = auto_min_samples if min_samples is None else min_samples
+            if is_short_text:
+                if min_cluster_size is None:
+                    book_min_cluster_size = DEFAULT_SHORT_TEXT_MIN_CLUSTER_SIZE
+                if min_samples is None:
+                    book_min_samples = DEFAULT_SHORT_TEXT_MIN_SAMPLES
             if book_min_samples > book_min_cluster_size:
                 book_min_samples = book_min_cluster_size
             book_soft_score_threshold = soft_score_threshold
             book_soft_top_k_topics = soft_top_k_topics
+            if is_short_text:
+                if book_soft_score_threshold is not None:
+                    book_soft_score_threshold = min(
+                        book_soft_score_threshold, DEFAULT_SHORT_TEXT_SOFT_SCORE_THRESHOLD
+                    )
+                if book_soft_top_k_topics is not None and book_soft_top_k_topics > 0:
+                    book_soft_top_k_topics = max(
+                        book_soft_top_k_topics, DEFAULT_SHORT_TEXT_SOFT_TOP_K
+                    )
             book_use_pca = use_pca
             book_pca_components = pca_components
 

@@ -73,6 +73,29 @@ Outputs (under output_root):
     }
   }
 
+- <output_root>/00_topic_split_half_stability.json
+  {
+    "text_count": int,
+    "pair_count": int,
+    "overall": {
+      "sign_agreement_rate": float,
+      "mean_abs_delta_r": float,
+      "median_abs_delta_r": float
+    },
+    "metrics": {
+      "<metric>": {
+        "pair_count": int,
+        "sign_agreement_rate": float,
+        "mean_abs_delta_r": float,
+        "median_abs_delta_r": float
+      }
+    },
+    "texts": [ ... ],
+    "params": {
+      "split_method": "odd_even"
+    }
+  }
+
 - <output_root>/<genre>/00_genre_central_topic_split_half_stability.json
   {
     "genre": str,
@@ -243,6 +266,7 @@ from .d1_dashboard_metrics import (
 from .x_configs import (
     AUTHOR_CENTRAL_PRESENCE_SPLIT_HALF_TEMPLATE,
     AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE,
+    AUTHOR_TOPIC_SPLIT_HALF_TEMPLATE,
     CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
     CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
     CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
@@ -250,6 +274,8 @@ from .x_configs import (
     GENRE_CENTRAL_PRESENCE_FILENAME,
     GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
     GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME,
+    GENRE_TOPIC_SPLIT_HALF_FILENAME,
+    TOPIC_SPLIT_HALF_FILENAME,
 )
 from .z_utils import find_topic_file, load_json
 
@@ -335,6 +361,12 @@ def _extract_central_topic_payload(
     return metadata, report, params
 
 
+def _extract_topic_payload(
+    entry: Dict[str, object],
+) -> Optional[Tuple[Dict[str, object], Dict[str, object], Dict[str, object]]]:
+    return _extract_central_topic_payload(entry)
+
+
 def _parse_category(category: object) -> Tuple[Optional[str], Optional[str]]:
     if not isinstance(category, str):
         return None, None
@@ -344,6 +376,30 @@ def _parse_category(category: object) -> Tuple[Optional[str], Optional[str]]:
     if not genre or not author:
         return None, None
     return genre, author
+
+
+def _topic_ids_from_report(report: Dict[str, object]) -> List[int]:
+    topics = report.get("topics")
+    if not isinstance(topics, dict):
+        return []
+    topic_ids: List[int] = []
+    for key, topic in topics.items():
+        if isinstance(key, int):
+            topic_id = key
+        elif isinstance(key, str):
+            try:
+                topic_id = int(key)
+            except ValueError:
+                continue
+        else:
+            continue
+        if not isinstance(topic, dict):
+            continue
+        correlations = topic.get("correlations")
+        if not isinstance(correlations, dict) or not correlations:
+            continue
+        topic_ids.append(topic_id)
+    return topic_ids
 
 
 def _aggregate_central_presence_correlations(
@@ -621,6 +677,123 @@ def _build_central_topic_split_half_entry(
     }
 
 
+def _build_topic_split_half_entry(
+    window_metrics_path: Path,
+    topic_entry: Dict[str, object],
+) -> Optional[Dict[str, object]]:
+    extracted = _extract_topic_payload(topic_entry)
+    if extracted is None:
+        return None
+    metadata, report, _params = extracted
+    if not isinstance(metadata, dict) or not isinstance(report, dict):
+        return None
+
+    topic_file = metadata.get("topic_file")
+    if not isinstance(topic_file, str):
+        topic_file = str(find_topic_file(window_metrics_path) or "")
+    if not topic_file:
+        return None
+    topic_path = Path(topic_file)
+    if not topic_path.exists():
+        topic_path = Path(topic_file.replace("\\", "/"))
+    if not topic_path.exists():
+        return None
+
+    metric_names = report.get("metric_names")
+    if not isinstance(metric_names, list) or not metric_names:
+        return None
+
+    topic_ids = _topic_ids_from_report(report)
+    if not topic_ids:
+        return None
+
+    window_data = load_window_metrics(window_metrics_path)
+    topics_data = load_json(topic_path)
+    if not isinstance(topics_data, dict):
+        return None
+    window_entries = window_data.get("syntax", {}).get("windows", []) if isinstance(window_data, dict) else []
+    window_table = collect_window_tables(window_data)
+    if not window_entries or not window_table:
+        return None
+    if len(window_entries) != len(window_table):
+        return None
+
+    score_windows = collect_window_topic_scores(
+        topics_data,
+        window_entries=window_entries,
+    )
+    if not score_windows or len(score_windows) != len(window_table):
+        return None
+
+    metric_series_map: Dict[str, List[float]] = {}
+    for metric in metric_names:
+        series = [row.get(metric) for row in window_table]
+        if not series or any(not _is_number(value) for value in series):
+            continue
+        metric_series_map[metric] = [float(value) for value in series]
+
+    if not metric_series_map:
+        return None
+
+    odd_idx = [idx for idx in range(len(window_table)) if idx % 2 == 1]
+    even_idx = [idx for idx in range(len(window_table)) if idx % 2 == 0]
+    if len(odd_idx) < 2 or len(even_idx) < 2:
+        return None
+
+    overall_signs: List[int] = []
+    overall_deltas: List[float] = []
+    metric_pairs: Dict[str, Dict[str, List[float]]] = {
+        metric: {"signs": [], "deltas": []} for metric in metric_series_map
+    }
+
+    for topic_id in topic_ids:
+        topic_series = [score_map.get(topic_id, 0.0) for score_map in score_windows]
+        if any(not _is_number(value) for value in topic_series):
+            continue
+        topic_series = [float(value) for value in topic_series]
+        topic_odd = [topic_series[idx] for idx in odd_idx]
+        topic_even = [topic_series[idx] for idx in even_idx]
+        for metric, metric_series in metric_series_map.items():
+            metric_odd = [metric_series[idx] for idx in odd_idx]
+            metric_even = [metric_series[idx] for idx in even_idx]
+            r_odd = _pearson(topic_odd, metric_odd)
+            r_even = _pearson(topic_even, metric_even)
+            if r_odd is None or r_even is None:
+                continue
+            sign_agree = 1 if (r_odd == 0 or r_even == 0 or (r_odd > 0) == (r_even > 0)) else 0
+            delta = abs(r_odd - r_even)
+            overall_signs.append(sign_agree)
+            overall_deltas.append(delta)
+            metric_pairs[metric]["signs"].append(sign_agree)
+            metric_pairs[metric]["deltas"].append(delta)
+
+    if not overall_signs or not overall_deltas:
+        return None
+
+    category = metadata.get("category")
+    text_name = metadata.get("text_name")
+    filename = metadata.get("filename")
+    if not isinstance(category, str) or not isinstance(text_name, str) or not isinstance(filename, str):
+        return None
+
+    text_summary = {
+        "category": category,
+        "text_name": text_name,
+        "filename": filename,
+        "pair_count": len(overall_signs),
+        "sign_agreement_rate": statistics.mean(overall_signs),
+        "mean_abs_delta_r": statistics.mean(overall_deltas),
+        "median_abs_delta_r": statistics.median(overall_deltas),
+    }
+
+    return {
+        "text": text_summary,
+        "overall_signs": overall_signs,
+        "overall_deltas": overall_deltas,
+        "metrics": metric_pairs,
+    }
+
+
 def _build_central_presence_split_half_entry(
     window_metrics_path: Path,
     presence_entry: Dict[str, object],
@@ -808,6 +981,25 @@ def _write_central_topic_split_half_summary(
         json.dump(payload, f, indent=2)
 
 
+def _write_topic_split_half_summary(
+    entries: List[Dict[str, object]],
+    *,
+    use_existing: bool,
+    output_root: Path,
+) -> None:
+    if not entries:
+        return
+    output_path = output_root / TOPIC_SPLIT_HALF_FILENAME
+    if use_existing and output_path.exists():
+        return
+    payload = _summarize_split_half_entries(entries)
+    if not payload:
+        return
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+
+
 def _write_genre_central_topic_split_half_summary(
     entries: List[Dict[str, object]],
     *,
@@ -839,6 +1031,37 @@ def _write_genre_central_topic_split_half_summary(
             json.dump(payload, f, indent=2)
 
 
+def _write_genre_topic_split_half_summary(
+    entries: List[Dict[str, object]],
+    *,
+    use_existing: bool,
+    output_root: Path,
+) -> None:
+    if not entries:
+        return
+    grouped: Dict[str, List[Dict[str, object]]] = {}
+    for entry in entries:
+        text = entry.get("text")
+        if not isinstance(text, dict):
+            continue
+        genre, _author = _parse_category(text.get("category"))
+        if not genre:
+            continue
+        grouped.setdefault(genre, []).append(entry)
+
+    for genre, genre_entries in grouped.items():
+        output_path = output_root / genre / GENRE_TOPIC_SPLIT_HALF_FILENAME
+        if use_existing and output_path.exists():
+            continue
+        payload = _summarize_split_half_entries(genre_entries)
+        if not payload:
+            continue
+        payload["genre"] = genre
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+
+
 def _write_author_central_topic_split_half_summary(
     entries: List[Dict[str, object]],
     *,
@@ -859,6 +1082,39 @@ def _write_author_central_topic_split_half_summary(
 
     for (genre, author), author_entries in grouped.items():
         filename = AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE.format(author=author)
+        output_path = output_root / genre / author / filename
+        if use_existing and output_path.exists():
+            continue
+        payload = _summarize_split_half_entries(author_entries)
+        if not payload:
+            continue
+        payload["genre"] = genre
+        payload["author"] = author
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+
+
+def _write_author_topic_split_half_summary(
+    entries: List[Dict[str, object]],
+    *,
+    use_existing: bool,
+    output_root: Path,
+) -> None:
+    if not entries:
+        return
+    grouped: Dict[Tuple[str, str], List[Dict[str, object]]] = {}
+    for entry in entries:
+        text = entry.get("text")
+        if not isinstance(text, dict):
+            continue
+        genre, author = _parse_category(text.get("category"))
+        if not genre or not author:
+            continue
+        grouped.setdefault((genre, author), []).append(entry)
+
+    for (genre, author), author_entries in grouped.items():
+        filename = AUTHOR_TOPIC_SPLIT_HALF_TEMPLATE.format(author=author)
         output_path = output_root / genre / author / filename
         if use_existing and output_path.exists():
             continue

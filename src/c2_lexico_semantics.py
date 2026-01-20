@@ -87,7 +87,7 @@ from collections import Counter
 
 import numpy as np
 
-from .x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
+from .x_configs import DEFAULT_MATTR_WINDOW_SIZE, DEFAULT_WINDOW_SIZE, load_spacy_model
 from .z_utils import sliding_windows, aggregate_windows
 
 def _tokenize_words_from_tokens(tokens, lowercase: bool = True):
@@ -111,7 +111,9 @@ def _tokenize_words(text: str, lowercase: bool = True, nlp=None):
     return _tokenize_words_from_tokens(doc, lowercase=lowercase)
 
 
-def _moving_average_type_token_ratio(tokens, window_size: int = 50) -> float:
+def _moving_average_type_token_ratio(
+    tokens, window_size: int = DEFAULT_MATTR_WINDOW_SIZE
+) -> float:
     """Compute Moving Average Type-Token Ratio (MATTR) over a sliding window."""
     tokens = [t for t in tokens if t]
     total_tokens = len(tokens)
@@ -137,7 +139,12 @@ def _moving_average_type_token_ratio(tokens, window_size: int = 50) -> float:
     return round(statistics.mean(ttr_values), 3)
 
 
-def compute_mattr_metrics(text: str, window_size: int = 50, lowercase: bool = True, nlp=None):
+def compute_mattr_metrics(
+    text: str,
+    window_size: int = DEFAULT_MATTR_WINDOW_SIZE,
+    lowercase: bool = True,
+    nlp=None,
+):
     """Compute MATTR over the whole text for inclusion in window metrics."""
     words = _tokenize_words(text, lowercase=lowercase, nlp=nlp)
     mattr = _moving_average_type_token_ratio(words, window_size=window_size)
@@ -178,7 +185,7 @@ class LexicoSemanticsAnalyzer:
         self,
         doc,
         window_size: int = DEFAULT_WINDOW_SIZE,
-        mattr_window_size: int = 50,
+        mattr_window_size: int = DEFAULT_MATTR_WINDOW_SIZE,
         lowercase: bool = True,
     ):
         """
@@ -383,7 +390,7 @@ class LexicoSemanticsAnalyzer:
         self,
         doc,
         window_size=DEFAULT_WINDOW_SIZE,
-        mattr_window_size=50,
+        mattr_window_size=DEFAULT_MATTR_WINDOW_SIZE,
         lowercase=True,
         global_avg_freq=None,
     ):

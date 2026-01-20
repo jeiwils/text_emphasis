@@ -1,0 +1,607 @@
+{
+  "text_count": 43,
+  "pair_count": 12240,
+  "overall": {
+    "sign_agreement_rate": 0.8495098039215686,
+    "mean_abs_delta_r": 0.04352031279408964,
+    "median_abs_delta_r": 0.031746810968963673
+  },
+  "metrics": {
+    "discourse.connective_counts_per_token.Comparison": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8083333333333333,
+      "mean_abs_delta_r": 0.050188257988930125,
+      "median_abs_delta_r": 0.04297145017570306
+    },
+    "discourse.connective_counts_per_token.Contingency": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8111111111111111,
+      "mean_abs_delta_r": 0.04459055292809087,
+      "median_abs_delta_r": 0.034666997376232016
+    },
+    "discourse.connective_counts_per_token.Expansion": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8166666666666667,
+      "mean_abs_delta_r": 0.04535491562767206,
+      "median_abs_delta_r": 0.03171664193238073
+    },
+    "discourse.connective_counts_per_token.Temporal": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8472222222222222,
+      "mean_abs_delta_r": 0.042920744482939796,
+      "median_abs_delta_r": 0.032647998283567764
+    },
+    "discourse.content_overlap_per_token": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8444444444444444,
+      "mean_abs_delta_r": 0.04441058569621136,
+      "median_abs_delta_r": 0.033839339975964444
+    },
+    "discourse.content_overlap_ratio": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8416666666666667,
+      "mean_abs_delta_r": 0.04631790004706956,
+      "median_abs_delta_r": 0.03641326398099955
+    },
+    "discourse.entity_overlap_per_token": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8583333333333333,
+      "mean_abs_delta_r": 0.04322691333718343,
+      "median_abs_delta_r": 0.02803460705911651
+    },
+    "discourse.entity_overlap_ratio": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8083333333333333,
+      "mean_abs_delta_r": 0.04995561712325732,
+      "median_abs_delta_r": 0.03339674245271565
+    },
+    "discourse.explicit_connectives_per_token": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8194444444444444,
+      "mean_abs_delta_r": 0.04663415737572774,
+      "median_abs_delta_r": 0.03463733074899973
+    },
+    "discourse.modality_per_token": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8138888888888889,
+      "mean_abs_delta_r": 0.04036287165601344,
+      "median_abs_delta_r": 0.034456393151768114
+    },
+    "discourse.pronoun_ratio": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8916666666666667,
+      "mean_abs_delta_r": 0.04458288121263201,
+      "median_abs_delta_r": 0.03243500547251815
+    },
+    "discourse.tense_shift": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8722222222222222,
+      "mean_abs_delta_r": 0.030560649653512184,
+      "median_abs_delta_r": 0.023297286306266957
+    },
+    "lexico_semantics.avg_word_freq": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8666666666666667,
+      "mean_abs_delta_r": 0.045386823197548755,
+      "median_abs_delta_r": 0.03343504542584448
+    },
+    "lexico_semantics.information_content": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8611111111111112,
+      "mean_abs_delta_r": 0.04320541119035091,
+      "median_abs_delta_r": 0.02856956751863058
+    },
+    "lexico_semantics.lexical_density_per_token": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8722222222222222,
+      "mean_abs_delta_r": 0.042494264986068606,
+      "median_abs_delta_r": 0.0340137392473248
+    },
+    "lexico_semantics.lexical_diversity_mattr.mattr_score": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8194444444444444,
+      "mean_abs_delta_r": 0.041434273495108094,
+      "median_abs_delta_r": 0.0291480782348199
+    },
+    "lexico_semantics.normalized_freq": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8666666666666667,
+      "mean_abs_delta_r": 0.04538703395902035,
+      "median_abs_delta_r": 0.033435279703559584
+    },
+    "log_prob.max_token_surprisal": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.825,
+      "mean_abs_delta_r": 0.04641977001312258,
+      "median_abs_delta_r": 0.033626924945026795
+    },
+    "log_prob.token_weighted_mean_surprisal": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.9027777777777778,
+      "mean_abs_delta_r": 0.04236270607057926,
+      "median_abs_delta_r": 0.03182612665998926
+    },
+    "log_prob.token_weighted_surprisal_variance": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8861111111111111,
+      "mean_abs_delta_r": 0.046082857596916826,
+      "median_abs_delta_r": 0.033200710370477296
+    },
+    "syntax.avg_dependents_per_head.coordinate_clause": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.7277777777777777,
+      "mean_abs_delta_r": 0.0550641435896765,
+      "median_abs_delta_r": 0.04257667894891211
+    },
+    "syntax.avg_dependents_per_head.main_clause": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8388888888888889,
+      "mean_abs_delta_r": 0.04330188009867502,
+      "median_abs_delta_r": 0.03529093704794703
+    },
+    "syntax.avg_dependents_per_head.subordinate_clause": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.7972222222222223,
+      "mean_abs_delta_r": 0.047425085852848936,
+      "median_abs_delta_r": 0.03807515462269835
+    },
+    "syntax.avg_mean_dependency_distance": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8611111111111112,
+      "mean_abs_delta_r": 0.04294720567417494,
+      "median_abs_delta_r": 0.028690125090360317
+    },
+    "syntax.avg_tokens_per_sentence": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.9138888888888889,
+      "mean_abs_delta_r": 0.03509629136084627,
+      "median_abs_delta_r": 0.023361914012081743
+    },
+    "syntax.clause_counts_per_token.coordinate": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8111111111111111,
+      "mean_abs_delta_r": 0.04798847842441559,
+      "median_abs_delta_r": 0.03324128489540156
+    },
+    "syntax.clause_counts_per_token.main": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.925,
+      "mean_abs_delta_r": 0.034860553120563326,
+      "median_abs_delta_r": 0.023586524795618517
+    },
+    "syntax.clause_counts_per_token.subordinate": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8222222222222222,
+      "mean_abs_delta_r": 0.04817496168754398,
+      "median_abs_delta_r": 0.03718785081858032
+    },
+    "syntax.clause_ratios.coordination_ratio": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8583333333333333,
+      "mean_abs_delta_r": 0.04249103538865551,
+      "median_abs_delta_r": 0.027185341103974598
+    },
+    "syntax.clause_ratios.subordination_ratio": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8666666666666667,
+      "mean_abs_delta_r": 0.04050896830346673,
+      "median_abs_delta_r": 0.028940226165608665
+    },
+    "syntax.depth_skew": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.7972222222222223,
+      "mean_abs_delta_r": 0.045704362980518866,
+      "median_abs_delta_r": 0.03253818013954157
+    },
+    "syntax.max_depth": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.8777777777777778,
+      "mean_abs_delta_r": 0.0410990343365182,
+      "median_abs_delta_r": 0.03081466035372826
+    },
+    "syntax.median_depth": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.9083333333333333,
+      "mean_abs_delta_r": 0.03855442772534418,
+      "median_abs_delta_r": 0.027029737807544675
+    },
+    "syntax.punctuation_per_token": {
+      "pair_count": 360,
+      "sign_agreement_rate": 0.9444444444444444,
+      "mean_abs_delta_r": 0.034595018817844346,
+      "median_abs_delta_r": 0.02673679465399091
+    }
+  },
+  "texts": [
+    {
+      "category": "gothic/fanu",
+      "text_name": "green_tea",
+      "filename": "green_tea_window_metrics.syntax.json",
+      "pair_count": 714,
+      "sign_agreement_rate": 0.8305322128851541,
+      "mean_abs_delta_r": 0.031276208483151484,
+      "median_abs_delta_r": 0.026988898549666546
+    },
+    {
+      "category": "gothic/fanu",
+      "text_name": "mr_justice_harbottle",
+      "filename": "mr_justice_harbottle_window_metrics.syntax.json",
+      "pair_count": 714,
+      "sign_agreement_rate": 0.8711484593837535,
+      "mean_abs_delta_r": 0.030703379547265344,
+      "median_abs_delta_r": 0.025738520590101753
+    },
+    {
+      "category": "gothic/fanu",
+      "text_name": "the_familiar",
+      "filename": "the_familiar_window_metrics.syntax.json",
+      "pair_count": 306,
+      "sign_agreement_rate": 0.8594771241830066,
+      "mean_abs_delta_r": 0.035861844592820324,
+      "median_abs_delta_r": 0.028769355355112256
+    },
+    {
+      "category": "gothic/hoffman",
+      "text_name": "automata",
+      "filename": "automata_window_metrics.syntax.json",
+      "pair_count": 374,
+      "sign_agreement_rate": 0.8368983957219251,
+      "mean_abs_delta_r": 0.038909773650981264,
+      "median_abs_delta_r": 0.034397184631674474
+    },
+    {
+      "category": "gothic/hoffman",
+      "text_name": "counsillor_krespel",
+      "filename": "counsillor_krespel_window_metrics.syntax.json",
+      "pair_count": 272,
+      "sign_agreement_rate": 0.8419117647058824,
+      "mean_abs_delta_r": 0.04125653529968209,
+      "median_abs_delta_r": 0.03543137412134209
+    },
+    {
+      "category": "gothic/hoffman",
+      "text_name": "the_sandman",
+      "filename": "the_sandman_window_metrics.syntax.json",
+      "pair_count": 510,
+      "sign_agreement_rate": 0.888235294117647,
+      "mean_abs_delta_r": 0.03026310786956553,
+      "median_abs_delta_r": 0.02442321568455802
+    },
+    {
+      "category": "gothic/poe",
+      "text_name": "the_cask_of_amontillado",
+      "filename": "the_cask_of_amontillado_window_metrics.syntax.json",
+      "pair_count": 272,
+      "sign_agreement_rate": 0.8529411764705882,
+      "mean_abs_delta_r": 0.04992311547885484,
+      "median_abs_delta_r": 0.03989989584929092
+    },
+    {
+      "category": "gothic/poe",
+      "text_name": "the_fall_of_the_house_of_usher",
+      "filename": "the_fall_of_the_house_of_usher_window_metrics.syntax.json",
+      "pair_count": 170,
+      "sign_agreement_rate": 0.8235294117647058,
+      "mean_abs_delta_r": 0.051445291719107826,
+      "median_abs_delta_r": 0.044566224449560835
+    },
+    {
+      "category": "gothic/poe",
+      "text_name": "the_telltale_heart",
+      "filename": "the_telltale_heart_window_metrics.syntax.json",
+      "pair_count": 170,
+      "sign_agreement_rate": 0.8352941176470589,
+      "mean_abs_delta_r": 0.08045993542813892,
+      "median_abs_delta_r": 0.06011922176847488
+    },
+    {
+      "category": "modernism/joyce",
+      "text_name": "Araby",
+      "filename": "Araby_window_metrics.syntax.json",
+      "pair_count": 102,
+      "sign_agreement_rate": 0.8529411764705882,
+      "mean_abs_delta_r": 0.062085405131790866,
+      "median_abs_delta_r": 0.04882817077880123
+    },
+    {
+      "category": "modernism/joyce",
+      "text_name": "eveline",
+      "filename": "eveline_window_metrics.syntax.json",
+      "pair_count": 136,
+      "sign_agreement_rate": 0.8897058823529411,
+      "mean_abs_delta_r": 0.06586018929039954,
+      "median_abs_delta_r": 0.05743731609336509
+    },
+    {
+      "category": "modernism/joyce",
+      "text_name": "the_dead",
+      "filename": "the_dead_window_metrics.syntax.json",
+      "pair_count": 1020,
+      "sign_agreement_rate": 0.8803921568627451,
+      "mean_abs_delta_r": 0.02676310227149456,
+      "median_abs_delta_r": 0.022342610696017246
+    },
+    {
+      "category": "modernism/kafka",
+      "text_name": "in_the_penal_colony",
+      "filename": "in_the_penal_colony_window_metrics.syntax.json",
+      "pair_count": 476,
+      "sign_agreement_rate": 0.842436974789916,
+      "mean_abs_delta_r": 0.03621156243323266,
+      "median_abs_delta_r": 0.027432836476366126
+    },
+    {
+      "category": "modernism/kafka",
+      "text_name": "the_judgement",
+      "filename": "the_judgement_window_metrics.syntax.json",
+      "pair_count": 68,
+      "sign_agreement_rate": 0.8529411764705882,
+      "mean_abs_delta_r": 0.05538645407164072,
+      "median_abs_delta_r": 0.04731638127985953
+    },
+    {
+      "category": "modernism/woolf",
+      "text_name": "an_unwritten_novel",
+      "filename": "an_unwritten_novel_window_metrics.syntax.json",
+      "pair_count": 408,
+      "sign_agreement_rate": 0.8651960784313726,
+      "mean_abs_delta_r": 0.045941409397390734,
+      "median_abs_delta_r": 0.039379123557927644
+    },
+    {
+      "category": "modernism/woolf",
+      "text_name": "kew_gardens",
+      "filename": "kew_gardens_window_metrics.syntax.json",
+      "pair_count": 136,
+      "sign_agreement_rate": 0.9117647058823529,
+      "mean_abs_delta_r": 0.0637818397465314,
+      "median_abs_delta_r": 0.04914522514427061
+    },
+    {
+      "category": "modernism/woolf",
+      "text_name": "the_mark_on_the_wall",
+      "filename": "the_mark_on_the_wall_window_metrics.syntax.json",
+      "pair_count": 102,
+      "sign_agreement_rate": 0.7745098039215687,
+      "mean_abs_delta_r": 0.07767527651915851,
+      "median_abs_delta_r": 0.07194159469996561
+    },
+    {
+      "category": "postmodernism/barthelme",
+      "text_name": "indian_uprising",
+      "filename": "indian_uprising_window_metrics.syntax.json",
+      "pair_count": 136,
+      "sign_agreement_rate": 0.7941176470588235,
+      "mean_abs_delta_r": 0.07071512320031585,
+      "median_abs_delta_r": 0.06741770139561203
+    },
+    {
+      "category": "postmodernism/barthelme",
+      "text_name": "the_balloon",
+      "filename": "the_balloon_window_metrics.syntax.json",
+      "pair_count": 68,
+      "sign_agreement_rate": 0.6617647058823529,
+      "mean_abs_delta_r": 0.18509366699868973,
+      "median_abs_delta_r": 0.16252851333059376
+    },
+    {
+      "category": "postmodernism/barthelme",
+      "text_name": "the_school",
+      "filename": "the_school_window_metrics.syntax.json",
+      "pair_count": 68,
+      "sign_agreement_rate": 0.7941176470588235,
+      "mean_abs_delta_r": 0.13099876082651277,
+      "median_abs_delta_r": 0.1171735050048061
+    },
+    {
+      "category": "postmodernism/borges",
+      "text_name": "Borges-The-Library-of-Babel",
+      "filename": "Borges-The-Library-of-Babel_window_metrics.syntax.json",
+      "pair_count": 68,
+      "sign_agreement_rate": 0.6764705882352942,
+      "mean_abs_delta_r": 0.10166348925183624,
+      "median_abs_delta_r": 0.08661605260102193
+    },
+    {
+      "category": "postmodernism/borges",
+      "text_name": "The_Garden_of_Forking_Paths",
+      "filename": "The_Garden_of_Forking_Paths_window_metrics.syntax.json",
+      "pair_count": 238,
+      "sign_agreement_rate": 0.726890756302521,
+      "mean_abs_delta_r": 0.05972658329930764,
+      "median_abs_delta_r": 0.047649165468623716
+    },
+    {
+      "category": "postmodernism/borges",
+      "text_name": "the_aleph",
+      "filename": "the_aleph_window_metrics.syntax.json",
+      "pair_count": 204,
+      "sign_agreement_rate": 0.8431372549019608,
+      "mean_abs_delta_r": 0.06655783808729082,
+      "median_abs_delta_r": 0.05455290711881072
+    },
+    {
+      "category": "postmodernism/calvino",
+      "text_name": "all_at_one_point",
+      "filename": "all_at_one_point_window_metrics.syntax.json",
+      "pair_count": 68,
+      "sign_agreement_rate": 0.7647058823529411,
+      "mean_abs_delta_r": 0.10946483826652151,
+      "median_abs_delta_r": 0.08099402911056944
+    },
+    {
+      "category": "postmodernism/calvino",
+      "text_name": "the_distance_of_the_moon",
+      "filename": "the_distance_of_the_moon_window_metrics.syntax.json",
+      "pair_count": 102,
+      "sign_agreement_rate": 0.8137254901960784,
+      "mean_abs_delta_r": 0.062236406393323035,
+      "median_abs_delta_r": 0.05364417120553986
+    },
+    {
+      "category": "postmodernism/calvino",
+      "text_name": "the_spiral",
+      "filename": "the_spiral_window_metrics.syntax.json",
+      "pair_count": 102,
+      "sign_agreement_rate": 0.7941176470588235,
+      "mean_abs_delta_r": 0.07343801427632388,
+      "median_abs_delta_r": 0.0564065728752017
+    },
+    {
+      "category": "realism/chopin",
+      "text_name": "a_pair_of_silk_stockings",
+      "filename": "a_pair_of_silk_stockings_window_metrics.syntax.json",
+      "pair_count": 136,
+      "sign_agreement_rate": 0.7867647058823529,
+      "mean_abs_delta_r": 0.09069551783804983,
+      "median_abs_delta_r": 0.07013944146831384
+    },
+    {
+      "category": "realism/chopin",
+      "text_name": "desirees_baby",
+      "filename": "desirees_baby_window_metrics.syntax.json",
+      "pair_count": 102,
+      "sign_agreement_rate": 0.7647058823529411,
+      "mean_abs_delta_r": 0.09160598574493363,
+      "median_abs_delta_r": 0.06552455638699943
+    },
+    {
+      "category": "realism/chopin",
+      "text_name": "the_story_of_an_hour",
+      "filename": "the_story_of_an_hour_window_metrics.syntax.json",
+      "pair_count": 68,
+      "sign_agreement_rate": 0.8676470588235294,
+      "mean_abs_delta_r": 0.07942881039523524,
+      "median_abs_delta_r": 0.053290141552592624
+    },
+    {
+      "category": "realism/james",
+      "text_name": "the_author_of_beltraffio",
+      "filename": "the_author_of_beltraffio_window_metrics.syntax.json",
+      "pair_count": 816,
+      "sign_agreement_rate": 0.8566176470588235,
+      "mean_abs_delta_r": 0.026095098944691014,
+      "median_abs_delta_r": 0.021684399270357424
+    },
+    {
+      "category": "realism/james",
+      "text_name": "the_figure_in_the_carpet",
+      "filename": "the_figure_in_the_carpet_window_metrics.syntax.json",
+      "pair_count": 714,
+      "sign_agreement_rate": 0.8711484593837535,
+      "mean_abs_delta_r": 0.028867290378648776,
+      "median_abs_delta_r": 0.02353197669582746
+    },
+    {
+      "category": "realism/james",
+      "text_name": "the_real_thing",
+      "filename": "the_real_thing_window_metrics.syntax.json",
+      "pair_count": 238,
+      "sign_agreement_rate": 0.8823529411764706,
+      "mean_abs_delta_r": 0.04654429081277612,
+      "median_abs_delta_r": 0.03688570297231672
+    },
+    {
+      "category": "realism/maupassant",
+      "text_name": "a_piece_of_string",
+      "filename": "a_piece_of_string_window_metrics.syntax.json",
+      "pair_count": 170,
+      "sign_agreement_rate": 0.8411764705882353,
+      "mean_abs_delta_r": 0.06559957879491528,
+      "median_abs_delta_r": 0.053934798184958214
+    },
+    {
+      "category": "realism/maupassant",
+      "text_name": "boule-de-suif",
+      "filename": "boule-de-suif_window_metrics.syntax.json",
+      "pair_count": 612,
+      "sign_agreement_rate": 0.8496732026143791,
+      "mean_abs_delta_r": 0.03195439707193488,
+      "median_abs_delta_r": 0.02457718376707143
+    },
+    {
+      "category": "realism/maupassant",
+      "text_name": "the_necklace",
+      "filename": "the_necklace_window_metrics.syntax.json",
+      "pair_count": 170,
+      "sign_agreement_rate": 0.8058823529411765,
+      "mean_abs_delta_r": 0.05845559174380914,
+      "median_abs_delta_r": 0.047222437829925266
+    },
+    {
+      "category": "romanticism/hawthorne",
+      "text_name": "Rappaccinis_Daughter",
+      "filename": "Rappaccinis_Daughter_window_metrics.syntax.json",
+      "pair_count": 476,
+      "sign_agreement_rate": 0.8865546218487395,
+      "mean_abs_delta_r": 0.032832341242888426,
+      "median_abs_delta_r": 0.02651022112459599
+    },
+    {
+      "category": "romanticism/hawthorne",
+      "text_name": "Young_Goodman_Brown",
+      "filename": "Young_Goodman_Brown_window_metrics.syntax.json",
+      "pair_count": 136,
+      "sign_agreement_rate": 0.7647058823529411,
+      "mean_abs_delta_r": 0.06653237320031084,
+      "median_abs_delta_r": 0.05569972452315573
+    },
+    {
+      "category": "romanticism/hawthorne",
+      "text_name": "the_ministers_black_veil",
+      "filename": "the_ministers_black_veil_window_metrics.syntax.json",
+      "pair_count": 204,
+      "sign_agreement_rate": 0.8431372549019608,
+      "mean_abs_delta_r": 0.049839779866875863,
+      "median_abs_delta_r": 0.03784008762834671
+    },
+    {
+      "category": "romanticism/kleist",
+      "text_name": "kleist_earthquake_in_chile",
+      "filename": "kleist_earthquake_in_chile_window_metrics.syntax.json",
+      "pair_count": 136,
+      "sign_agreement_rate": 0.8970588235294118,
+      "mean_abs_delta_r": 0.05628340413352167,
+      "median_abs_delta_r": 0.0539655315001131
+    },
+    {
+      "category": "romanticism/kleist",
+      "text_name": "kleist_marquise_of_o",
+      "filename": "kleist_marquise_of_o_window_metrics.syntax.json",
+      "pair_count": 476,
+      "sign_agreement_rate": 0.907563025210084,
+      "mean_abs_delta_r": 0.02757690853878358,
+      "median_abs_delta_r": 0.022470416239520747
+    },
+    {
+      "category": "romanticism/shelley",
+      "text_name": "the_dream",
+      "filename": "the_dream_window_metrics.syntax.json",
+      "pair_count": 238,
+      "sign_agreement_rate": 0.7773109243697479,
+      "mean_abs_delta_r": 0.05401274237519477,
+      "median_abs_delta_r": 0.046340214904491195
+    },
+    {
+      "category": "romanticism/shelley",
+      "text_name": "the_mortal_immortal",
+      "filename": "the_mortal_immortal_window_metrics.syntax.json",
+      "pair_count": 136,
+      "sign_agreement_rate": 0.8455882352941176,
+      "mean_abs_delta_r": 0.057678410326863105,
+      "median_abs_delta_r": 0.046989234313573505
+    },
+    {
+      "category": "romanticism/shelley",
+      "text_name": "the_transformation",
+      "filename": "the_transformation_window_metrics.syntax.json",
+      "pair_count": 408,
+      "sign_agreement_rate": 0.8553921568627451,
+      "mean_abs_delta_r": 0.04212346694142474,
+      "median_abs_delta_r": 0.035555302573868526
+    }
+  ],
+  "params": {
+    "split_method": "odd_even"
+  }
+}

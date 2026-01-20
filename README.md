@@ -64,7 +64,7 @@ Notes:
 ## Central topic selection flow (topic-only)
 ```mermaid
 flowchart TD
-    topic_windows[Sliding windows (15 sentences, stride 6)] --> window_texts[Window text]
+    topic_windows[Sliding windows (15 sentences, stride 3)] --> window_texts[Window text]
     window_texts --> embed[SentenceTransformer window embeddings]
     embed --> l2[L2 normalize embeddings]
     l2 --> pca[PCA (optional)]
@@ -143,7 +143,7 @@ flowchart TD
   - metric list is flattened per-window metrics (sentence indices stripped).
 - Significance:
   - Pearson r omitted when n < 2 or either variable is constant;
-  - block permutation with contiguous blocks (default block_size=5, permutations=2000), two-sided on |r|;
+  - block permutation with contiguous blocks (default block_size=5, permutations=1000), two-sided on |r|;
     p = (count + 1) / (permutations + 1); RNG fixed (DEFAULT_RNG_SEED in x_configs.py; default 42).
   - Blocks are fixed-length L, with the final block allowed to be shorter; blocks are permuted as units.
   - L=5 was chosen to exceed the overlap horizon induced by the metric window and projection smoothing;

@@ -1,16 +1,21 @@
+"""Central configuration defaults for text_emphasis.
+
+Defaults defined here are the single source of truth for runtime arguments and docs.
+"""
+
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Optional, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Tuple
 
 import spacy
 
-LOOP_BLOCK_SIZES_ENABLED = False
-LOOP_BLOCK_SIZES = (3, 5, 7)
-DEFAULT_BLOCK_SIZE = 5
-DEFAULT_DASHBOARD_PERMUTATIONS: int = 1000
+DEFAULT_USE_EXISTING = True
 DEFAULT_RNG_SEED: int = 42
 
-USE_EXISTING = True
+DEFAULT_BLOCK_SIZE: int = 5
+DEFAULT_DASHBOARD_PERMUTATIONS: int = 1000
+LOOP_BLOCK_SIZES_ENABLED = False
+LOOP_BLOCK_SIZES = (3, 5, 7)
 
 MODEL_CONFIGS = {
     "causal_lm": "gpt2",
@@ -22,17 +27,29 @@ DEFAULT_SPACY_MODEL = "en_core_web_sm"
 DEFAULT_SPACY_DISABLE: Sequence[str] = ()
 # Shared window size (in sentences) for sliding window metrics
 DEFAULT_WINDOW_SIZE: int = 3
-# Default soft topic-score filtering for topic modelling + dashboard
-DEFAULT_SOFT_SCORE_THRESHOLD: float = 0.3 #0.5
-DEFAULT_SOFT_TOP_K: int = 5 #3
 # Default stride (in sentences) for sliding window metrics
 DEFAULT_METRIC_WINDOW_STRIDE: int = 1
 # Topic model windows use base_window_size * multiple
 DEFAULT_TOPIC_WINDOW_MULTIPLE: int = 5
 # Topic window stride uses base_window_size * stride_multiple
 DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE: int = 2
-# Pipeline topic stride override uses base_window_size * stride_multiple
-DEFAULT_PIPELINE_TOPIC_WINDOW_STRIDE_MULTIPLE: int = 1
+# Default soft topic-score filtering for topic modelling + dashboard
+DEFAULT_SOFT_SCORE_THRESHOLD: float = 0.35
+DEFAULT_SOFT_TOP_K: int = 3
+# Short-text fallback (low window count) to avoid empty topic scores.
+DEFAULT_SHORT_TEXT_WINDOW_COUNT: int = 10
+DEFAULT_SHORT_TEXT_SOFT_SCORE_THRESHOLD: float = 0.25
+DEFAULT_SHORT_TEXT_SOFT_TOP_K: int = 3
+DEFAULT_SHORT_TEXT_MIN_CLUSTER_SIZE: int = 2
+DEFAULT_SHORT_TEXT_MIN_SAMPLES: int = 1
+DEFAULT_SHORT_TEXT_WINDOW_MULTIPLE: int = 4
+DEFAULT_USE_PCA: bool = True
+DEFAULT_PCA_COMPONENTS: int = 50
+DEFAULT_TOPIC_KEYWORD_TOP_N: int = 8
+DEFAULT_TOPIC_KEYWORD_NGRAM_RANGE: Tuple[int, int] = (1, 3)
+
+DEFAULT_MATTR_WINDOW_SIZE: int = 50
+DEFAULT_CONCEPT_TOP_N: int = 100
 # Genre layout for raw/processed text folders
 GENRES = [
     "gothic",
@@ -674,7 +691,8 @@ BOOK_CONFIGS = {
     },
 }
 
-DEFAULT_BOOK_CONFIG = { #### I think I can remove this? or do i need to update to some default if I want to run with another book without making configs??
+# Fallback PDF config when no book-specific settings are provided.
+DEFAULT_BOOK_CONFIG = {
     "pages": None,
     "use_text_flow": False,
     "extract_kwargs": None,
@@ -744,8 +762,11 @@ CENTRAL_TOPIC_CORRELATIONS_SUFFIX = "_central_topic_correlations.json"
 CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX = "_central_topic_presence_correlations.json"
 
 GENRE_CENTRAL_PRESENCE_FILENAME = "00_genre_central_topic_presence_correlations.json"
+TOPIC_SPLIT_HALF_FILENAME = "00_topic_split_half_stability.json"
 CENTRAL_TOPIC_SPLIT_HALF_FILENAME = "00_central_topic_split_half_stability.json"
+GENRE_TOPIC_SPLIT_HALF_FILENAME = "00_genre_topic_split_half_stability.json"
 GENRE_CENTRAL_TOPIC_SPLIT_HALF_FILENAME = "00_genre_central_topic_split_half_stability.json"
+AUTHOR_TOPIC_SPLIT_HALF_TEMPLATE = "{author}_topic_split_half_stability.json"
 AUTHOR_CENTRAL_TOPIC_SPLIT_HALF_TEMPLATE = "{author}_central_topic_split_half_stability.json"
 CENTRAL_PRESENCE_SPLIT_HALF_FILENAME = "00_central_topic_presence_split_half_stability.json"
 GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME = "00_genre_central_topic_presence_split_half_stability.json"
@@ -759,9 +780,10 @@ TABLE_P_VALUE_MIN_DISPLAY = 0.001
 
 DEFAULT_CENTRAL_PRESENCE_P = 2.0
 DEFAULT_CENTRAL_PRESENCE_NORMALIZE = True
+DEFAULT_CENTRAL_TOPIC_NEAR_TOP_ALPHA = 0.8
 DEFAULT_CENTRALITY_TOP_SCORE_FRACTION = 0.1
-DEFAULT_CENTRALITY_COHERENCE_FLOOR = 0.3
-DEFAULT_CENTRALITY_EXCLUSIVITY_FLOOR = 0.3
+DEFAULT_CENTRALITY_COHERENCE_FLOOR = 0.25
+DEFAULT_CENTRALITY_EXCLUSIVITY_FLOOR = 0.25
 
 @dataclass(frozen=True)
 class DashboardCorrelationConfig:
@@ -773,7 +795,7 @@ class DashboardCorrelationConfig:
 
 @dataclass(frozen=True)
 class CentralTopicSelectionConfig:
-    near_top_alpha: float = 0.85
+    near_top_alpha: float = DEFAULT_CENTRAL_TOPIC_NEAR_TOP_ALPHA
     max_topics: Optional[int] = None
     top_score_fraction: float = DEFAULT_CENTRALITY_TOP_SCORE_FRACTION
     coherence_floor: float = DEFAULT_CENTRALITY_COHERENCE_FLOOR
@@ -804,6 +826,7 @@ class ExemplarScatterConfig:
     point_alpha: float = 0.7
     cmap_name: str = "viridis"
     ci_z: float = 1.96
+    fixed_exemplars: Sequence[Dict[str, object]] = ()
 
 
 @dataclass(frozen=True)
@@ -835,6 +858,7 @@ CORE_SIGNATURE_METRICS = (
     "syntax.clause_ratios.coordination_ratio",
     "syntax.avg_tokens_per_sentence",
     "discourse.content_overlap_ratio",
+    "discourse.explicit_connectives_per_token",
     "log_prob.token_weighted_mean_surprisal",
 )
 
@@ -901,6 +925,36 @@ class ForestPlotConfig:
 
 
 @dataclass(frozen=True)
+class AuthorDispersionConfig:
+    metrics: Sequence[str] = CORE_SIGNATURE_METRICS
+    author_targets: Sequence[Dict[str, object]] = ()
+    sd_fig_width: float = 8.5
+    sd_min_height: float = 3.5
+    sd_row_height: float = 0.4
+    dist_fig_width: float = 9.0
+    dist_fig_height: float = 4.5
+    bar_color: str = "#2c7fb8"
+    box_color: str = "#9ecae1"
+    point_size: float = 0.0
+    point_alpha: float = 0.7
+    label_max_len: int = 45
+    distribution: str = "box"
+
+
+@dataclass(frozen=True)
+class InternalStabilityRankConfig:
+    fig_width: float = 11.0
+    min_height: float = 4.0
+    row_height: float = 0.4
+    rate_color: str = "#2c7fb8"
+    delta_color: str = "#9ecae1"
+    label_max_len: int = 45
+    annotate: bool = True
+    label_font_size: int = 8
+    value_font_size: int = 7
+
+
+@dataclass(frozen=True)
 class TextMetricHeatmapConfig:
     p_threshold: float = 0.05
     min_width: float = 10.0
@@ -946,6 +1000,9 @@ class StabilityStackedBarConfig:
     family_order: Sequence[str] = ("syntax", "discourse", "lexico_semantics", "log_prob")
     family_colors: Sequence[str] = ("#1b9e77", "#d95f02", "#7570b3", "#e7298a")
     bar_alpha: float = 0.85
+    normalize: bool = True
+    normalize_mode: str = "total"
+    as_percent: bool = True
 
 
 @dataclass(frozen=True)
@@ -970,6 +1027,36 @@ class TopicMetricLineConfig:
     line_alpha: float = 0.85
     label_max_len: int = 45
     max_xticks: int = 12
+    presence_metric_targets: Sequence[Dict[str, object]] = ()
+
+
+@dataclass(frozen=True)
+class TopicGraphConfig:
+    text_targets: Sequence[str] = (
+        "gothic/poe/the_fall_of_the_house_of_usher",
+        "realism/chopin/a_pair_of_silk_stockings",
+        "modernism/joyce/the_dead",
+        "postmodernism/borges/The_Garden_of_Forking_Paths",
+        "gothic/hoffman/automata",
+    )
+    top_k_edges: int = 3
+    min_similarity: float = 0.05
+    fig_width: float = 9.5
+    fig_height: float = 7.0
+    layout_seed: int = 42
+    node_size_base: float = 220.0
+    node_size_scale: float = 900.0
+    central_color: str = "#d95f02"
+    non_central_color: str = "#1b9e77"
+    node_border_color: str = "#1a1a1a"
+    node_border_width: float = 0.8
+    label_font_size: float = 7.5
+    label_color: str = "#111111"
+    label_max_len: int = 36
+    edge_color: str = "#bdbdbd"
+    edge_alpha: float = 0.6
+    edge_width_min: float = 0.35
+    edge_width_scale: float = 2.4
 
 
 @dataclass(frozen=True)
@@ -986,21 +1073,71 @@ class DataSelectionConfig:
 DEFAULT_CENTRAL_TOPIC_X_CONFIG = CentralTopicXBarConfig()
 DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG = CentralTopicSelectionConfig()
 DEFAULT_DASHBOARD_CORRELATION_CONFIG = DashboardCorrelationConfig()
-DEFAULT_EXEMPLAR_SCATTER_CONFIG = ExemplarScatterConfig()
+DEFAULT_EXEMPLAR_SCATTER_CONFIG = ExemplarScatterConfig(
+    fixed_exemplars=(
+        {
+            "genre": "romanticism",
+            "author": "kleist",
+            "text_name": "kleist_earthquake_in_chile",
+            "topic_id": 2,
+            "metric": "syntax.clause_ratios.coordination_ratio",
+        },
+        {
+            "genre": "romanticism",
+            "author": "kleist",
+            "text_name": "kleist_marquise_of_o",
+            "topic_id": 10,
+            "metric": "syntax.median_depth",
+        },
+        {
+            "genre": "modernism",
+            "author": "woolf",
+            "text_name": "kew_gardens",
+            "topic_id": 0,
+            "metric": "syntax.median_depth",
+        },
+        {
+            "genre": "modernism",
+            "author": "woolf",
+            "text_name": "an_unwritten_novel",
+            "topic_id": 9,
+            "metric": "syntax.median_depth",
+        },
+    )
+)
 DEFAULT_PRESENCE_SLOPEGRAPH_CONFIG = PresenceSlopegraphConfig()
 DEFAULT_CONVERGENCE_INDEX_CONFIG = ConvergenceIndexConfig()
 DEFAULT_AGGREGATED_HEATMAP_CONFIG = AggregatedHeatmapConfig()
 DEFAULT_TOPIC_METRIC_HEATMAP_CONFIG = TopicMetricHeatmapConfig()
 DEFAULT_FOREST_PLOT_CONFIG = ForestPlotConfig()
+DEFAULT_AUTHOR_DISPERSION_CONFIG = AuthorDispersionConfig(
+    author_targets=(
+        {
+            "genre": "modernism",
+            "author": "woolf",
+        },
+    )
+)
+DEFAULT_INTERNAL_STABILITY_RANK_CONFIG = InternalStabilityRankConfig()
 DEFAULT_TEXT_METRIC_HEATMAP_CONFIG = TextMetricHeatmapConfig()
 DEFAULT_CENTRAL_TOPIC_WINDOW_HEATMAP_CONFIG = CentralTopicWindowHeatmapConfig()
 DEFAULT_STABILITY_FILTER_CONFIG = StabilityFilterConfig()
 DEFAULT_STABILITY_STACKED_BAR_CONFIG = StabilityStackedBarConfig()
-DEFAULT_TOPIC_METRIC_LINE_CONFIG = TopicMetricLineConfig()
+DEFAULT_TOPIC_METRIC_LINE_CONFIG = TopicMetricLineConfig(
+    presence_metric_targets=(
+        {
+            "genre": "romanticism",
+            "author": "kleist",
+            "text_name": "kleist_marquise_of_o",
+            "metric": "syntax.punctuation_per_token",
+        },
+    )
+)
+DEFAULT_TOPIC_GRAPH_CONFIG = TopicGraphConfig()
 DEFAULT_DATA_SELECTION_CONFIG = DataSelectionConfig(genres=tuple(GENRES))
 
 CONVERGENCE_METRIC_LABELS = {
-    "significant_count": "Significant metrics (count)",
+    "significant_count": "Significant metrics (proportion)",
     "mean_abs_r": "Mean |r|",
     "mean_abs_r_zeroed": "Mean |r| (nonsig=0)",
     "sign_agreement": "Sign agreement (proportion)",

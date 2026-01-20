@@ -27,8 +27,11 @@ from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
 from .x_configs import (
-    DEFAULT_PIPELINE_TOPIC_WINDOW_STRIDE_MULTIPLE,
+    DEFAULT_CONCEPT_TOP_N,
+    DEFAULT_MATTR_WINDOW_SIZE,
     DEFAULT_TOPIC_WINDOW_MULTIPLE,
+    DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
+    DEFAULT_USE_EXISTING,
     DEFAULT_WINDOW_SIZE,
     GENRES,
     MODEL_CONFIGS,
@@ -49,7 +52,12 @@ from .c3_discourse import DiscourseAnalyzer
 from .d2_dashboard import run_dashboard_with_config
 from .z_utils import analytics_path, iter_dirs, text_path
 
-def run_concept_embeddings(top_n=100, use_existing=True, authors=None, encoder=None):
+def run_concept_embeddings(
+    top_n=DEFAULT_CONCEPT_TOP_N,
+    use_existing=DEFAULT_USE_EXISTING,
+    authors=None,
+    encoder=None,
+):
     """
     Extract noun-phrase concepts and embeddings for all normalised texts.
     """
@@ -77,7 +85,7 @@ def run_concept_embeddings(top_n=100, use_existing=True, authors=None, encoder=N
     tqdm.write("Concept embeddings complete.")
 
 
-def run_corpus_metrics(use_existing=True, authors=None):
+def run_corpus_metrics(use_existing=DEFAULT_USE_EXISTING, authors=None):
     """
     Compute and save corpus-level log-prob/surprisal metrics for all cleaned texts.
     """
@@ -206,7 +214,11 @@ def _load_corpus_frequencies(text_dir: Path, base_name: str) -> dict:
         return {}
 
 
-def run_windowed_metrics(mattr_window_size=50, use_existing=True, authors=None):
+def run_windowed_metrics(
+    mattr_window_size=DEFAULT_MATTR_WINDOW_SIZE,
+    use_existing=DEFAULT_USE_EXISTING,
+    authors=None,
+):
     """
     Compute window-level metrics by combining syntax, lexico-semantic, discourse
     Requires corpus outputs from run_corpus_metrics.
@@ -354,7 +366,7 @@ def run_windowed_metrics(mattr_window_size=50, use_existing=True, authors=None):
     tqdm.write(f"Window metrics complete: {processed} processed, {skipped} skipped.")
 
 
-def run_preprocessing(process_unknown=True, use_existing=True, authors=None):
+def run_preprocessing(process_unknown=True, use_existing=DEFAULT_USE_EXISTING, authors=None):
     """
     Run PDF preprocessing to produce cleaned/normalised corpora.
     """
@@ -376,8 +388,8 @@ def run_preprocessing(process_unknown=True, use_existing=True, authors=None):
 
 
 def run_all_metrics(
-    mattr_window_size=50,
-    use_existing=True,
+    mattr_window_size=DEFAULT_MATTR_WINDOW_SIZE,
+    use_existing=DEFAULT_USE_EXISTING,
     process_unknown=True,
     authors=None,
 ):
@@ -403,7 +415,7 @@ def run_all_metrics(
         use_existing=use_existing,
         base_window_size=window_size,
         window_multiple=DEFAULT_TOPIC_WINDOW_MULTIPLE,
-        window_stride=window_size * DEFAULT_PIPELINE_TOPIC_WINDOW_STRIDE_MULTIPLE,
+        window_stride=window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
         encoder=shared_encoder,
         authors=authors,
     )
