@@ -1,10 +1,10 @@
 {
   "text_count": 9,
-  "pair_count": 3026,
+  "pair_count": 3471,
   "overall": {
-    "sign_agreement_rate": 0.8509583608724388,
-    "mean_abs_delta_r": 0.03989009165932092,
-    "median_abs_delta_r": 0.02798269044430353
+    "sign_agreement_rate": 0.8513396715643907,
+    "mean_abs_delta_r": 0.04074629354918023,
+    "median_abs_delta_r": 0.028850948412696177
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.9550561797752809,
       "mean_abs_delta_r": 0.036789824712466425,
       "median_abs_delta_r": 0.025331856971928773
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 89,
+      "sign_agreement_rate": 0.8426966292134831,
+      "mean_abs_delta_r": 0.045814098174662705,
+      "median_abs_delta_r": 0.034546129688386704
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 89,
+      "sign_agreement_rate": 0.8876404494382022,
+      "mean_abs_delta_r": 0.04765104214524195,
+      "median_abs_delta_r": 0.028669076434997
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 89,
+      "sign_agreement_rate": 0.797752808988764,
+      "mean_abs_delta_r": 0.043004561056131756,
+      "median_abs_delta_r": 0.03380446336809029
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 89,
+      "sign_agreement_rate": 0.8876404494382022,
+      "mean_abs_delta_r": 0.04750933074225952,
+      "median_abs_delta_r": 0.03966981552144367
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 89,
+      "sign_agreement_rate": 0.8539325842696629,
+      "mean_abs_delta_r": 0.048863299882821724,
+      "median_abs_delta_r": 0.03778985973422171
     }
   },
   "texts": [
@@ -217,82 +247,82 @@
       "category": "realism/chopin",
       "text_name": "a_pair_of_silk_stockings",
       "filename": "a_pair_of_silk_stockings_window_metrics.syntax.json",
-      "pair_count": 136,
-      "sign_agreement_rate": 0.7867647058823529,
-      "mean_abs_delta_r": 0.09069551783804983,
+      "pair_count": 156,
+      "sign_agreement_rate": 0.7948717948717948,
+      "mean_abs_delta_r": 0.08964819072764511,
       "median_abs_delta_r": 0.07013944146831384
     },
     {
       "category": "realism/chopin",
       "text_name": "desirees_baby",
       "filename": "desirees_baby_window_metrics.syntax.json",
-      "pair_count": 102,
-      "sign_agreement_rate": 0.7647058823529411,
-      "mean_abs_delta_r": 0.09160598574493363,
-      "median_abs_delta_r": 0.06552455638699943
+      "pair_count": 117,
+      "sign_agreement_rate": 0.7863247863247863,
+      "mean_abs_delta_r": 0.09685236502512794,
+      "median_abs_delta_r": 0.07868502101653063
     },
     {
       "category": "realism/chopin",
       "text_name": "the_story_of_an_hour",
       "filename": "the_story_of_an_hour_window_metrics.syntax.json",
-      "pair_count": 68,
-      "sign_agreement_rate": 0.8676470588235294,
-      "mean_abs_delta_r": 0.07942881039523524,
-      "median_abs_delta_r": 0.053290141552592624
+      "pair_count": 78,
+      "sign_agreement_rate": 0.8846153846153846,
+      "mean_abs_delta_r": 0.08060430903192871,
+      "median_abs_delta_r": 0.05587560630209262
     },
     {
       "category": "realism/james",
       "text_name": "the_author_of_beltraffio",
       "filename": "the_author_of_beltraffio_window_metrics.syntax.json",
-      "pair_count": 816,
-      "sign_agreement_rate": 0.8566176470588235,
-      "mean_abs_delta_r": 0.026095098944691014,
-      "median_abs_delta_r": 0.021684399270357424
+      "pair_count": 936,
+      "sign_agreement_rate": 0.8525641025641025,
+      "mean_abs_delta_r": 0.027508794560162572,
+      "median_abs_delta_r": 0.022214718283199455
     },
     {
       "category": "realism/james",
       "text_name": "the_figure_in_the_carpet",
       "filename": "the_figure_in_the_carpet_window_metrics.syntax.json",
-      "pair_count": 714,
-      "sign_agreement_rate": 0.8711484593837535,
-      "mean_abs_delta_r": 0.028867290378648776,
-      "median_abs_delta_r": 0.02353197669582746
+      "pair_count": 819,
+      "sign_agreement_rate": 0.8644688644688645,
+      "mean_abs_delta_r": 0.0295684624699503,
+      "median_abs_delta_r": 0.023612107864735624
     },
     {
       "category": "realism/james",
       "text_name": "the_real_thing",
       "filename": "the_real_thing_window_metrics.syntax.json",
-      "pair_count": 238,
-      "sign_agreement_rate": 0.8823529411764706,
-      "mean_abs_delta_r": 0.04654429081277612,
-      "median_abs_delta_r": 0.03688570297231672
+      "pair_count": 273,
+      "sign_agreement_rate": 0.8827838827838828,
+      "mean_abs_delta_r": 0.04859708804422195,
+      "median_abs_delta_r": 0.040052982198721845
     },
     {
       "category": "realism/maupassant",
       "text_name": "a_piece_of_string",
       "filename": "a_piece_of_string_window_metrics.syntax.json",
-      "pair_count": 170,
-      "sign_agreement_rate": 0.8411764705882353,
-      "mean_abs_delta_r": 0.06559957879491528,
-      "median_abs_delta_r": 0.053934798184958214
+      "pair_count": 195,
+      "sign_agreement_rate": 0.8461538461538461,
+      "mean_abs_delta_r": 0.06809698829097811,
+      "median_abs_delta_r": 0.05765031455503425
     },
     {
       "category": "realism/maupassant",
       "text_name": "boule-de-suif",
       "filename": "boule-de-suif_window_metrics.syntax.json",
-      "pair_count": 612,
-      "sign_agreement_rate": 0.8496732026143791,
-      "mean_abs_delta_r": 0.03195439707193488,
-      "median_abs_delta_r": 0.02457718376707143
+      "pair_count": 702,
+      "sign_agreement_rate": 0.8490028490028491,
+      "mean_abs_delta_r": 0.031501831193229864,
+      "median_abs_delta_r": 0.024651812698102855
     },
     {
       "category": "realism/maupassant",
       "text_name": "the_necklace",
       "filename": "the_necklace_window_metrics.syntax.json",
-      "pair_count": 170,
-      "sign_agreement_rate": 0.8058823529411765,
-      "mean_abs_delta_r": 0.05845559174380914,
-      "median_abs_delta_r": 0.047222437829925266
+      "pair_count": 195,
+      "sign_agreement_rate": 0.8307692307692308,
+      "mean_abs_delta_r": 0.057443069854355815,
+      "median_abs_delta_r": 0.04719227301389714
     }
   ],
   "params": {

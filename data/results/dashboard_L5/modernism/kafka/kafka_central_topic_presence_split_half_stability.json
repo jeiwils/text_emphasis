@@ -1,10 +1,10 @@
 {
   "text_count": 2,
-  "pair_count": 68,
+  "pair_count": 78,
   "overall": {
-    "sign_agreement_rate": 0.9264705882352942,
-    "mean_abs_delta_r": 0.06398298951826656,
-    "median_abs_delta_r": 0.042736182570472736
+    "sign_agreement_rate": 0.9102564102564102,
+    "mean_abs_delta_r": 0.06312148372116375,
+    "median_abs_delta_r": 0.04119041388142436
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 1,
       "mean_abs_delta_r": 0.08663924899867687,
       "median_abs_delta_r": 0.08663924899867687
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.013239253286802338,
+      "median_abs_delta_r": 0.013239253286802338
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.13050731037499014,
+      "median_abs_delta_r": 0.13050731037499014
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.00569737452682214,
+      "median_abs_delta_r": 0.00569737452682214
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 0.5,
+      "mean_abs_delta_r": 0.039375109908355216,
+      "median_abs_delta_r": 0.039375109908355216
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 0.5,
+      "mean_abs_delta_r": 0.09749717340735371,
+      "median_abs_delta_r": 0.09749717340735371
     }
   },
   "texts": [
@@ -217,19 +247,19 @@
       "category": "modernism/kafka",
       "text_name": "in_the_penal_colony",
       "filename": "in_the_penal_colony_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.9705882352941176,
-      "mean_abs_delta_r": 0.030186279645253555,
-      "median_abs_delta_r": 0.02634327312240866
+      "pair_count": 39,
+      "sign_agreement_rate": 0.9487179487179487,
+      "mean_abs_delta_r": 0.03009760109012864,
+      "median_abs_delta_r": 0.025723252787282404
     },
     {
       "category": "modernism/kafka",
       "text_name": "the_judgement",
       "filename": "the_judgement_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8823529411764706,
-      "mean_abs_delta_r": 0.09777969939127955,
-      "median_abs_delta_r": 0.07883103887302711
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8717948717948718,
+      "mean_abs_delta_r": 0.09614536635219886,
+      "median_abs_delta_r": 0.07813190254847348
     }
   ],
   "params": {

@@ -1,10 +1,10 @@
 {
   "text_count": 2,
-  "pair_count": 68,
+  "pair_count": 78,
   "overall": {
-    "sign_agreement_rate": 0.9117647058823529,
-    "mean_abs_delta_r": 0.03349593753027418,
-    "median_abs_delta_r": 0.025084630480391605
+    "sign_agreement_rate": 0.9102564102564102,
+    "mean_abs_delta_r": 0.03256761011046688,
+    "median_abs_delta_r": 0.023515557170862164
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 1,
       "mean_abs_delta_r": 0.020311002648553567,
       "median_abs_delta_r": 0.020311002648553567
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.015230474203116025,
+      "median_abs_delta_r": 0.015230474203116025
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.017007822374065597,
+      "median_abs_delta_r": 0.017007822374065597
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 0.5,
+      "mean_abs_delta_r": 0.0660984108806982,
+      "median_abs_delta_r": 0.0660984108806982
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.016493636322536597,
+      "median_abs_delta_r": 0.016493636322536597
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 2,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.016444574498469755,
+      "median_abs_delta_r": 0.016444574498469755
     }
   },
   "texts": [
@@ -217,19 +247,19 @@
       "category": "romanticism/kleist",
       "text_name": "kleist_earthquake_in_chile",
       "filename": "kleist_earthquake_in_chile_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8529411764705882,
-      "mean_abs_delta_r": 0.04127382587327077,
-      "median_abs_delta_r": 0.030280743052146
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8461538461538461,
+      "mean_abs_delta_r": 0.04073642384567285,
+      "median_abs_delta_r": 0.026709743012042084
     },
     {
       "category": "romanticism/kleist",
       "text_name": "kleist_marquise_of_o",
       "filename": "kleist_marquise_of_o_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.9705882352941176,
-      "mean_abs_delta_r": 0.025718049187277593,
-      "median_abs_delta_r": 0.021414237793295092
+      "pair_count": 39,
+      "sign_agreement_rate": 0.9743589743589743,
+      "mean_abs_delta_r": 0.024398796375260906,
+      "median_abs_delta_r": 0.020688283323985535
     }
   ],
   "params": {

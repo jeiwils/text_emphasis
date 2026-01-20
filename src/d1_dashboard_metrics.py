@@ -104,6 +104,7 @@ from .x_configs import (
     DEFAULT_BLOCK_SIZE,
     DEFAULT_CENTRAL_PRESENCE_NORMALIZE,
     DEFAULT_CENTRAL_PRESENCE_P,
+    DEFAULT_PRESENCE_K_REFERENCE,
     DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG,
     DEFAULT_DASHBOARD_PERMUTATIONS,
     DEFAULT_RNG_SEED,
@@ -231,7 +232,11 @@ def flatten_numeric_metrics(entry: Dict[str, object], prefix: str) -> Dict[str, 
     return metrics
 
 
-def collect_window_tables(window_data: Dict[str, object]) -> List[Dict[str, float]]:
+def collect_window_tables(
+    window_data: Dict[str, object],
+    *,
+    include_rms_variance: bool = True,
+) -> List[Dict[str, float]]:
     """
     Flatten per-window metrics from the window analysis result so they can be
     correlated against topic presence.
@@ -275,7 +280,35 @@ def collect_window_tables(window_data: Dict[str, object]) -> List[Dict[str, floa
         for name, entries in metrics_by_name.items():
             row.update(flatten_numeric_metrics(entries[idx], name))
         table.append(row)
+    if include_rms_variance:
+        _append_rms_z_metrics(table)
     return table
+
+
+def _variance(values: List[float]) -> float:
+    if len(values) < 2:
+        return 0.0
+    return statistics.pvariance(values)
+
+
+def _collect_domain_metric_series(
+    window_data: Dict[str, object],
+    *,
+    domain: str,
+) -> Tuple[Dict[str, List[float]], int]:
+    domain_payload = window_data.get(domain, {}) if isinstance(window_data, dict) else {}
+    windows = domain_payload.get("windows", []) if isinstance(domain_payload, dict) else []
+    if not windows:
+        return {}, 0
+    filtered = _filter_dashboard_windows(windows, domain=domain)
+    series: Dict[str, List[float]] = {}
+    for window in filtered:
+        if not isinstance(window, dict):
+            continue
+        flat = flatten_numeric_metrics(window, domain)
+        for metric, value in flat.items():
+            series.setdefault(metric, []).append(float(value))
+    return series, len(filtered)
 
 
 def dashboard_metric_names(window_table: List[Dict[str, float]]) -> List[str]:
@@ -306,6 +339,71 @@ def _metric_matrix(
                 raise ValueError(f"NaN metric value for {metric}")
             matrix[metric_idx, row_idx] = float(value)
     return matrix
+
+
+def _rms_z_series(
+    window_table: List[Dict[str, float]],
+) -> Tuple[Dict[str, np.ndarray], Optional[np.ndarray], Dict[str, int]]:
+    if not window_table:
+        return {}, None, {}
+    metric_names = dashboard_metric_names(window_table)
+    if not metric_names:
+        return {}, None, {}
+    matrix = _metric_matrix(window_table, metric_names)
+    if matrix.size == 0:
+        return {}, None, {}
+
+    means = np.mean(matrix, axis=1)
+    stds = np.std(matrix, axis=1, ddof=0)
+    valid = stds > 0
+    window_count = matrix.shape[1]
+    z_scores = np.zeros_like(matrix)
+    if np.any(valid):
+        z_scores[valid, :] = (matrix[valid, :] - means[valid, None]) / stds[valid, None]
+
+    rms_by_domain: Dict[str, np.ndarray] = {}
+    metric_counts: Dict[str, int] = {}
+    for domain in WINDOW_METRIC_DOMAINS:
+        domain_indices = [
+            idx
+            for idx, name in enumerate(metric_names)
+            if name.startswith(f"{domain}.")
+        ]
+        if not domain_indices:
+            continue
+        valid_indices = [idx for idx in domain_indices if valid[idx]]
+        if valid_indices:
+            rms = np.sqrt(np.mean(np.square(z_scores[valid_indices, :]), axis=0))
+            metric_counts[domain] = len(valid_indices)
+        else:
+            rms = np.zeros(window_count, dtype=float)
+            metric_counts[domain] = 0
+        rms_by_domain[domain] = rms
+
+    overall_indices = [idx for idx, is_valid in enumerate(valid) if is_valid]
+    if overall_indices:
+        overall_rms = np.sqrt(
+            np.mean(np.square(z_scores[overall_indices, :]), axis=0)
+        )
+    else:
+        overall_rms = np.zeros(window_count, dtype=float)
+
+    return rms_by_domain, overall_rms, metric_counts
+
+
+def _append_rms_z_metrics(window_table: List[Dict[str, float]]) -> None:
+    if not window_table:
+        return
+    if any(key.startswith("variance.") for key in window_table[0].keys()):
+        return
+    rms_by_domain, overall_rms, _metric_counts = _rms_z_series(window_table)
+    if not rms_by_domain and overall_rms is None:
+        return
+    for idx, row in enumerate(window_table):
+        for domain, series in rms_by_domain.items():
+            row[f"variance.{domain}_rms_z"] = round(float(series[idx]), 6)
+        if overall_rms is not None:
+            row["variance.overall_rms_z"] = round(float(overall_rms[idx]), 6)
 
 
 def _pearson_vector(x: np.ndarray, y_matrix: np.ndarray) -> np.ndarray:
@@ -641,7 +739,6 @@ def _collect_centrality_rows(topics_data: Dict[str, object]) -> List[Dict[str, o
 
 def central_topics(
     topics_data: Dict[str, object],
-    top_n: Optional[int] = None,
     *,
     near_top_alpha: Optional[float] = None,
     coherence_floor: Optional[float] = None,
@@ -650,14 +747,10 @@ def central_topics(
     config = DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG
     if near_top_alpha is None:
         near_top_alpha = config.near_top_alpha
-    if top_n is None:
-        top_n = config.max_topics
     if coherence_floor is None:
         coherence_floor = config.coherence_floor
     if exclusivity_floor is None:
         exclusivity_floor = config.exclusivity_floor
-    if top_n is not None and top_n <= 0:
-        top_n = None
 
     ranked = _collect_centrality_rows(topics_data)
     if not ranked:
@@ -703,9 +796,27 @@ def central_topics(
         near_top = near_top_alpha * max_score
         filtered = [row for row in ranked if row["score"] >= near_top]
         ranked = filtered
-    if top_n is None or top_n <= 0:
-        return ranked
-    return ranked[:top_n]
+    return ranked
+
+
+def _presence_k_value(
+    topics_data: Dict[str, object],
+    *,
+    default_count: int,
+    central_ids: Optional[set[int]] = None,
+) -> Tuple[int, str]:
+    reference = str(DEFAULT_PRESENCE_K_REFERENCE or "self").lower()
+    if reference == "central":
+        if central_ids is None:
+            central_ranked = central_topics(topics_data)
+            central_ids = {
+                row["topic_id"]
+                for row in central_ranked
+                if isinstance(row.get("topic_id"), int)
+            }
+        if central_ids:
+            return len(central_ids), "central"
+    return default_count, "self"
 
 
 def build_topic_correlation_report(
@@ -892,6 +1003,13 @@ def build_central_presence_report(
         return {}
 
     num_central = len(central_topic_ids)
+    k_value, k_reference = _presence_k_value(
+        topics_data,
+        default_count=num_central,
+        central_ids=central_topic_ids,
+    )
+    if k_value <= 0:
+        return {}
     inv_p = 1.0 / presence_p
     presence_scores: List[float] = []
     for score_map in topic_score_windows:
@@ -903,7 +1021,7 @@ def build_central_presence_report(
             powered_sum += score ** presence_p
         if powered_sum > 0.0:
             if normalize_presence:
-                powered_sum /= num_central
+                powered_sum /= k_value
             presence = powered_sum ** inv_p
         else:
             presence = 0.0
@@ -943,8 +1061,296 @@ def build_central_presence_report(
             "presence_aggregation": "p_norm",
             "presence_p": presence_p,
             "presence_normalized": normalize_presence,
+            "presence_k_reference": k_reference,
+            "presence_k": k_value,
             "block_size": block_size,
             "permutations": permutations,
+        },
+    }
+
+
+def build_topic_presence_report(
+    window_data: Dict[str, object],
+    topics_data: Dict[str, object],
+    *,
+    block_size: int,
+    permutations: int,
+) -> Dict[str, object]:
+    topics = _topic_items(topics_data)
+    topic_ids = {
+        topic.get("topic_id")
+        for topic in topics
+        if isinstance(topic, dict) and isinstance(topic.get("topic_id"), int)
+    }
+    topic_ids = {topic_id for topic_id in topic_ids if isinstance(topic_id, int) and topic_id >= 0}
+    if not topic_ids:
+        return {}
+
+    presence_p = float(DEFAULT_CENTRAL_PRESENCE_P)
+    normalize_presence = bool(DEFAULT_CENTRAL_PRESENCE_NORMALIZE)
+    if presence_p <= 0:
+        raise ValueError("topic presence p must be > 0")
+
+    window_entries = window_data.get("syntax", {}).get("windows", [])
+    window_table = collect_window_tables(window_data)
+    if not window_table:
+        return {}
+
+    metric_names = dashboard_metric_names(window_table)
+    if not metric_names:
+        return {}
+    metric_matrix = _metric_matrix(window_table, metric_names)
+    topic_score_windows = collect_window_topic_scores(
+        topics_data,
+        window_entries=window_entries,
+    )
+    if len(topic_score_windows) != len(window_table):
+        return {}
+
+    num_topics = len(topic_ids)
+    k_value, k_reference = _presence_k_value(
+        topics_data,
+        default_count=num_topics,
+    )
+    if k_value <= 0:
+        return {}
+    inv_p = 1.0 / presence_p
+    presence_scores: List[float] = []
+    for score_map in topic_score_windows:
+        powered_sum = 0.0
+        for topic_id in topic_ids:
+            score = score_map.get(topic_id, 0.0)
+            if score <= 0.0:
+                continue
+            powered_sum += score ** presence_p
+        if powered_sum > 0.0:
+            if normalize_presence:
+                powered_sum /= k_value
+            presence = powered_sum ** inv_p
+        else:
+            presence = 0.0
+        presence_scores.append(presence)
+
+    correlations: Dict[str, object] = {}
+    rng = np.random.default_rng(DEFAULT_RNG_SEED)
+    presence_array = np.asarray(presence_scores, dtype=float)
+    corrs = _pearson_vector(presence_array, metric_matrix)
+    blocks = _build_blocks(presence_array, block_size) if block_size > 0 else None
+    for metric_idx, metric in enumerate(metric_names):
+        corr = corrs[metric_idx]
+        if not np.isfinite(corr):
+            continue
+        p_value = block_permutation_p_value(
+            presence_array,
+            metric_matrix[metric_idx],
+            block_size=block_size,
+            permutations=permutations,
+            rng=rng,
+            observed=float(corr),
+            blocks=blocks,
+        )
+        correlations[metric] = {
+            "pearson_r": float(corr),
+            "p_value": p_value,
+        }
+
+    return {
+        "window_count": len(window_table),
+        "metric_names": metric_names,
+        "topic_presence": {
+            "topic_presence_scores": presence_scores,
+            "correlations": correlations,
+        },
+        "params": {
+            "presence_aggregation": "p_norm",
+            "presence_p": presence_p,
+            "presence_normalized": normalize_presence,
+            "presence_k_reference": k_reference,
+            "presence_k": k_value,
+            "block_size": block_size,
+            "permutations": permutations,
+        },
+    }
+
+
+def build_non_central_presence_report(
+    window_data: Dict[str, object],
+    topics_data: Dict[str, object],
+    *,
+    block_size: int,
+    permutations: int,
+) -> Dict[str, object]:
+    topics = _topic_items(topics_data)
+    topic_ids = {
+        topic.get("topic_id")
+        for topic in topics
+        if isinstance(topic, dict) and isinstance(topic.get("topic_id"), int)
+    }
+    topic_ids = {topic_id for topic_id in topic_ids if isinstance(topic_id, int) and topic_id >= 0}
+    if not topic_ids:
+        return {}
+
+    central_ranked = central_topics(topics_data)
+    central_topic_ids = {
+        row["topic_id"] for row in central_ranked if isinstance(row.get("topic_id"), int)
+    }
+    non_central_topic_ids = {
+        topic_id for topic_id in topic_ids if topic_id not in central_topic_ids
+    }
+    if not non_central_topic_ids:
+        return {}
+
+    presence_p = float(DEFAULT_CENTRAL_PRESENCE_P)
+    normalize_presence = bool(DEFAULT_CENTRAL_PRESENCE_NORMALIZE)
+    if presence_p <= 0:
+        raise ValueError("non-central topic presence p must be > 0")
+
+    window_entries = window_data.get("syntax", {}).get("windows", [])
+    window_table = collect_window_tables(window_data)
+    if not window_table:
+        return {}
+
+    metric_names = dashboard_metric_names(window_table)
+    if not metric_names:
+        return {}
+    metric_matrix = _metric_matrix(window_table, metric_names)
+    topic_score_windows = collect_window_topic_scores(
+        topics_data,
+        window_entries=window_entries,
+    )
+    if len(topic_score_windows) != len(window_table):
+        return {}
+
+    num_topics = len(non_central_topic_ids)
+    k_value, k_reference = _presence_k_value(
+        topics_data,
+        default_count=num_topics,
+        central_ids=central_topic_ids,
+    )
+    if k_value <= 0:
+        return {}
+    inv_p = 1.0 / presence_p
+    presence_scores: List[float] = []
+    for score_map in topic_score_windows:
+        powered_sum = 0.0
+        for topic_id in non_central_topic_ids:
+            score = score_map.get(topic_id, 0.0)
+            if score <= 0.0:
+                continue
+            powered_sum += score ** presence_p
+        if powered_sum > 0.0:
+            if normalize_presence:
+                powered_sum /= k_value
+            presence = powered_sum ** inv_p
+        else:
+            presence = 0.0
+        presence_scores.append(presence)
+
+    correlations: Dict[str, object] = {}
+    rng = np.random.default_rng(DEFAULT_RNG_SEED)
+    presence_array = np.asarray(presence_scores, dtype=float)
+    corrs = _pearson_vector(presence_array, metric_matrix)
+    blocks = _build_blocks(presence_array, block_size) if block_size > 0 else None
+    for metric_idx, metric in enumerate(metric_names):
+        corr = corrs[metric_idx]
+        if not np.isfinite(corr):
+            continue
+        p_value = block_permutation_p_value(
+            presence_array,
+            metric_matrix[metric_idx],
+            block_size=block_size,
+            permutations=permutations,
+            rng=rng,
+            observed=float(corr),
+            blocks=blocks,
+        )
+        correlations[metric] = {
+            "pearson_r": float(corr),
+            "p_value": p_value,
+        }
+
+    return {
+        "window_count": len(window_table),
+        "metric_names": metric_names,
+        "non_central_topic_presence": {
+            "non_central_presence_scores": presence_scores,
+            "correlations": correlations,
+        },
+        "params": {
+            "presence_aggregation": "p_norm",
+            "presence_p": presence_p,
+            "presence_normalized": normalize_presence,
+            "presence_k_reference": k_reference,
+            "presence_k": k_value,
+            "block_size": block_size,
+            "permutations": permutations,
+        },
+    }
+
+
+def build_window_variance_report(window_data: Dict[str, object]) -> Dict[str, object]:
+    metric_variances: Dict[str, Dict[str, float]] = {}
+    window_counts: Dict[str, int] = {}
+    metric_counts: Dict[str, int] = {}
+
+    for domain in WINDOW_METRIC_DOMAINS:
+        series_by_metric, window_count = _collect_domain_metric_series(
+            window_data,
+            domain=domain,
+        )
+        if not series_by_metric:
+            continue
+        window_counts[domain] = window_count
+        per_metric_var: Dict[str, float] = {}
+        domain_variance_values: List[float] = []
+        for metric in sorted(series_by_metric.keys()):
+            variance = _variance(series_by_metric[metric])
+            per_metric_var[metric] = round(variance, 6)
+            domain_variance_values.append(variance)
+        if per_metric_var:
+            metric_variances[domain] = per_metric_var
+            metric_counts[domain] = len(per_metric_var)
+
+    if not metric_variances:
+        return {}
+
+    window_table = collect_window_tables(window_data, include_rms_variance=False)
+    rms_by_domain, overall_rms, rms_metric_counts = _rms_z_series(window_table)
+    rms_domain_means: Dict[str, float] = {}
+    rms_domain_variances: Dict[str, float] = {}
+    for domain, series in rms_by_domain.items():
+        if len(series) == 0:
+            continue
+        rms_domain_means[domain] = round(float(np.mean(series)), 6)
+        rms_domain_variances[domain] = round(float(np.var(series)), 6)
+
+    overall_mean = None
+    overall_variance = None
+    if overall_rms is not None and len(overall_rms) > 0:
+        overall_mean = round(float(np.mean(overall_rms)), 6)
+        overall_variance = round(float(np.var(overall_rms)), 6)
+    overall_metric_count = sum(rms_metric_counts.values())
+
+    window_count = len(window_table) if window_table else None
+
+    return {
+        "window_count": window_count,
+        "window_counts": window_counts,
+        "metric_variances": metric_variances,
+        "metric_counts": metric_counts,
+        "rms_z": {
+            "domain_means": rms_domain_means,
+            "domain_variances": rms_domain_variances,
+            "overall_mean": overall_mean,
+            "overall_variance": overall_variance,
+            "metric_counts": rms_metric_counts,
+            "overall_metric_count": overall_metric_count,
+        },
+        "params": {
+            "metric_variance_method": "pvariance",
+            "rms_z_method": "rms_z",
+            "rms_z_variance_method": "pvariance",
+            "window_metric_filter": "DASHBOARD_WINDOW_CONFIG",
         },
     }
 

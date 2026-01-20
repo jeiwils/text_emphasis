@@ -42,15 +42,17 @@ Notes:
   - `*_topic_correlations.json` (per-topic correlations)
   - `*_central_topic_correlations.json` (per-central-topic correlations)
   - `*_central_topic_presence_correlations.json` (all-central-topic p-norm correlations)
+  - `*_topic_presence_correlations.json` (all-topic p-norm correlations)
+  - `*_non_central_topic_presence_correlations.json` (all-non-central-topic p-norm correlations)
+  - `*_window_variances.json` (per-metric variances + RMS-z dispersion summaries)
 
 ## Central topics (percentile-ranked components)
 - Centrality selection:
   - Uses topic stats: coherence, exclusivity, prevalence, persistence, top10_mean.
   - Compute within-text percentile ranks for each metric across topics.
   - Optional coherence/exclusivity percentile floors applied before near-top selection.
-  - Centrality score is the mean of component percentiles, with persistence/top10_mean combined via max (OR).
-  - Keep topics with score >= near_top_alpha * max (after floors).
-  - Optional cap via `CentralTopicSelectionConfig.max_topics` in `src/x_configs.py` (None = no cap).
+- Centrality score is the mean of component percentiles, with persistence/top10_mean combined via max (OR).
+- Keep topics with score >= near_top_alpha * max (after floors).
 - Metric definitions (from topic modeling):
   - Prevalence (soft mean): sum of topic scores across non-noise windows / number of non-noise windows.
     - topic_scores already filtered by score_threshold/top_k at topic modeling time.
@@ -112,18 +114,28 @@ flowchart TD
     tense_shift, entity_overlap_ratio, content_overlap_ratio, pronoun_ratio.
 - Discourse (text-level dashboard row): mean across windows of explicit_connectives_per_token, modality_per_token,
   connective_counts_per_token, tense_shift, and entity_overlap_rate.
+- Variance composites (window-level, used in correlations):
+  - variance.<domain>_rms_z (per-domain RMS of per-metric z-scores across windows).
+  - variance.overall_rms_z (RMS of per-metric z-scores across all domains).
 
 ## Correlations
 - Per text:
   - `*_topic_correlations.json` includes correlations for all topics; `*_central_topic_correlations.json` includes
     only selected central topics; `*_central_topic_presence_correlations.json` is the all-central-topic (p-norm)
-    aggregate.
+    aggregate; `*_topic_presence_correlations.json` is the all-topic (p-norm) aggregate; and
+    `*_non_central_topic_presence_correlations.json` is the all-non-central-topic (p-norm) aggregate.
   - For each topic, correlate window metrics with overlap-weighted soft topic scores; compute Pearson r with block
     permutation p-values, plus binary correlations from score > 0.
 - All-central-topic (p-norm) correlations use a normalized p-norm across central topics per window
   (soft score; 0 when no central topic is present). Default p=2; normalization divides by K
   (number of central topics). Dashboard correlations do not apply extra per-window top-k/threshold
   filtering for central topics beyond what topic modeling already stored.
+- All-topic (p-norm) correlations use the same normalized p-norm across all topics per window
+  (soft score; 0 when no topic is present). Default p=2; normalization divides by K
+  (by default K matches the central-topic count for k-matching).
+- All-non-central-topic (p-norm) correlations use the same normalized p-norm across non-central topics per window
+  (soft score; 0 when no non-central topic is present). Default p=2; normalization divides by K
+  (by default K matches the central-topic count for k-matching).
 - Per genre:
   - All-central-topic (p-norm) correlations aggregated across texts via Fisher z for r (weighted by n-3; only n > 3)
     and Stouffer for p-values (weights sqrt(n-3), sign from r).

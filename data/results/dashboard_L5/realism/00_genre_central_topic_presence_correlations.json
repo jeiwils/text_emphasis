@@ -35,7 +35,12 @@
     "syntax.depth_skew",
     "syntax.max_depth",
     "syntax.median_depth",
-    "syntax.punctuation_per_token"
+    "syntax.punctuation_per_token",
+    "variance.discourse_rms_z",
+    "variance.lexico_semantics_rms_z",
+    "variance.log_prob_rms_z",
+    "variance.overall_rms_z",
+    "variance.syntax_rms_z"
   ],
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -343,6 +348,51 @@
       "total_effective_windows": 678,
       "fisher_z": 0.0030629483808052274,
       "fisher_z_weight_sum": 651
+    },
+    "variance.discourse_rms_z": {
+      "pearson_r": 0.022754199026333938,
+      "p_value": 0.37803173133066137,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.022758127269341327,
+      "fisher_z_weight_sum": 651
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pearson_r": -0.02800735894170427,
+      "p_value": 0.26748324443112903,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.02801468549449583,
+      "fisher_z_weight_sum": 651
+    },
+    "variance.log_prob_rms_z": {
+      "pearson_r": 0.03292094606560747,
+      "p_value": 0.21940848863983042,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": 0.032932846921709565,
+      "fisher_z_weight_sum": 651
+    },
+    "variance.overall_rms_z": {
+      "pearson_r": -0.01763298877437703,
+      "p_value": 0.5140807671633638,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.01763481661181314,
+      "fisher_z_weight_sum": 651
+    },
+    "variance.syntax_rms_z": {
+      "pearson_r": -0.0515528732120803,
+      "p_value": 0.0446730633465493,
+      "text_count": 9,
+      "total_windows": 3380,
+      "total_effective_windows": 678,
+      "fisher_z": -0.05159861684661082,
+      "fisher_z_weight_sum": 651
     }
   },
   "texts": [
@@ -354,7 +404,7 @@
       "window_count": 104,
       "effective_window_count": 21,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "realism/chopin",
@@ -364,7 +414,7 @@
       "window_count": 138,
       "effective_window_count": 28,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "realism/chopin",
@@ -374,7 +424,7 @@
       "window_count": 65,
       "effective_window_count": 13,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "realism/james",
@@ -384,7 +434,7 @@
       "window_count": 910,
       "effective_window_count": 182,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "realism/james",
@@ -394,7 +444,7 @@
       "window_count": 793,
       "effective_window_count": 159,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "realism/james",
@@ -404,7 +454,7 @@
       "window_count": 280,
       "effective_window_count": 56,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "realism/maupassant",
@@ -414,7 +464,7 @@
       "window_count": 174,
       "effective_window_count": 35,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "realism/maupassant",
@@ -424,7 +474,7 @@
       "window_count": 688,
       "effective_window_count": 138,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "realism/maupassant",
@@ -434,7 +484,7 @@
       "window_count": 228,
       "effective_window_count": 46,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     }
   ],
   "params": {

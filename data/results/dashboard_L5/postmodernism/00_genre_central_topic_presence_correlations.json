@@ -35,7 +35,12 @@
     "syntax.depth_skew",
     "syntax.max_depth",
     "syntax.median_depth",
-    "syntax.punctuation_per_token"
+    "syntax.punctuation_per_token",
+    "variance.discourse_rms_z",
+    "variance.lexico_semantics_rms_z",
+    "variance.log_prob_rms_z",
+    "variance.overall_rms_z",
+    "variance.syntax_rms_z"
   ],
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -343,6 +348,51 @@
       "total_effective_windows": 258,
       "fisher_z": -0.00661308176813843,
       "fisher_z_weight_sum": 231
+    },
+    "variance.discourse_rms_z": {
+      "pearson_r": -0.011706231491317205,
+      "p_value": 0.7564377826846371,
+      "text_count": 9,
+      "total_windows": 1268,
+      "total_effective_windows": 258,
+      "fisher_z": -0.01170676625977062,
+      "fisher_z_weight_sum": 231
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pearson_r": -0.03440291405292698,
+      "p_value": 0.36865013025341975,
+      "text_count": 9,
+      "total_windows": 1268,
+      "total_effective_windows": 258,
+      "fisher_z": -0.03441649634284196,
+      "fisher_z_weight_sum": 231
+    },
+    "variance.log_prob_rms_z": {
+      "pearson_r": 0.004192790152192021,
+      "p_value": 0.8793806760605722,
+      "text_count": 9,
+      "total_windows": 1268,
+      "total_effective_windows": 258,
+      "fisher_z": 0.004192814721487655,
+      "fisher_z_weight_sum": 231
+    },
+    "variance.overall_rms_z": {
+      "pearson_r": -0.003981273981779338,
+      "p_value": 0.8978796588631319,
+      "text_count": 9,
+      "total_windows": 1268,
+      "total_effective_windows": 258,
+      "fisher_z": -0.003981295017096899,
+      "fisher_z_weight_sum": 231
+    },
+    "variance.syntax_rms_z": {
+      "pearson_r": 0.018116407006827786,
+      "p_value": 0.6575479830520536,
+      "text_count": 9,
+      "total_windows": 1268,
+      "total_effective_windows": 258,
+      "fisher_z": 0.018118389357518576,
+      "fisher_z_weight_sum": 231
     }
   },
   "texts": [
@@ -354,7 +404,7 @@
       "window_count": 153,
       "effective_window_count": 31,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "postmodernism/barthelme",
@@ -364,7 +414,7 @@
       "window_count": 49,
       "effective_window_count": 10,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "postmodernism/barthelme",
@@ -374,7 +424,7 @@
       "window_count": 92,
       "effective_window_count": 19,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "postmodernism/borges",
@@ -384,7 +434,7 @@
       "window_count": 131,
       "effective_window_count": 27,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "postmodernism/borges",
@@ -394,7 +444,7 @@
       "window_count": 237,
       "effective_window_count": 48,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "postmodernism/borges",
@@ -404,7 +454,7 @@
       "window_count": 226,
       "effective_window_count": 46,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "postmodernism/calvino",
@@ -414,7 +464,7 @@
       "window_count": 60,
       "effective_window_count": 12,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "postmodernism/calvino",
@@ -424,7 +474,7 @@
       "window_count": 199,
       "effective_window_count": 40,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "postmodernism/calvino",
@@ -434,7 +484,7 @@
       "window_count": 121,
       "effective_window_count": 25,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     }
   ],
   "params": {

@@ -41,7 +41,12 @@
       "syntax.depth_skew",
       "syntax.max_depth",
       "syntax.median_depth",
-      "syntax.punctuation_per_token"
+      "syntax.punctuation_per_token",
+      "variance.discourse_rms_z",
+      "variance.lexico_semantics_rms_z",
+      "variance.log_prob_rms_z",
+      "variance.overall_rms_z",
+      "variance.syntax_rms_z"
     ],
     "central_topic_presence": {
       "central_presence_scores": [
@@ -408,6 +413,26 @@
         "syntax.punctuation_per_token": {
           "pearson_r": 0.21223314909467209,
           "p_value": 0.059940059940059943
+        },
+        "variance.discourse_rms_z": {
+          "pearson_r": 0.021338325044065316,
+          "p_value": 0.8381618381618382
+        },
+        "variance.lexico_semantics_rms_z": {
+          "pearson_r": -0.031820421751650535,
+          "p_value": 0.7472527472527473
+        },
+        "variance.log_prob_rms_z": {
+          "pearson_r": 0.05059110530595365,
+          "p_value": 0.5984015984015985
+        },
+        "variance.overall_rms_z": {
+          "pearson_r": -0.03205566617411595,
+          "p_value": 0.7652347652347652
+        },
+        "variance.syntax_rms_z": {
+          "pearson_r": -0.014262223513902425,
+          "p_value": 0.8611388611388612
         }
       }
     }

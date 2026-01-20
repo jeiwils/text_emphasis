@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "category": "romanticism/shelley",
+    "text_name": "the_dream",
+    "filename": "the_dream_window_metrics.syntax.json"
+  },
+  "report": {
+    "window_count": 262,
+    "window_counts": {
+      "syntax": 262,
+      "lexico_semantics": 262,
+      "discourse": 262,
+      "log_prob": 262
+    },
+    "metric_variances": {
+      "syntax": {
+        "syntax.avg_dependents_per_head.coordinate_clause": 1.912548,
+        "syntax.avg_dependents_per_head.main_clause": 1.940059,
+        "syntax.avg_dependents_per_head.subordinate_clause": 1.748657,
+        "syntax.avg_mean_dependency_distance": 0.700791,
+        "syntax.avg_tokens_per_sentence": 105.987219,
+        "syntax.clause_counts_per_token.coordinate": 0.000808,
+        "syntax.clause_counts_per_token.main": 0.001464,
+        "syntax.clause_counts_per_token.subordinate": 0.000924,
+        "syntax.clause_ratios.coordination_ratio": 0.633778,
+        "syntax.clause_ratios.subordination_ratio": 0.800176,
+        "syntax.depth_skew": 0.041293,
+        "syntax.max_depth": 7.040805,
+        "syntax.median_depth": 0.489758,
+        "syntax.punctuation_per_token": 0.002603
+      },
+      "lexico_semantics": {
+        "lexico_semantics.avg_word_freq": 186.819196,
+        "lexico_semantics.information_content": 0.044421,
+        "lexico_semantics.lexical_density_per_token": 0.002846,
+        "lexico_semantics.lexical_diversity_mattr.mattr_score": 0.003492,
+        "lexico_semantics.normalized_freq": 16.301272
+      },
+      "discourse": {
+        "discourse.connective_counts_per_token.Comparison": 6.3e-05,
+        "discourse.connective_counts_per_token.Contingency": 0.000158,
+        "discourse.connective_counts_per_token.Expansion": 0.000413,
+        "discourse.connective_counts_per_token.Temporal": 9.7e-05,
+        "discourse.content_overlap_per_token": 0.000177,
+        "discourse.content_overlap_ratio": 0.00118,
+        "discourse.entity_overlap_per_token": 7.5e-05,
+        "discourse.entity_overlap_ratio": 0.002303,
+        "discourse.explicit_connectives_per_token": 0.000682,
+        "discourse.modality_per_token": 2e-05,
+        "discourse.pronoun_ratio": 0.001951,
+        "discourse.tense_shift": 0.060941
+      },
+      "log_prob": {
+        "log_prob.max_token_surprisal": 3.975355,
+        "log_prob.token_weighted_mean_surprisal": 0.173648,
+        "log_prob.token_weighted_surprisal_variance": 2.355226
+      }
+    },
+    "metric_counts": {
+      "syntax": 14,
+      "lexico_semantics": 5,
+      "discourse": 12,
+      "log_prob": 3
+    },
+    "rms_z": {
+      "domain_means": {
+        "syntax": 0.94325,
+        "lexico_semantics": 0.895957,
+        "discourse": 0.930114,
+        "log_prob": 0.880807
+      },
+      "domain_variances": {
+        "syntax": 0.110279,
+        "lexico_semantics": 0.197261,
+        "discourse": 0.134888,
+        "log_prob": 0.224179
+      },
+      "overall_mean": 0.968221,
+      "overall_variance": 0.062548,
+      "metric_counts": {
+        "syntax": 14,
+        "lexico_semantics": 5,
+        "discourse": 12,
+        "log_prob": 3
+      },
+      "overall_metric_count": 34
+    },
+    "params": {
+      "metric_variance_method": "pvariance",
+      "rms_z_method": "rms_z",
+      "rms_z_variance_method": "pvariance",
+      "window_metric_filter": "DASHBOARD_WINDOW_CONFIG"
+    }
+  }
+}

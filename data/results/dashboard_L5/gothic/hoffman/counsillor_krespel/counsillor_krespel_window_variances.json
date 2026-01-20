@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "category": "gothic/hoffman",
+    "text_name": "counsillor_krespel",
+    "filename": "counsillor_krespel_window_metrics.syntax.json"
+  },
+  "report": {
+    "window_count": 371,
+    "window_counts": {
+      "syntax": 371,
+      "lexico_semantics": 371,
+      "discourse": 371,
+      "log_prob": 371
+    },
+    "metric_variances": {
+      "syntax": {
+        "syntax.avg_dependents_per_head.coordinate_clause": 2.509988,
+        "syntax.avg_dependents_per_head.main_clause": 2.109045,
+        "syntax.avg_dependents_per_head.subordinate_clause": 1.836804,
+        "syntax.avg_mean_dependency_distance": 0.535576,
+        "syntax.avg_tokens_per_sentence": 141.330304,
+        "syntax.clause_counts_per_token.coordinate": 0.000816,
+        "syntax.clause_counts_per_token.main": 0.004062,
+        "syntax.clause_counts_per_token.subordinate": 0.000905,
+        "syntax.clause_ratios.coordination_ratio": 0.607298,
+        "syntax.clause_ratios.subordination_ratio": 1.339866,
+        "syntax.depth_skew": 0.044618,
+        "syntax.max_depth": 5.602575,
+        "syntax.median_depth": 0.441317,
+        "syntax.punctuation_per_token": 0.003241
+      },
+      "lexico_semantics": {
+        "lexico_semantics.avg_word_freq": 218.164035,
+        "lexico_semantics.information_content": 0.077174,
+        "lexico_semantics.lexical_density_per_token": 0.002936,
+        "lexico_semantics.lexical_diversity_mattr.mattr_score": 0.003888,
+        "lexico_semantics.normalized_freq": 11.007658
+      },
+      "discourse": {
+        "discourse.connective_counts_per_token.Comparison": 9e-05,
+        "discourse.connective_counts_per_token.Contingency": 9.3e-05,
+        "discourse.connective_counts_per_token.Expansion": 0.000373,
+        "discourse.connective_counts_per_token.Temporal": 9.6e-05,
+        "discourse.content_overlap_per_token": 0.000595,
+        "discourse.content_overlap_ratio": 0.00484,
+        "discourse.entity_overlap_per_token": 0.00024,
+        "discourse.entity_overlap_ratio": 0.00735,
+        "discourse.explicit_connectives_per_token": 0.000518,
+        "discourse.modality_per_token": 4.5e-05,
+        "discourse.pronoun_ratio": 0.001844,
+        "discourse.tense_shift": 0.069153
+      },
+      "log_prob": {
+        "log_prob.max_token_surprisal": 3.345646,
+        "log_prob.token_weighted_mean_surprisal": 0.156014,
+        "log_prob.token_weighted_surprisal_variance": 3.154333
+      }
+    },
+    "metric_counts": {
+      "syntax": 14,
+      "lexico_semantics": 5,
+      "discourse": 12,
+      "log_prob": 3
+    },
+    "rms_z": {
+      "domain_means": {
+        "syntax": 0.923448,
+        "lexico_semantics": 0.828617,
+        "discourse": 0.91433,
+        "log_prob": 0.868802
+      },
+      "domain_variances": {
+        "syntax": 0.147245,
+        "lexico_semantics": 0.313394,
+        "discourse": 0.164,
+        "log_prob": 0.245183
+      },
+      "overall_mean": 0.937538,
+      "overall_variance": 0.121022,
+      "metric_counts": {
+        "syntax": 14,
+        "lexico_semantics": 5,
+        "discourse": 12,
+        "log_prob": 3
+      },
+      "overall_metric_count": 34
+    },
+    "params": {
+      "metric_variance_method": "pvariance",
+      "rms_z_method": "rms_z",
+      "rms_z_variance_method": "pvariance",
+      "window_metric_filter": "DASHBOARD_WINDOW_CONFIG"
+    }
+  }
+}

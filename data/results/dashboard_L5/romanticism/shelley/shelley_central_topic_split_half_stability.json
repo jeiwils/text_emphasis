@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 306,
+  "pair_count": 351,
   "overall": {
-    "sign_agreement_rate": 0.8660130718954249,
-    "mean_abs_delta_r": 0.04647458811192207,
-    "median_abs_delta_r": 0.03713949656936121
+    "sign_agreement_rate": 0.8717948717948718,
+    "mean_abs_delta_r": 0.04524749657188625,
+    "median_abs_delta_r": 0.03639386183318037
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 1,
       "mean_abs_delta_r": 0.05178914706843972,
       "median_abs_delta_r": 0.0411764243342638
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.053369958223651946,
+      "median_abs_delta_r": 0.04647590055493801
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 0.8888888888888888,
+      "mean_abs_delta_r": 0.04019966439305228,
+      "median_abs_delta_r": 0.032802773488689096
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 0.7777777777777778,
+      "mean_abs_delta_r": 0.035758338759337906,
+      "median_abs_delta_r": 0.028762173179106024
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.024856581374574253,
+      "median_abs_delta_r": 0.02322102642133463
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 0.8888888888888888,
+      "mean_abs_delta_r": 0.030331827747596855,
+      "median_abs_delta_r": 0.02550855477439365
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "romanticism/shelley",
       "text_name": "the_dream",
       "filename": "the_dream_window_metrics.syntax.json",
-      "pair_count": 102,
-      "sign_agreement_rate": 0.803921568627451,
-      "mean_abs_delta_r": 0.0523519569019859,
-      "median_abs_delta_r": 0.043188982786331674
+      "pair_count": 117,
+      "sign_agreement_rate": 0.8205128205128205,
+      "mean_abs_delta_r": 0.05092984359984231,
+      "median_abs_delta_r": 0.039021979857464806
     },
     {
       "category": "romanticism/shelley",
       "text_name": "the_mortal_immortal",
       "filename": "the_mortal_immortal_window_metrics.syntax.json",
-      "pair_count": 68,
-      "sign_agreement_rate": 0.8676470588235294,
-      "mean_abs_delta_r": 0.05645964708982554,
-      "median_abs_delta_r": 0.048219384826985186
+      "pair_count": 78,
+      "sign_agreement_rate": 0.8589743589743589,
+      "mean_abs_delta_r": 0.05524853586689693,
+      "median_abs_delta_r": 0.046989234313573505
     },
     {
       "category": "romanticism/shelley",
       "text_name": "the_transformation",
       "filename": "the_transformation_window_metrics.syntax.json",
-      "pair_count": 136,
-      "sign_agreement_rate": 0.9117647058823529,
-      "mean_abs_delta_r": 0.03707403203042247,
-      "median_abs_delta_r": 0.0289855214621422
+      "pair_count": 156,
+      "sign_agreement_rate": 0.9166666666666666,
+      "mean_abs_delta_r": 0.035985216653413865,
+      "median_abs_delta_r": 0.02763126706213094
     }
   ],
   "params": {

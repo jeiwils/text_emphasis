@@ -35,7 +35,12 @@
     "syntax.depth_skew",
     "syntax.max_depth",
     "syntax.median_depth",
-    "syntax.punctuation_per_token"
+    "syntax.punctuation_per_token",
+    "variance.discourse_rms_z",
+    "variance.lexico_semantics_rms_z",
+    "variance.log_prob_rms_z",
+    "variance.overall_rms_z",
+    "variance.syntax_rms_z"
   ],
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -343,6 +348,51 @@
       "total_effective_windows": 787,
       "fisher_z": -0.05329355108651033,
       "fisher_z_weight_sum": 760
+    },
+    "variance.discourse_rms_z": {
+      "pearson_r": -0.04754168765990179,
+      "p_value": 0.043149777399316136,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.04757755441104724,
+      "fisher_z_weight_sum": 760
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pearson_r": -0.028319857805781386,
+      "p_value": 0.393216861624619,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.028327432428502896,
+      "fisher_z_weight_sum": 760
+    },
+    "variance.log_prob_rms_z": {
+      "pearson_r": -0.018090266617802043,
+      "p_value": 0.47010377516738,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.018092240398672042,
+      "fisher_z_weight_sum": 760
+    },
+    "variance.overall_rms_z": {
+      "pearson_r": -0.057300100642216474,
+      "p_value": 0.026856882775094792,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.057362935641931234,
+      "fisher_z_weight_sum": 760
+    },
+    "variance.syntax_rms_z": {
+      "pearson_r": -0.038150922786537346,
+      "p_value": 0.12093260025897679,
+      "text_count": 9,
+      "total_windows": 3920,
+      "total_effective_windows": 787,
+      "fisher_z": -0.03816944843346758,
+      "fisher_z_weight_sum": 760
     }
   },
   "texts": [
@@ -354,7 +404,7 @@
       "window_count": 655,
       "effective_window_count": 131,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "gothic/fanu",
@@ -364,7 +414,7 @@
       "window_count": 615,
       "effective_window_count": 123,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "gothic/fanu",
@@ -374,7 +424,7 @@
       "window_count": 500,
       "effective_window_count": 100,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "gothic/hoffman",
@@ -384,7 +434,7 @@
       "window_count": 529,
       "effective_window_count": 106,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "gothic/hoffman",
@@ -394,7 +444,7 @@
       "window_count": 371,
       "effective_window_count": 75,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "gothic/hoffman",
@@ -404,7 +454,7 @@
       "window_count": 633,
       "effective_window_count": 127,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "gothic/poe",
@@ -414,7 +464,7 @@
       "window_count": 224,
       "effective_window_count": 45,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "gothic/poe",
@@ -424,7 +474,7 @@
       "window_count": 236,
       "effective_window_count": 48,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "gothic/poe",
@@ -434,7 +484,7 @@
       "window_count": 157,
       "effective_window_count": 32,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     }
   ],
   "params": {

@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 1768,
+  "pair_count": 2028,
   "overall": {
-    "sign_agreement_rate": 0.8659502262443439,
-    "mean_abs_delta_r": 0.02996741362141618,
-    "median_abs_delta_r": 0.023846365024122986
+    "sign_agreement_rate": 0.861439842209073,
+    "mean_abs_delta_r": 0.031179392261969457,
+    "median_abs_delta_r": 0.024770278190337933
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.9615384615384616,
       "mean_abs_delta_r": 0.027446468347156725,
       "median_abs_delta_r": 0.025749309338749603
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 52,
+      "sign_agreement_rate": 0.8269230769230769,
+      "mean_abs_delta_r": 0.04230797979739733,
+      "median_abs_delta_r": 0.03592211730703502
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 52,
+      "sign_agreement_rate": 0.8846153846153846,
+      "mean_abs_delta_r": 0.031221522487637314,
+      "median_abs_delta_r": 0.02144757080018897
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 52,
+      "sign_agreement_rate": 0.7115384615384616,
+      "mean_abs_delta_r": 0.043042071692941865,
+      "median_abs_delta_r": 0.03201234610563519
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 52,
+      "sign_agreement_rate": 0.8653846153846154,
+      "mean_abs_delta_r": 0.037845824372230524,
+      "median_abs_delta_r": 0.03678820518907684
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 52,
+      "sign_agreement_rate": 0.8653846153846154,
+      "mean_abs_delta_r": 0.04268683673845154,
+      "median_abs_delta_r": 0.03561567990865841
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "realism/james",
       "text_name": "the_author_of_beltraffio",
       "filename": "the_author_of_beltraffio_window_metrics.syntax.json",
-      "pair_count": 816,
-      "sign_agreement_rate": 0.8566176470588235,
-      "mean_abs_delta_r": 0.026095098944691014,
-      "median_abs_delta_r": 0.021684399270357424
+      "pair_count": 936,
+      "sign_agreement_rate": 0.8525641025641025,
+      "mean_abs_delta_r": 0.027508794560162572,
+      "median_abs_delta_r": 0.022214718283199455
     },
     {
       "category": "realism/james",
       "text_name": "the_figure_in_the_carpet",
       "filename": "the_figure_in_the_carpet_window_metrics.syntax.json",
-      "pair_count": 714,
-      "sign_agreement_rate": 0.8711484593837535,
-      "mean_abs_delta_r": 0.028867290378648776,
-      "median_abs_delta_r": 0.02353197669582746
+      "pair_count": 819,
+      "sign_agreement_rate": 0.8644688644688645,
+      "mean_abs_delta_r": 0.0295684624699503,
+      "median_abs_delta_r": 0.023612107864735624
     },
     {
       "category": "realism/james",
       "text_name": "the_real_thing",
       "filename": "the_real_thing_window_metrics.syntax.json",
-      "pair_count": 238,
-      "sign_agreement_rate": 0.8823529411764706,
-      "mean_abs_delta_r": 0.04654429081277612,
-      "median_abs_delta_r": 0.03688570297231672
+      "pair_count": 273,
+      "sign_agreement_rate": 0.8827838827838828,
+      "mean_abs_delta_r": 0.04859708804422195,
+      "median_abs_delta_r": 0.040052982198721845
     }
   ],
   "params": {

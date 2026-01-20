@@ -35,7 +35,12 @@
     "syntax.depth_skew",
     "syntax.max_depth",
     "syntax.median_depth",
-    "syntax.punctuation_per_token"
+    "syntax.punctuation_per_token",
+    "variance.discourse_rms_z",
+    "variance.lexico_semantics_rms_z",
+    "variance.log_prob_rms_z",
+    "variance.overall_rms_z",
+    "variance.syntax_rms_z"
   ],
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -343,6 +348,51 @@
       "total_effective_windows": 510,
       "fisher_z": -0.019170472759401997,
       "fisher_z_weight_sum": 486
+    },
+    "variance.discourse_rms_z": {
+      "pearson_r": 0.00886995362142438,
+      "p_value": 0.6223200312722676,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.008870186250124631,
+      "fisher_z_weight_sum": 486
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pearson_r": -0.018830360777293314,
+      "p_value": 0.6869215187045836,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.018832586889635305,
+      "fisher_z_weight_sum": 486
+    },
+    "variance.log_prob_rms_z": {
+      "pearson_r": -0.026919809944949136,
+      "p_value": 0.40353694017582176,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.026926315488731006,
+      "fisher_z_weight_sum": 486
+    },
+    "variance.overall_rms_z": {
+      "pearson_r": -0.030437611147540043,
+      "p_value": 0.42720658684481516,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.030447015999031286,
+      "fisher_z_weight_sum": 486
+    },
+    "variance.syntax_rms_z": {
+      "pearson_r": -0.048149960378769736,
+      "p_value": 0.14145333554840578,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.04818722281574446,
+      "fisher_z_weight_sum": 486
     }
   },
   "texts": [
@@ -354,7 +404,7 @@
       "window_count": 143,
       "effective_window_count": 29,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "modernism/joyce",
@@ -364,7 +414,7 @@
       "window_count": 125,
       "effective_window_count": 25,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "modernism/joyce",
@@ -374,7 +424,7 @@
       "window_count": 968,
       "effective_window_count": 194,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "modernism/kafka",
@@ -384,7 +434,7 @@
       "window_count": 525,
       "effective_window_count": 105,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "modernism/kafka",
@@ -394,7 +444,7 @@
       "window_count": 220,
       "effective_window_count": 44,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "modernism/woolf",
@@ -404,7 +454,7 @@
       "window_count": 340,
       "effective_window_count": 68,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "modernism/woolf",
@@ -414,7 +464,7 @@
       "window_count": 86,
       "effective_window_count": 18,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "modernism/woolf",
@@ -424,7 +474,7 @@
       "window_count": 132,
       "effective_window_count": 27,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     }
   ],
   "params": {

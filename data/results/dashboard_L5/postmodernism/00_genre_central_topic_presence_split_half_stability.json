@@ -1,10 +1,10 @@
 {
   "text_count": 9,
-  "pair_count": 306,
+  "pair_count": 351,
   "overall": {
-    "sign_agreement_rate": 0.7875816993464052,
-    "mean_abs_delta_r": 0.0944341636631015,
-    "median_abs_delta_r": 0.07080361618771683
+    "sign_agreement_rate": 0.7891737891737892,
+    "mean_abs_delta_r": 0.09123157804758325,
+    "median_abs_delta_r": 0.06972286312565705
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.7777777777777778,
       "mean_abs_delta_r": 0.08839919723362052,
       "median_abs_delta_r": 0.0712097771080438
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.0734144018687088,
+      "median_abs_delta_r": 0.06972286312565705
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.055301357575385096,
+      "median_abs_delta_r": 0.05739124923139349
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 0.7777777777777778,
+      "mean_abs_delta_r": 0.10342267451775787,
+      "median_abs_delta_r": 0.10954182214733695
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.047320518169212344,
+      "median_abs_delta_r": 0.05482004567182311
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 0.8888888888888888,
+      "mean_abs_delta_r": 0.06781102717923117,
+      "median_abs_delta_r": 0.056520823598694675
     }
   },
   "texts": [
@@ -217,82 +247,82 @@
       "category": "postmodernism/barthelme",
       "text_name": "indian_uprising",
       "filename": "indian_uprising_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8823529411764706,
-      "mean_abs_delta_r": 0.08192826163495645,
-      "median_abs_delta_r": 0.08126902567581734
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8974358974358975,
+      "mean_abs_delta_r": 0.08017154403879351,
+      "median_abs_delta_r": 0.08099893154121303
     },
     {
       "category": "postmodernism/barthelme",
       "text_name": "the_balloon",
       "filename": "the_balloon_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.6470588235294118,
-      "mean_abs_delta_r": 0.24777625445788606,
-      "median_abs_delta_r": 0.22519871939871922
+      "pair_count": 39,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.22666093667124482,
+      "median_abs_delta_r": 0.18983700043733048
     },
     {
       "category": "postmodernism/barthelme",
       "text_name": "the_school",
       "filename": "the_school_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8823529411764706,
-      "mean_abs_delta_r": 0.08646093997638783,
-      "median_abs_delta_r": 0.07243856642116357
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8205128205128205,
+      "mean_abs_delta_r": 0.08791027606047136,
+      "median_abs_delta_r": 0.07281467352211474
     },
     {
       "category": "postmodernism/borges",
       "text_name": "Borges-The-Library-of-Babel",
       "filename": "Borges-The-Library-of-Babel_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.5882352941176471,
-      "mean_abs_delta_r": 0.10263085049740822,
-      "median_abs_delta_r": 0.08971771446239792
+      "pair_count": 39,
+      "sign_agreement_rate": 0.6410256410256411,
+      "mean_abs_delta_r": 0.09873058594639944,
+      "median_abs_delta_r": 0.0786732544048718
     },
     {
       "category": "postmodernism/borges",
       "text_name": "The_Garden_of_Forking_Paths",
       "filename": "The_Garden_of_Forking_Paths_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.7647058823529411,
-      "mean_abs_delta_r": 0.062227361295936846,
-      "median_abs_delta_r": 0.06347366827814947
+      "pair_count": 39,
+      "sign_agreement_rate": 0.7692307692307693,
+      "mean_abs_delta_r": 0.062351629245767023,
+      "median_abs_delta_r": 0.06502097973005941
     },
     {
       "category": "postmodernism/borges",
       "text_name": "the_aleph",
       "filename": "the_aleph_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8529411764705882,
-      "mean_abs_delta_r": 0.05375227047459495,
-      "median_abs_delta_r": 0.05146535842559286
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8205128205128205,
+      "mean_abs_delta_r": 0.05306272287611162,
+      "median_abs_delta_r": 0.05291659445062005
     },
     {
       "category": "postmodernism/calvino",
       "text_name": "all_at_one_point",
       "filename": "all_at_one_point_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.07989594870911415,
-      "median_abs_delta_r": 0.06786921438167647
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8461538461538461,
+      "mean_abs_delta_r": 0.0782554197516345,
+      "median_abs_delta_r": 0.06757995261578702
     },
     {
       "category": "postmodernism/calvino",
       "text_name": "the_distance_of_the_moon",
       "filename": "the_distance_of_the_moon_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.060928876763040665,
-      "median_abs_delta_r": 0.04984835151382394
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8205128205128205,
+      "mean_abs_delta_r": 0.060169286781662015,
+      "median_abs_delta_r": 0.056047363112496196
     },
     {
       "category": "postmodernism/calvino",
       "text_name": "the_spiral",
       "filename": "the_spiral_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.07430670915858838,
-      "median_abs_delta_r": 0.06291110077114098
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8205128205128205,
+      "mean_abs_delta_r": 0.07377180105616492,
+      "median_abs_delta_r": 0.06378483101922425
     }
   ],
   "params": {

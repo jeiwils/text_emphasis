@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 102,
+  "pair_count": 117,
   "overall": {
-    "sign_agreement_rate": 0.8823529411764706,
-    "mean_abs_delta_r": 0.0721588122481111,
-    "median_abs_delta_r": 0.06562720590032785
+    "sign_agreement_rate": 0.8632478632478633,
+    "mean_abs_delta_r": 0.07164536605882743,
+    "median_abs_delta_r": 0.0625011422990023
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 1,
       "mean_abs_delta_r": 0.048694804643476274,
       "median_abs_delta_r": 0.0497440956302628
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.027262320563910973,
+      "median_abs_delta_r": 0.03184944454539985
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.04223170634644217,
+      "median_abs_delta_r": 0.044435476923808497
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.043651347542286424,
+      "median_abs_delta_r": 0.04025136891568183
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.07099338535808326,
+      "median_abs_delta_r": 0.05219296530429687
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.1566309000477696,
+      "median_abs_delta_r": 0.15812942257230975
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "modernism/woolf",
       "text_name": "an_unwritten_novel",
       "filename": "an_unwritten_novel_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.9411764705882353,
-      "mean_abs_delta_r": 0.07056873329614377,
-      "median_abs_delta_r": 0.0648880303116007
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8717948717948718,
+      "mean_abs_delta_r": 0.06902977295683163,
+      "median_abs_delta_r": 0.06010771981272189
     },
     {
       "category": "modernism/woolf",
       "text_name": "kew_gardens",
       "filename": "kew_gardens_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.9411764705882353,
-      "mean_abs_delta_r": 0.07129048432593288,
-      "median_abs_delta_r": 0.047914018094080746
+      "pair_count": 39,
+      "sign_agreement_rate": 0.9230769230769231,
+      "mean_abs_delta_r": 0.06964633520136108,
+      "median_abs_delta_r": 0.04960937882847971
     },
     {
       "category": "modernism/woolf",
       "text_name": "the_mark_on_the_wall",
       "filename": "the_mark_on_the_wall_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.7647058823529411,
-      "mean_abs_delta_r": 0.07461721912225666,
-      "median_abs_delta_r": 0.07242796071749655
+      "pair_count": 39,
+      "sign_agreement_rate": 0.7948717948717948,
+      "mean_abs_delta_r": 0.07625999001828959,
+      "median_abs_delta_r": 0.07242664172374814
     }
   ],
   "params": {

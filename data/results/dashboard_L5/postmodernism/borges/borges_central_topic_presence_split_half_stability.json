@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 102,
+  "pair_count": 117,
   "overall": {
-    "sign_agreement_rate": 0.7352941176470589,
-    "mean_abs_delta_r": 0.07287016075598,
-    "median_abs_delta_r": 0.06108327846270374
+    "sign_agreement_rate": 0.7435897435897436,
+    "mean_abs_delta_r": 0.07138164602275937,
+    "median_abs_delta_r": 0.06101402231585404
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 1,
       "mean_abs_delta_r": 0.030271627505578606,
       "median_abs_delta_r": 0.015260946488080573
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.06231531314156998,
+      "median_abs_delta_r": 0.06972286312565705
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.03589240400675807,
+      "median_abs_delta_r": 0.021256603904291557
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.12925906222391836,
+      "median_abs_delta_r": 0.13847866748114282
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.05364591064062006,
+      "median_abs_delta_r": 0.05482004567182311
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.02518603917142851,
+      "median_abs_delta_r": 0.009959998311658806
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "postmodernism/borges",
       "text_name": "Borges-The-Library-of-Babel",
       "filename": "Borges-The-Library-of-Babel_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.5882352941176471,
-      "mean_abs_delta_r": 0.10263085049740822,
-      "median_abs_delta_r": 0.08971771446239792
+      "pair_count": 39,
+      "sign_agreement_rate": 0.6410256410256411,
+      "mean_abs_delta_r": 0.09873058594639944,
+      "median_abs_delta_r": 0.0786732544048718
     },
     {
       "category": "postmodernism/borges",
       "text_name": "The_Garden_of_Forking_Paths",
       "filename": "The_Garden_of_Forking_Paths_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.7647058823529411,
-      "mean_abs_delta_r": 0.062227361295936846,
-      "median_abs_delta_r": 0.06347366827814947
+      "pair_count": 39,
+      "sign_agreement_rate": 0.7692307692307693,
+      "mean_abs_delta_r": 0.062351629245767023,
+      "median_abs_delta_r": 0.06502097973005941
     },
     {
       "category": "postmodernism/borges",
       "text_name": "the_aleph",
       "filename": "the_aleph_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8529411764705882,
-      "mean_abs_delta_r": 0.05375227047459495,
-      "median_abs_delta_r": 0.05146535842559286
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8205128205128205,
+      "mean_abs_delta_r": 0.05306272287611162,
+      "median_abs_delta_r": 0.05291659445062005
     }
   ],
   "params": {

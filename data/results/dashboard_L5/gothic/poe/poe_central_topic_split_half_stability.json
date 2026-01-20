@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 306,
+  "pair_count": 351,
   "overall": {
-    "sign_agreement_rate": 0.8300653594771242,
-    "mean_abs_delta_r": 0.0601569111152963,
-    "median_abs_delta_r": 0.0471681941059523
+    "sign_agreement_rate": 0.8433048433048433,
+    "mean_abs_delta_r": 0.060235891724068256,
+    "median_abs_delta_r": 0.04778857102765491
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.8888888888888888,
       "mean_abs_delta_r": 0.03241679976013933,
       "median_abs_delta_r": 0.012765697845302806
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.05099252725302378,
+      "median_abs_delta_r": 0.047435021051080564
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.05637837234938575,
+      "median_abs_delta_r": 0.053210259694420066
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 0.7777777777777778,
+      "mean_abs_delta_r": 0.08028870717190471,
+      "median_abs_delta_r": 0.08452732367154489
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 0.8888888888888888,
+      "mean_abs_delta_r": 0.05942243395822541,
+      "median_abs_delta_r": 0.06541438811646663
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 9,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.05678275858604812,
+      "median_abs_delta_r": 0.06135864933587498
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "gothic/poe",
       "text_name": "the_cask_of_amontillado",
       "filename": "the_cask_of_amontillado_window_metrics.syntax.json",
-      "pair_count": 170,
-      "sign_agreement_rate": 0.8352941176470589,
-      "mean_abs_delta_r": 0.050635183145599526,
-      "median_abs_delta_r": 0.04039091672844079
+      "pair_count": 195,
+      "sign_agreement_rate": 0.841025641025641,
+      "mean_abs_delta_r": 0.05184564048123771,
+      "median_abs_delta_r": 0.04189276148039836
     },
     {
       "category": "gothic/poe",
       "text_name": "the_fall_of_the_house_of_usher",
       "filename": "the_fall_of_the_house_of_usher_window_metrics.syntax.json",
-      "pair_count": 68,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.06000038677552475,
-      "median_abs_delta_r": 0.050194511572864225
+      "pair_count": 78,
+      "sign_agreement_rate": 0.8461538461538461,
+      "mean_abs_delta_r": 0.060831010037658874,
+      "median_abs_delta_r": 0.054874846766649554
     },
     {
       "category": "gothic/poe",
       "text_name": "the_telltale_heart",
       "filename": "the_telltale_heart_window_metrics.syntax.json",
-      "pair_count": 68,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.08411775537930978,
-      "median_abs_delta_r": 0.0623701362383441
+      "pair_count": 78,
+      "sign_agreement_rate": 0.8461538461538461,
+      "mean_abs_delta_r": 0.08061640151755402,
+      "median_abs_delta_r": 0.06223705560733811
     }
   ],
   "params": {

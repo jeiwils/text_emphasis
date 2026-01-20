@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 272,
+  "pair_count": 312,
   "overall": {
-    "sign_agreement_rate": 0.7610294117647058,
-    "mean_abs_delta_r": 0.11438066855645854,
-    "median_abs_delta_r": 0.09015159609237582
+    "sign_agreement_rate": 0.75,
+    "mean_abs_delta_r": 0.1151875769589314,
+    "median_abs_delta_r": 0.09001231552728345
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.75,
       "mean_abs_delta_r": 0.09768075740845038,
       "median_abs_delta_r": 0.10542752579103311
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.375,
+      "mean_abs_delta_r": 0.17896278626568796,
+      "median_abs_delta_r": 0.13452705533016346
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.875,
+      "mean_abs_delta_r": 0.08045509026568118,
+      "median_abs_delta_r": 0.05174493080508005
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.75,
+      "mean_abs_delta_r": 0.1437897679907316,
+      "median_abs_delta_r": 0.116482484642355
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.5,
+      "mean_abs_delta_r": 0.09874102053167709,
+      "median_abs_delta_r": 0.09806537560551545
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.875,
+      "mean_abs_delta_r": 0.10142410542495657,
+      "median_abs_delta_r": 0.06952318693653056
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "postmodernism/barthelme",
       "text_name": "indian_uprising",
       "filename": "indian_uprising_window_metrics.syntax.json",
-      "pair_count": 136,
-      "sign_agreement_rate": 0.7941176470588235,
-      "mean_abs_delta_r": 0.07071512320031585,
-      "median_abs_delta_r": 0.06741770139561203
+      "pair_count": 156,
+      "sign_agreement_rate": 0.8076923076923077,
+      "mean_abs_delta_r": 0.07104370140236153,
+      "median_abs_delta_r": 0.0667364394046211
     },
     {
       "category": "postmodernism/barthelme",
       "text_name": "the_balloon",
       "filename": "the_balloon_window_metrics.syntax.json",
-      "pair_count": 68,
-      "sign_agreement_rate": 0.6617647058823529,
-      "mean_abs_delta_r": 0.18509366699868973,
-      "median_abs_delta_r": 0.16252851333059376
+      "pair_count": 78,
+      "sign_agreement_rate": 0.6538461538461539,
+      "mean_abs_delta_r": 0.17717821362771494,
+      "median_abs_delta_r": 0.1456238827854595
     },
     {
       "category": "postmodernism/barthelme",
       "text_name": "the_school",
       "filename": "the_school_window_metrics.syntax.json",
-      "pair_count": 68,
-      "sign_agreement_rate": 0.7941176470588235,
-      "mean_abs_delta_r": 0.13099876082651277,
-      "median_abs_delta_r": 0.1171735050048061
+      "pair_count": 78,
+      "sign_agreement_rate": 0.7307692307692307,
+      "mean_abs_delta_r": 0.14148469140328765,
+      "median_abs_delta_r": 0.12574801963956247
     }
   ],
   "params": {

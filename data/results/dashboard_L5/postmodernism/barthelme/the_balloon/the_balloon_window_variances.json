@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "category": "postmodernism/barthelme",
+    "text_name": "the_balloon",
+    "filename": "the_balloon_window_metrics.syntax.json"
+  },
+  "report": {
+    "window_count": 49,
+    "window_counts": {
+      "syntax": 49,
+      "lexico_semantics": 49,
+      "discourse": 49,
+      "log_prob": 49
+    },
+    "metric_variances": {
+      "syntax": {
+        "syntax.avg_dependents_per_head.coordinate_clause": 1.047449,
+        "syntax.avg_dependents_per_head.main_clause": 2.398723,
+        "syntax.avg_dependents_per_head.subordinate_clause": 1.780654,
+        "syntax.avg_mean_dependency_distance": 0.502464,
+        "syntax.avg_tokens_per_sentence": 145.887545,
+        "syntax.clause_counts_per_token.coordinate": 0.000444,
+        "syntax.clause_counts_per_token.main": 0.000147,
+        "syntax.clause_counts_per_token.subordinate": 0.000376,
+        "syntax.clause_ratios.coordination_ratio": 0.672908,
+        "syntax.clause_ratios.subordination_ratio": 1.116745,
+        "syntax.depth_skew": 0.043856,
+        "syntax.max_depth": 5.783424,
+        "syntax.median_depth": 0.500818,
+        "syntax.punctuation_per_token": 0.001164
+      },
+      "lexico_semantics": {
+        "lexico_semantics.avg_word_freq": 18.411163,
+        "lexico_semantics.information_content": 0.043451,
+        "lexico_semantics.lexical_density_per_token": 0.003524,
+        "lexico_semantics.lexical_diversity_mattr.mattr_score": 0.001612,
+        "lexico_semantics.normalized_freq": 3.130145
+      },
+      "discourse": {
+        "discourse.connective_counts_per_token.Comparison": 2.6e-05,
+        "discourse.connective_counts_per_token.Contingency": 0.000121,
+        "discourse.connective_counts_per_token.Expansion": 0.000142,
+        "discourse.connective_counts_per_token.Temporal": 4.4e-05,
+        "discourse.content_overlap_per_token": 0.000188,
+        "discourse.content_overlap_ratio": 0.001566,
+        "discourse.entity_overlap_per_token": 0.000158,
+        "discourse.entity_overlap_ratio": 0.004562,
+        "discourse.explicit_connectives_per_token": 0.000333,
+        "discourse.modality_per_token": 1.4e-05,
+        "discourse.pronoun_ratio": 0.000414,
+        "discourse.tense_shift": 0.10909
+      },
+      "log_prob": {
+        "log_prob.max_token_surprisal": 2.090548,
+        "log_prob.token_weighted_mean_surprisal": 0.108449,
+        "log_prob.token_weighted_surprisal_variance": 2.223871
+      }
+    },
+    "metric_counts": {
+      "syntax": 14,
+      "lexico_semantics": 5,
+      "discourse": 12,
+      "log_prob": 3
+    },
+    "rms_z": {
+      "domain_means": {
+        "syntax": 0.957107,
+        "lexico_semantics": 0.889144,
+        "discourse": 0.958218,
+        "log_prob": 0.911441
+      },
+      "domain_variances": {
+        "syntax": 0.083946,
+        "lexico_semantics": 0.209423,
+        "discourse": 0.081819,
+        "log_prob": 0.169276
+      },
+      "overall_mean": 0.973192,
+      "overall_variance": 0.052896,
+      "metric_counts": {
+        "syntax": 14,
+        "lexico_semantics": 5,
+        "discourse": 12,
+        "log_prob": 3
+      },
+      "overall_metric_count": 34
+    },
+    "params": {
+      "metric_variance_method": "pvariance",
+      "rms_z_method": "rms_z",
+      "rms_z_variance_method": "pvariance",
+      "window_metric_filter": "DASHBOARD_WINDOW_CONFIG"
+    }
+  }
+}

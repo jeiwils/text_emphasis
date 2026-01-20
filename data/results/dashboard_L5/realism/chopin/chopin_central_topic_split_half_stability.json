@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 272,
+  "pair_count": 312,
   "overall": {
-    "sign_agreement_rate": 0.8014705882352942,
-    "mean_abs_delta_r": 0.08429843441802073,
-    "median_abs_delta_r": 0.06303361843239008
+    "sign_agreement_rate": 0.8205128205128205,
+    "mean_abs_delta_r": 0.08640129521679561,
+    "median_abs_delta_r": 0.06565348748456946
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.75,
       "mean_abs_delta_r": 0.131748885465906,
       "median_abs_delta_r": 0.13521702203152414
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.10505793316531162,
+      "median_abs_delta_r": 0.10399443569129962
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.875,
+      "mean_abs_delta_r": 0.09161583632558681,
+      "median_abs_delta_r": 0.08552786044463459
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.060616739716367225,
+      "median_abs_delta_r": 0.054440393391602004
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.875,
+      "mean_abs_delta_r": 0.13565846936681228,
+      "median_abs_delta_r": 0.15546292426363945
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.110554764668246,
+      "median_abs_delta_r": 0.10700590638830647
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "realism/chopin",
       "text_name": "a_pair_of_silk_stockings",
       "filename": "a_pair_of_silk_stockings_window_metrics.syntax.json",
-      "pair_count": 102,
-      "sign_agreement_rate": 0.7941176470588235,
-      "mean_abs_delta_r": 0.08023729910629816,
-      "median_abs_delta_r": 0.06592335349573672
+      "pair_count": 117,
+      "sign_agreement_rate": 0.811965811965812,
+      "mean_abs_delta_r": 0.07981488286504122,
+      "median_abs_delta_r": 0.06587520717296555
     },
     {
       "category": "realism/chopin",
       "text_name": "desirees_baby",
       "filename": "desirees_baby_window_metrics.syntax.json",
-      "pair_count": 102,
-      "sign_agreement_rate": 0.7647058823529411,
-      "mean_abs_delta_r": 0.09160598574493363,
-      "median_abs_delta_r": 0.06552455638699943
+      "pair_count": 117,
+      "sign_agreement_rate": 0.7863247863247863,
+      "mean_abs_delta_r": 0.09685236502512794,
+      "median_abs_delta_r": 0.07868502101653063
     },
     {
       "category": "realism/chopin",
       "text_name": "the_story_of_an_hour",
       "filename": "the_story_of_an_hour_window_metrics.syntax.json",
-      "pair_count": 68,
-      "sign_agreement_rate": 0.8676470588235294,
-      "mean_abs_delta_r": 0.07942881039523524,
-      "median_abs_delta_r": 0.053290141552592624
+      "pair_count": 78,
+      "sign_agreement_rate": 0.8846153846153846,
+      "mean_abs_delta_r": 0.08060430903192871,
+      "median_abs_delta_r": 0.05587560630209262
     }
   ],
   "params": {

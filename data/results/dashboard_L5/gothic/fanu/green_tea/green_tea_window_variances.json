@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "category": "gothic/fanu",
+    "text_name": "green_tea",
+    "filename": "green_tea_window_metrics.syntax.json"
+  },
+  "report": {
+    "window_count": 655,
+    "window_counts": {
+      "syntax": 655,
+      "lexico_semantics": 655,
+      "discourse": 655,
+      "log_prob": 655
+    },
+    "metric_variances": {
+      "syntax": {
+        "syntax.avg_dependents_per_head.coordinate_clause": 3.069832,
+        "syntax.avg_dependents_per_head.main_clause": 2.414841,
+        "syntax.avg_dependents_per_head.subordinate_clause": 2.719686,
+        "syntax.avg_mean_dependency_distance": 0.651443,
+        "syntax.avg_tokens_per_sentence": 93.321196,
+        "syntax.clause_counts_per_token.coordinate": 0.000832,
+        "syntax.clause_counts_per_token.main": 0.001811,
+        "syntax.clause_counts_per_token.subordinate": 0.001301,
+        "syntax.clause_ratios.coordination_ratio": 0.599726,
+        "syntax.clause_ratios.subordination_ratio": 0.931311,
+        "syntax.depth_skew": 0.035995,
+        "syntax.max_depth": 4.481851,
+        "syntax.median_depth": 0.322515,
+        "syntax.punctuation_per_token": 0.003022
+      },
+      "lexico_semantics": {
+        "lexico_semantics.avg_word_freq": 599.646827,
+        "lexico_semantics.information_content": 0.073544,
+        "lexico_semantics.lexical_density_per_token": 0.00401,
+        "lexico_semantics.lexical_diversity_mattr.mattr_score": 0.00461,
+        "lexico_semantics.normalized_freq": 21.110059
+      },
+      "discourse": {
+        "discourse.connective_counts_per_token.Comparison": 0.000114,
+        "discourse.connective_counts_per_token.Contingency": 0.000131,
+        "discourse.connective_counts_per_token.Expansion": 0.000469,
+        "discourse.connective_counts_per_token.Temporal": 0.000101,
+        "discourse.content_overlap_per_token": 0.000338,
+        "discourse.content_overlap_ratio": 0.002439,
+        "discourse.entity_overlap_per_token": 0.000194,
+        "discourse.entity_overlap_ratio": 0.005277,
+        "discourse.explicit_connectives_per_token": 0.000857,
+        "discourse.modality_per_token": 4.7e-05,
+        "discourse.pronoun_ratio": 0.002424,
+        "discourse.tense_shift": 0.077477
+      },
+      "log_prob": {
+        "log_prob.max_token_surprisal": 3.942038,
+        "log_prob.token_weighted_mean_surprisal": 0.172196,
+        "log_prob.token_weighted_surprisal_variance": 3.482713
+      }
+    },
+    "metric_counts": {
+      "syntax": 14,
+      "lexico_semantics": 5,
+      "discourse": 12,
+      "log_prob": 3
+    },
+    "rms_z": {
+      "domain_means": {
+        "syntax": 0.940486,
+        "lexico_semantics": 0.894169,
+        "discourse": 0.921885,
+        "log_prob": 0.881447
+      },
+      "domain_variances": {
+        "syntax": 0.115487,
+        "lexico_semantics": 0.200462,
+        "discourse": 0.150128,
+        "log_prob": 0.223052
+      },
+      "overall_mean": 0.962319,
+      "overall_variance": 0.073943,
+      "metric_counts": {
+        "syntax": 14,
+        "lexico_semantics": 5,
+        "discourse": 12,
+        "log_prob": 3
+      },
+      "overall_metric_count": 34
+    },
+    "params": {
+      "metric_variance_method": "pvariance",
+      "rms_z_method": "rms_z",
+      "rms_z_variance_method": "pvariance",
+      "window_metric_filter": "DASHBOARD_WINDOW_CONFIG"
+    }
+  }
+}

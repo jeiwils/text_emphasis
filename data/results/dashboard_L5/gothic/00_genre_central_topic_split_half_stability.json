@@ -1,10 +1,10 @@
 {
   "text_count": 9,
-  "pair_count": 1190,
+  "pair_count": 1365,
   "overall": {
-    "sign_agreement_rate": 0.8378151260504202,
-    "mean_abs_delta_r": 0.04248188446273748,
-    "median_abs_delta_r": 0.033050209144520386
+    "sign_agreement_rate": 0.8476190476190476,
+    "mean_abs_delta_r": 0.04197467267137723,
+    "median_abs_delta_r": 0.03239376281424667
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.9142857142857143,
       "mean_abs_delta_r": 0.026516804101462246,
       "median_abs_delta_r": 0.01853948381611545
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 35,
+      "sign_agreement_rate": 0.8857142857142857,
+      "mean_abs_delta_r": 0.041893104995641035,
+      "median_abs_delta_r": 0.024485547506703856
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 35,
+      "sign_agreement_rate": 0.9142857142857143,
+      "mean_abs_delta_r": 0.038905005747751714,
+      "median_abs_delta_r": 0.02991551575953379
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 35,
+      "sign_agreement_rate": 0.8285714285714286,
+      "mean_abs_delta_r": 0.04371243693001667,
+      "median_abs_delta_r": 0.03170055333080157
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 35,
+      "sign_agreement_rate": 0.9714285714285714,
+      "mean_abs_delta_r": 0.03496527746946092,
+      "median_abs_delta_r": 0.02993549427325895
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 35,
+      "sign_agreement_rate": 0.9714285714285714,
+      "mean_abs_delta_r": 0.03315233730776717,
+      "median_abs_delta_r": 0.024512129942642055
     }
   },
   "texts": [
@@ -217,82 +247,82 @@
       "category": "gothic/fanu",
       "text_name": "green_tea",
       "filename": "green_tea_window_metrics.syntax.json",
-      "pair_count": 102,
-      "sign_agreement_rate": 0.7843137254901961,
-      "mean_abs_delta_r": 0.028960065156006073,
-      "median_abs_delta_r": 0.02644119413261179
+      "pair_count": 117,
+      "sign_agreement_rate": 0.8034188034188035,
+      "mean_abs_delta_r": 0.029104848209273892,
+      "median_abs_delta_r": 0.025483216353844568
     },
     {
       "category": "gothic/fanu",
       "text_name": "mr_justice_harbottle",
       "filename": "mr_justice_harbottle_window_metrics.syntax.json",
-      "pair_count": 136,
-      "sign_agreement_rate": 0.8602941176470589,
-      "mean_abs_delta_r": 0.036474896713681586,
-      "median_abs_delta_r": 0.032481346803926614
+      "pair_count": 156,
+      "sign_agreement_rate": 0.8717948717948718,
+      "mean_abs_delta_r": 0.0348921557427462,
+      "median_abs_delta_r": 0.030994001333140092
     },
     {
       "category": "gothic/fanu",
       "text_name": "the_familiar",
       "filename": "the_familiar_window_metrics.syntax.json",
-      "pair_count": 102,
-      "sign_agreement_rate": 0.8137254901960784,
-      "mean_abs_delta_r": 0.038807575417723957,
-      "median_abs_delta_r": 0.031336667633254406
+      "pair_count": 117,
+      "sign_agreement_rate": 0.811965811965812,
+      "mean_abs_delta_r": 0.03812117921473133,
+      "median_abs_delta_r": 0.029932160279144603
     },
     {
       "category": "gothic/hoffman",
       "text_name": "automata",
       "filename": "automata_window_metrics.syntax.json",
-      "pair_count": 238,
-      "sign_agreement_rate": 0.8277310924369747,
-      "mean_abs_delta_r": 0.0398181044839183,
-      "median_abs_delta_r": 0.03277183583453
+      "pair_count": 273,
+      "sign_agreement_rate": 0.8424908424908425,
+      "mean_abs_delta_r": 0.03835140854608115,
+      "median_abs_delta_r": 0.030965216888036648
     },
     {
       "category": "gothic/hoffman",
       "text_name": "counsillor_krespel",
       "filename": "counsillor_krespel_window_metrics.syntax.json",
-      "pair_count": 136,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.04062279073132604,
-      "median_abs_delta_r": 0.03610109163628626
+      "pair_count": 156,
+      "sign_agreement_rate": 0.8269230769230769,
+      "mean_abs_delta_r": 0.039551984650911906,
+      "median_abs_delta_r": 0.03376204184216297
     },
     {
       "category": "gothic/hoffman",
       "text_name": "the_sandman",
       "filename": "the_sandman_window_metrics.syntax.json",
-      "pair_count": 170,
-      "sign_agreement_rate": 0.9058823529411765,
-      "mean_abs_delta_r": 0.031006670653899282,
-      "median_abs_delta_r": 0.02441021023395181
+      "pair_count": 195,
+      "sign_agreement_rate": 0.9076923076923077,
+      "mean_abs_delta_r": 0.03181520286247451,
+      "median_abs_delta_r": 0.024713985431271308
     },
     {
       "category": "gothic/poe",
       "text_name": "the_cask_of_amontillado",
       "filename": "the_cask_of_amontillado_window_metrics.syntax.json",
-      "pair_count": 170,
-      "sign_agreement_rate": 0.8352941176470589,
-      "mean_abs_delta_r": 0.050635183145599526,
-      "median_abs_delta_r": 0.04039091672844079
+      "pair_count": 195,
+      "sign_agreement_rate": 0.841025641025641,
+      "mean_abs_delta_r": 0.05184564048123771,
+      "median_abs_delta_r": 0.04189276148039836
     },
     {
       "category": "gothic/poe",
       "text_name": "the_fall_of_the_house_of_usher",
       "filename": "the_fall_of_the_house_of_usher_window_metrics.syntax.json",
-      "pair_count": 68,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.06000038677552475,
-      "median_abs_delta_r": 0.050194511572864225
+      "pair_count": 78,
+      "sign_agreement_rate": 0.8461538461538461,
+      "mean_abs_delta_r": 0.060831010037658874,
+      "median_abs_delta_r": 0.054874846766649554
     },
     {
       "category": "gothic/poe",
       "text_name": "the_telltale_heart",
       "filename": "the_telltale_heart_window_metrics.syntax.json",
-      "pair_count": 68,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.08411775537930978,
-      "median_abs_delta_r": 0.0623701362383441
+      "pair_count": 78,
+      "sign_agreement_rate": 0.8461538461538461,
+      "mean_abs_delta_r": 0.08061640151755402,
+      "median_abs_delta_r": 0.06223705560733811
     }
   ],
   "params": {

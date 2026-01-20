@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "category": "romanticism/hawthorne",
+    "text_name": "the_ministers_black_veil",
+    "filename": "the_ministers_black_veil_window_metrics.syntax.json"
+  },
+  "report": {
+    "window_count": 233,
+    "window_counts": {
+      "syntax": 233,
+      "lexico_semantics": 233,
+      "discourse": 233,
+      "log_prob": 233
+    },
+    "metric_variances": {
+      "syntax": {
+        "syntax.avg_dependents_per_head.coordinate_clause": 2.396586,
+        "syntax.avg_dependents_per_head.main_clause": 1.756718,
+        "syntax.avg_dependents_per_head.subordinate_clause": 1.491493,
+        "syntax.avg_mean_dependency_distance": 0.288091,
+        "syntax.avg_tokens_per_sentence": 63.606938,
+        "syntax.clause_counts_per_token.coordinate": 0.000584,
+        "syntax.clause_counts_per_token.main": 0.001125,
+        "syntax.clause_counts_per_token.subordinate": 0.000864,
+        "syntax.clause_ratios.coordination_ratio": 0.492916,
+        "syntax.clause_ratios.subordination_ratio": 0.661766,
+        "syntax.depth_skew": 0.035115,
+        "syntax.max_depth": 4.141502,
+        "syntax.median_depth": 0.335107,
+        "syntax.punctuation_per_token": 0.00278
+      },
+      "lexico_semantics": {
+        "lexico_semantics.avg_word_freq": 214.639642,
+        "lexico_semantics.information_content": 0.044991,
+        "lexico_semantics.lexical_density_per_token": 0.002627,
+        "lexico_semantics.lexical_diversity_mattr.mattr_score": 0.002768,
+        "lexico_semantics.normalized_freq": 17.351647
+      },
+      "discourse": {
+        "discourse.connective_counts_per_token.Comparison": 0.000105,
+        "discourse.connective_counts_per_token.Contingency": 0.000113,
+        "discourse.connective_counts_per_token.Expansion": 0.000289,
+        "discourse.connective_counts_per_token.Temporal": 7e-05,
+        "discourse.content_overlap_per_token": 0.00014,
+        "discourse.content_overlap_ratio": 0.001009,
+        "discourse.entity_overlap_per_token": 8.5e-05,
+        "discourse.entity_overlap_ratio": 0.00267,
+        "discourse.explicit_connectives_per_token": 0.000547,
+        "discourse.modality_per_token": 3.3e-05,
+        "discourse.pronoun_ratio": 0.001206,
+        "discourse.tense_shift": 0.063895
+      },
+      "log_prob": {
+        "log_prob.max_token_surprisal": 4.06537,
+        "log_prob.token_weighted_mean_surprisal": 0.17451,
+        "log_prob.token_weighted_surprisal_variance": 3.370758
+      }
+    },
+    "metric_counts": {
+      "syntax": 14,
+      "lexico_semantics": 5,
+      "discourse": 12,
+      "log_prob": 3
+    },
+    "rms_z": {
+      "domain_means": {
+        "syntax": 0.938715,
+        "lexico_semantics": 0.890286,
+        "discourse": 0.937281,
+        "log_prob": 0.85171
+      },
+      "domain_variances": {
+        "syntax": 0.118814,
+        "lexico_semantics": 0.20739,
+        "discourse": 0.121503,
+        "log_prob": 0.27459
+      },
+      "overall_mean": 0.96039,
+      "overall_variance": 0.077651,
+      "metric_counts": {
+        "syntax": 14,
+        "lexico_semantics": 5,
+        "discourse": 12,
+        "log_prob": 3
+      },
+      "overall_metric_count": 34
+    },
+    "params": {
+      "metric_variance_method": "pvariance",
+      "rms_z_method": "rms_z",
+      "rms_z_variance_method": "pvariance",
+      "window_metric_filter": "DASHBOARD_WINDOW_CONFIG"
+    }
+  }
+}

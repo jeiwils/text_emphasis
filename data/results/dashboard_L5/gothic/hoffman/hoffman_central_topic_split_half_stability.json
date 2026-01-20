@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 544,
+  "pair_count": 624,
   "overall": {
-    "sign_agreement_rate": 0.8511029411764706,
-    "mean_abs_delta_r": 0.03726570297388929,
-    "median_abs_delta_r": 0.03094584589904502
+    "sign_agreement_rate": 0.8589743589743589,
+    "mean_abs_delta_r": 0.036608988296161764,
+    "median_abs_delta_r": 0.029840857229920005
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.9375,
       "mean_abs_delta_r": 0.028399296768729446,
       "median_abs_delta_r": 0.019224288050827876
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 16,
+      "sign_agreement_rate": 0.875,
+      "mean_abs_delta_r": 0.041064074436756894,
+      "median_abs_delta_r": 0.01895649024758799
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 16,
+      "sign_agreement_rate": 0.875,
+      "mean_abs_delta_r": 0.026624019592516028,
+      "median_abs_delta_r": 0.026703971987253064
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 16,
+      "sign_agreement_rate": 0.8125,
+      "mean_abs_delta_r": 0.03315594351307485,
+      "median_abs_delta_r": 0.02813110383936743
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 16,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.031412999822576254,
+      "median_abs_delta_r": 0.029040437899210722
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 16,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.028459605073148694,
+      "median_abs_delta_r": 0.023664995832426795
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "gothic/hoffman",
       "text_name": "automata",
       "filename": "automata_window_metrics.syntax.json",
-      "pair_count": 238,
-      "sign_agreement_rate": 0.8277310924369747,
-      "mean_abs_delta_r": 0.0398181044839183,
-      "median_abs_delta_r": 0.03277183583453
+      "pair_count": 273,
+      "sign_agreement_rate": 0.8424908424908425,
+      "mean_abs_delta_r": 0.03835140854608115,
+      "median_abs_delta_r": 0.030965216888036648
     },
     {
       "category": "gothic/hoffman",
       "text_name": "counsillor_krespel",
       "filename": "counsillor_krespel_window_metrics.syntax.json",
-      "pair_count": 136,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.04062279073132604,
-      "median_abs_delta_r": 0.03610109163628626
+      "pair_count": 156,
+      "sign_agreement_rate": 0.8269230769230769,
+      "mean_abs_delta_r": 0.039551984650911906,
+      "median_abs_delta_r": 0.03376204184216297
     },
     {
       "category": "gothic/hoffman",
       "text_name": "the_sandman",
       "filename": "the_sandman_window_metrics.syntax.json",
-      "pair_count": 170,
-      "sign_agreement_rate": 0.9058823529411765,
-      "mean_abs_delta_r": 0.031006670653899282,
-      "median_abs_delta_r": 0.02441021023395181
+      "pair_count": 195,
+      "sign_agreement_rate": 0.9076923076923077,
+      "mean_abs_delta_r": 0.03181520286247451,
+      "median_abs_delta_r": 0.024713985431271308
     }
   ],
   "params": {

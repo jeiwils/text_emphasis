@@ -20,6 +20,7 @@ from matplotlib.patches import Patch
 
 from .d1_dashboard_metrics import (
     _collect_centrality_rows,
+    _topic_items,
     central_topics,
     collect_window_tables,
     collect_window_topic_scores,
@@ -28,6 +29,7 @@ from .d1_dashboard_metrics import (
 from .x_configs import (
     CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
     CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
+    NON_CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
     GENRE_CENTRAL_PRESENCE_SPLIT_HALF_FILENAME,
     GENRE_TOPIC_SPLIT_HALF_FILENAME,
     GENRES,
@@ -41,6 +43,10 @@ from .x_configs import (
     InternalStabilityRankConfig,
     ExemplarScatterConfig,
     ForestPlotConfig,
+    PresenceComparisonPanelConfig,
+    PresenceComparisonScatterConfig,
+    PresenceTimelinePanelConfig,
+    TopicCentralityQuadrantConfig,
     PresenceSlopegraphConfig,
     TopicGraphConfig,
     DEFAULT_BLOCK_SIZE,
@@ -66,6 +72,10 @@ from .x_configs import (
     DEFAULT_DATA_SELECTION_CONFIG,
     DEFAULT_EXEMPLAR_SCATTER_CONFIG,
     DEFAULT_FOREST_PLOT_CONFIG,
+    DEFAULT_PRESENCE_COMPARISON_PANEL_CONFIG,
+    DEFAULT_PRESENCE_COMPARISON_SCATTER_CONFIG,
+    DEFAULT_PRESENCE_TIMELINE_PANEL_CONFIG,
+    DEFAULT_TOPIC_CENTRALITY_QUADRANT_CONFIG,
     DEFAULT_PRESENCE_SLOPEGRAPH_CONFIG,
     DEFAULT_STABILITY_FILTER_CONFIG,
     DEFAULT_STABILITY_STACKED_BAR_CONFIG,
@@ -75,6 +85,7 @@ from .x_configs import (
     DEFAULT_TOPIC_METRIC_HEATMAP_CONFIG,
     DEFAULT_USE_EXISTING,
     TOPIC_CORRELATIONS_SUFFIX,
+    TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
 )
 from .z_utils import analytics_path, find_topic_file, load_json, results_path
 
@@ -330,6 +341,85 @@ def _matches_selection(
         return False
 
     return True
+
+
+def _safe_label(value: str) -> str:
+    cleaned = []
+    for ch in str(value):
+        if ch.isalnum() or ch in {"_", "-"}:
+            cleaned.append(ch)
+        else:
+            cleaned.append("_")
+    text = "".join(cleaned).strip("_")
+    return text or "unknown"
+
+
+def _selection_suffix(selection: Optional[DataSelectionConfig]) -> str:
+    if selection is None:
+        return ""
+    parts: List[str] = []
+
+    if selection.genres:
+        genres = set(selection.genres)
+        if genres != set(GENRES):
+            items = "-".join(_safe_label(item) for item in selection.genres if item)
+            if items:
+                parts.append(f"genres_{items}")
+    if selection.authors:
+        items = "-".join(_safe_label(item) for item in selection.authors if item)
+        if items:
+            parts.append(f"authors_{items}")
+    if selection.texts:
+        items = "-".join(_safe_label(item) for item in selection.texts if item)
+        if items:
+            parts.append(f"texts_{items}")
+    if selection.categories:
+        items = "-".join(_safe_label(item) for item in selection.categories if item)
+        if items:
+            parts.append(f"categories_{items}")
+    if selection.exclude_genres:
+        items = "-".join(_safe_label(item) for item in selection.exclude_genres if item)
+        if items:
+            parts.append(f"exclude_genres_{items}")
+    if selection.exclude_authors:
+        items = "-".join(_safe_label(item) for item in selection.exclude_authors if item)
+        if items:
+            parts.append(f"exclude_authors_{items}")
+    if selection.exclude_texts:
+        items = "-".join(_safe_label(item) for item in selection.exclude_texts if item)
+        if items:
+            parts.append(f"exclude_texts_{items}")
+    if selection.exclude_categories:
+        items = "-".join(_safe_label(item) for item in selection.exclude_categories if item)
+        if items:
+            parts.append(f"exclude_categories_{items}")
+
+    if not parts:
+        return ""
+    return "__" + "__".join(parts)
+
+
+def _selection_title(selection: Optional[DataSelectionConfig]) -> str:
+    if selection is None:
+        return ""
+    authors = list(selection.authors or ())
+    texts = list(selection.texts or ())
+    genres = list(selection.genres or ())
+    categories = list(selection.categories or ())
+
+    if authors:
+        label = "Author" if len(authors) == 1 else "Authors"
+        return f"{label}: {', '.join(authors)}"
+    if texts:
+        label = "Text" if len(texts) == 1 else "Texts"
+        return f"{label}: {', '.join(texts)}"
+    if genres and set(genres) != set(GENRES):
+        label = "Genre" if len(genres) == 1 else "Genres"
+        return f"{label}: {', '.join(genres)}"
+    if categories:
+        label = "Category" if len(categories) == 1 else "Categories"
+        return f"{label}: {', '.join(categories)}"
+    return ""
 
 
 def _matches_genre_selection(genre: str, selection: Optional[DataSelectionConfig]) -> bool:
@@ -618,6 +708,38 @@ def _topic_label(topic_id: int, keywords: Sequence[str], max_len: int) -> str:
     return str(topic_id)
 
 
+def _topic_metric_map(report: Dict[str, object], metric: str) -> Dict[int, float]:
+    if not isinstance(report, dict) or not metric:
+        return {}
+    topics = report.get("topics")
+    if not isinstance(topics, dict):
+        return {}
+    metric_map: Dict[int, float] = {}
+    for raw_id, entry in topics.items():
+        if isinstance(raw_id, int):
+            topic_id = raw_id
+        elif isinstance(raw_id, str):
+            try:
+                topic_id = int(raw_id)
+            except ValueError:
+                continue
+        else:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        correlations = entry.get("correlations")
+        if not isinstance(correlations, dict):
+            continue
+        corr_entry = correlations.get(metric)
+        if not isinstance(corr_entry, dict):
+            continue
+        value = corr_entry.get("pearson_r")
+        if not isinstance(value, (int, float)) or (isinstance(value, float) and math.isnan(value)):
+            continue
+        metric_map[topic_id] = float(value)
+    return metric_map
+
+
 def _build_topic_similarity_graph_data(
     topics_data: Dict[str, object],
     report: Dict[str, object],
@@ -813,6 +935,166 @@ def _iter_central_topic_reports(
             yield path, payload
 
 
+def _iter_topic_presence_reports(
+    dashboard_root: Optional[Path] = None,
+) -> Iterable[Tuple[Path, Dict[str, object]]]:
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
+    if not root.exists():
+        raise FileNotFoundError(f"Dashboard directory not found: {root}")
+    for path in root.rglob(f"*{TOPIC_PRESENCE_CORRELATIONS_SUFFIX}"):
+        if path.name.endswith(CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX):
+            continue
+        if path.name.endswith(NON_CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX):
+            continue
+        payload = load_json(path)
+        if isinstance(payload, dict):
+            yield path, payload
+
+
+def _as_float(value: object) -> Optional[float]:
+    if not isinstance(value, (int, float)):
+        return None
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    return float(value)
+
+
+def _as_count(value: object) -> Optional[int]:
+    numeric = _as_float(value)
+    if numeric is None:
+        return None
+    count = int(numeric)
+    if count <= 0:
+        return None
+    return count
+
+
+def _fisher_z(value: float) -> Optional[float]:
+    if value <= -1.0 or value >= 1.0:
+        value = max(min(value, 0.999999), -0.999999)
+    return math.atanh(value)
+
+
+def _stouffer_p_value(rows: List[Tuple[float, float, int]]) -> Optional[float]:
+    if not rows:
+        return None
+    normal = statistics.NormalDist()
+    weighted = []
+    for r_value, p_value, n_value in rows:
+        if n_value <= 3:
+            continue
+        p_value = max(min(p_value, 1.0 - 1e-15), 1e-15)
+        z_value = normal.inv_cdf(1.0 - p_value / 2.0)
+        if r_value < 0:
+            z_value = -z_value
+        weight = math.sqrt(n_value - 3)
+        weighted.append((weight, z_value))
+    if not weighted:
+        return None
+    denom = math.sqrt(sum(weight ** 2 for weight, _ in weighted))
+    if denom <= 0:
+        return None
+    z_combined = sum(weight * z_value for weight, z_value in weighted) / denom
+    return 2.0 * (1.0 - normal.cdf(abs(z_combined)))
+
+
+def _effective_n(window_count: Optional[int], block_size: Optional[int]) -> Optional[int]:
+    if window_count is None:
+        return None
+    if not isinstance(block_size, int) or block_size <= 0:
+        return window_count
+    blocks = (window_count + block_size - 1) // block_size
+    return max(1, blocks)
+
+
+def _aggregate_presence_correlations(
+    entries: Sequence[Dict[str, object]],
+    *,
+    presence_key: str,
+) -> Dict[str, object]:
+    metrics: Dict[str, List[Tuple[float, float, int, int]]] = {}
+    texts: List[Dict[str, object]] = []
+    for entry in entries:
+        presence_report = entry.get("presence_report", {})
+        if not isinstance(presence_report, dict):
+            continue
+        report = presence_report.get("report")
+        if not isinstance(report, dict):
+            continue
+        params = presence_report.get("params", {})
+        if not isinstance(params, dict):
+            params = {}
+        block_size = _as_count(params.get("block_size"))
+        presence = report.get(presence_key, {})
+        if not isinstance(presence, dict):
+            continue
+        correlations = presence.get("correlations", {})
+        if not isinstance(correlations, dict) or not correlations:
+            continue
+
+        window_count = _as_count(report.get("window_count"))
+        if window_count is None:
+            continue
+        effective_window_count = _effective_n(window_count, block_size)
+        texts.append(
+            {
+                "category": entry.get("category"),
+                "author": entry.get("author"),
+                "text_name": entry.get("text_name"),
+                "filename": entry.get("filename"),
+                "window_count": window_count,
+                "effective_window_count": effective_window_count,
+                "block_size": block_size,
+                "metric_count": len(correlations),
+            }
+        )
+
+        for metric, corr_entry in correlations.items():
+            if not isinstance(corr_entry, dict):
+                continue
+            r_value = _as_float(corr_entry.get("pearson_r"))
+            p_value = _as_float(corr_entry.get("p_value"))
+            n_value = window_count
+            n_eff = _effective_n(n_value, block_size)
+            if r_value is None or p_value is None or n_value is None or n_eff is None:
+                continue
+            metrics.setdefault(metric, []).append((r_value, p_value, n_eff, n_value))
+
+    aggregated: Dict[str, object] = {}
+    for metric, rows in metrics.items():
+        valid_rows = [(r, p, n_eff, n_raw) for r, p, n_eff, n_raw in rows if n_eff > 3]
+        if not valid_rows:
+            continue
+        weights = [(n_eff - 3) for _, _, n_eff, _ in valid_rows]
+        z_values = [_fisher_z(r) for r, _, _, _ in valid_rows]
+        if any(z is None for z in z_values):
+            continue
+        weight_sum = sum(weights)
+        if weight_sum <= 0:
+            continue
+        z_bar = sum(z * w for z, w in zip(z_values, weights)) / weight_sum
+        r_bar = math.tanh(z_bar)
+        p_combined = _stouffer_p_value([(r, p, n_eff) for r, p, n_eff, _ in valid_rows])
+        aggregated[metric] = {
+            "pearson_r": r_bar,
+            "p_value": p_combined,
+            "text_count": len(valid_rows),
+            "total_windows": sum(n_raw for _, _, _, n_raw in valid_rows),
+            "total_effective_windows": sum(n_eff for _, _, n_eff, _ in valid_rows),
+            "fisher_z": z_bar,
+            "fisher_z_weight_sum": weight_sum,
+        }
+
+    return {
+        "metric_names": sorted(aggregated.keys()),
+        "metrics": aggregated,
+        "texts": sorted(
+            texts,
+            key=lambda row: (row.get("category", ""), row.get("text_name", "")),
+        ),
+    }
+
+
 def _load_aggregated_presence_by_genre(
     dashboard_root: Optional[Path] = None,
     selection: Optional[DataSelectionConfig] = None,
@@ -830,6 +1112,46 @@ def _load_aggregated_presence_by_genre(
             continue
         metrics = payload.get("metrics") or {}
         if isinstance(metrics, dict):
+            aggregated[genre] = metrics
+    return aggregated
+
+
+def _load_aggregated_topic_presence_by_genre(
+    dashboard_root: Optional[Path] = None,
+    selection: Optional[DataSelectionConfig] = None,
+) -> Dict[str, Dict[str, Dict[str, object]]]:
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
+    if not root.exists():
+        return {}
+    entries_by_genre: Dict[str, List[Dict[str, object]]] = defaultdict(list)
+    for path, payload in _iter_topic_presence_reports(root):
+        metadata = payload.get("metadata") or {}
+        report = payload.get("report") or {}
+        if not isinstance(metadata, dict) or not isinstance(report, dict):
+            continue
+        category = metadata.get("category") or ""
+        category_parts = [part for part in str(category).split("/") if part]
+        genre = category_parts[0] if category_parts else "unknown"
+        author = category_parts[1] if len(category_parts) > 1 else "unknown"
+        text_name = metadata.get("text_name") or path.parent.name
+        if not _matches_selection(genre, author, text_name, selection):
+            continue
+        entries_by_genre[genre].append(
+            {
+                "genre": genre,
+                "author": author,
+                "text_name": text_name,
+                "filename": metadata.get("filename") or "",
+                "category": category,
+                "presence_report": payload,
+            }
+        )
+
+    aggregated: Dict[str, Dict[str, Dict[str, object]]] = {}
+    for genre, entries in entries_by_genre.items():
+        summary = _aggregate_presence_correlations(entries, presence_key="topic_presence")
+        metrics = summary.get("metrics") or {}
+        if isinstance(metrics, dict) and metrics:
             aggregated[genre] = metrics
     return aggregated
 
@@ -860,6 +1182,39 @@ def _collect_central_presence_r_by_genre(
         if not _matches_selection(genre, author, text_name, selection):
             continue
         presence = report.get("central_topic_presence") or {}
+        correlations = presence.get("correlations") or {}
+        if not isinstance(correlations, dict):
+            continue
+        for metric, corr in correlations.items():
+            if not isinstance(corr, dict):
+                continue
+            r_val = corr.get("pearson_r")
+            if isinstance(r_val, (int, float)):
+                by_genre[genre][metric].append(float(r_val))
+    return by_genre
+
+
+def _collect_topic_presence_r_by_genre(
+    dashboard_root: Optional[Path] = None,
+    selection: Optional[DataSelectionConfig] = None,
+) -> Dict[str, Dict[str, List[float]]]:
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
+    if not root.exists():
+        return {}
+    by_genre: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: defaultdict(list))
+    for path, payload in _iter_topic_presence_reports(dashboard_root):
+        metadata = payload.get("metadata") or {}
+        report = payload.get("report") or {}
+        if not isinstance(metadata, dict) or not isinstance(report, dict):
+            continue
+        category = metadata.get("category") or ""
+        category_parts = [part for part in str(category).split("/") if part]
+        genre = category_parts[0] if category_parts else "unknown"
+        author = category_parts[1] if len(category_parts) > 1 else "unknown"
+        text_name = metadata.get("text_name") or path.parent.name
+        if not _matches_selection(genre, author, text_name, selection):
+            continue
+        presence = report.get("topic_presence") or {}
         correlations = presence.get("correlations") or {}
         if not isinstance(correlations, dict):
             continue
@@ -1323,6 +1678,41 @@ def collect_central_topic_data(
                     )
 
     return entries_by_genre, presence_entries
+
+
+def collect_topic_presence_entries(
+    dashboard_root: Optional[Path] = None,
+    selection: Optional[DataSelectionConfig] = None,
+) -> List[Dict[str, object]]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    entries: List[Dict[str, object]] = []
+
+    for path, data in _iter_topic_presence_reports(dashboard_root):
+        metadata = data.get("metadata")
+        report = data.get("report")
+        if not isinstance(metadata, dict) or not isinstance(report, dict):
+            continue
+        category = metadata.get("category") or ""
+        category_parts = [part for part in str(category).split("/") if part]
+        genre = category_parts[0] if category_parts else "unknown"
+        author = category_parts[1] if len(category_parts) > 1 else "unknown"
+        text_name = metadata.get("text_name") or path.parent.name
+        if not _matches_selection(genre, author, text_name, selection):
+            continue
+        presence = report.get("topic_presence") or {}
+        if presence.get("correlations"):
+            entries.append(
+                {
+                    "genre": genre,
+                    "author": author,
+                    "text_name": text_name,
+                    "window_count": report.get("window_count"),
+                    "presence": presence,
+                }
+            )
+
+    return entries
 
 
 def _iter_topic_reports(
@@ -1823,6 +2213,1009 @@ def plot_presence_slopegraphs(
     return []
 
 
+def plot_presence_comparison_scatter(
+    *,
+    config: Optional[PresenceComparisonScatterConfig] = None,
+    metrics: Optional[Sequence[str]] = None,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> Optional[Path]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    if config is None:
+        config = DEFAULT_PRESENCE_COMPARISON_SCATTER_CONFIG
+    if metrics is None:
+        metrics = config.metrics
+    metrics_list = [metric for metric in metrics if isinstance(metric, str) and metric]
+    if not metrics_list:
+        return None
+
+    points_by_metric: Dict[str, List[Dict[str, object]]] = {
+        metric: [] for metric in metrics_list
+    }
+    for path, data in _iter_central_topic_reports(dashboard_root):
+        metadata = data.get("metadata")
+        report = data.get("report")
+        if not isinstance(metadata, dict) or not isinstance(report, dict):
+            continue
+        category = metadata.get("category") or ""
+        category_parts = [part for part in str(category).split("/") if part]
+        genre = category_parts[0] if category_parts else "unknown"
+        author = category_parts[1] if len(category_parts) > 1 else "unknown"
+        text_name = metadata.get("text_name") or path.parent.name
+        if not _matches_selection(genre, author, text_name, selection):
+            continue
+
+        central_path = path.with_name(
+            path.name.replace(
+                CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
+                CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
+            )
+        )
+        topic_path = path.with_name(
+            path.name.replace(
+                CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
+                TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
+            )
+        )
+        if not central_path.exists() or not topic_path.exists():
+            continue
+
+        central_payload = load_json(central_path)
+        topic_payload = load_json(topic_path)
+        central_correlations = _extract_presence_correlations(
+            central_payload,
+            key="central_topic_presence",
+        )
+        topic_correlations = _extract_presence_correlations(
+            topic_payload,
+            key="topic_presence",
+        )
+        if not central_correlations or not topic_correlations:
+            continue
+
+        for metric in metrics_list:
+            central_entry = central_correlations.get(metric)
+            topic_entry = topic_correlations.get(metric)
+            if not isinstance(central_entry, dict) or not isinstance(topic_entry, dict):
+                continue
+            central_r = central_entry.get("pearson_r")
+            topic_r = topic_entry.get("pearson_r")
+            if not _is_number(central_r) or not _is_number(topic_r):
+                continue
+            points_by_metric[metric].append(
+                {
+                    "genre": genre,
+                    "author": author,
+                    "text_name": text_name,
+                    "central_r": float(central_r),
+                    "topic_r": float(topic_r),
+                }
+            )
+
+    metrics_with_points = [
+        metric for metric in metrics_list if points_by_metric.get(metric)
+    ]
+    if not metrics_with_points:
+        return None
+
+    group_key = "genre"
+    legend_title = "Genres"
+    if selection is not None:
+        if selection.texts:
+            group_key = "text_name"
+            legend_title = "Texts"
+        elif selection.authors:
+            if len(selection.authors) == 1:
+                group_key = "text_name"
+                legend_title = "Texts"
+            else:
+                group_key = "author"
+                legend_title = "Authors"
+        elif selection.genres:
+            if len(selection.genres) == 1:
+                group_key = "author"
+                legend_title = "Authors"
+            else:
+                group_key = "genre"
+                legend_title = "Genres"
+        elif selection.categories:
+            if len(selection.categories) == 1:
+                group_key = "text_name"
+                legend_title = "Texts"
+            else:
+                group_key = "author"
+                legend_title = "Authors"
+
+    group_labels: set[str] = set()
+    author_set = {entry["author"] for points in points_by_metric.values() for entry in points}
+    multiple_authors = len(author_set) > 1
+    for points in points_by_metric.values():
+        for entry in points:
+            if group_key == "text_name":
+                label = entry["text_name"]
+                if multiple_authors:
+                    label = f"{entry['author']}/{label}"
+                entry["group_label"] = label
+            elif group_key == "author":
+                entry["group_label"] = entry["author"]
+            else:
+                entry["group_label"] = entry["genre"]
+            group_labels.add(entry["group_label"])
+
+    if group_key == "genre":
+        ordered_groups = _ordered_genres(group_labels)
+    else:
+        ordered_groups = sorted(group_labels)
+
+    cmap = plt.get_cmap(config.cmap_name)
+    denom = max(len(ordered_groups) - 1, 1)
+    group_colors = {
+        group: cmap(idx / denom) for idx, group in enumerate(ordered_groups)
+    }
+
+    cols = max(1, int(config.cols))
+    rows = math.ceil(len(metrics_with_points) / cols)
+    fig_width = config.panel_width * cols
+    fig_height = config.panel_height * rows
+    fig, axes = plt.subplots(rows, cols, figsize=(fig_width, fig_height), squeeze=False)
+
+    for idx in range(rows * cols):
+        row = idx // cols
+        col = idx % cols
+        ax = axes[row][col]
+        if idx >= len(metrics_with_points):
+            ax.axis("off")
+            continue
+        metric = metrics_with_points[idx]
+        points = points_by_metric.get(metric, [])
+        x_vals = [entry["topic_r"] for entry in points]
+        y_vals = [entry["central_r"] for entry in points]
+        colors = [group_colors.get(entry["group_label"], "#666666") for entry in points]
+        ax.scatter(
+            x_vals,
+            y_vals,
+            s=config.point_size,
+            alpha=config.point_alpha,
+            c=colors,
+            edgecolors="none",
+        )
+
+        if config.axis_limits:
+            axis_min, axis_max = config.axis_limits
+        else:
+            bound = max([abs(val) for val in x_vals + y_vals] + [0.1])
+            axis_min, axis_max = -bound, bound
+        ax.set_xlim(axis_min, axis_max)
+        ax.set_ylim(axis_min, axis_max)
+
+        if config.show_identity_line:
+            ax.plot(
+                [axis_min, axis_max],
+                [axis_min, axis_max],
+                color=config.identity_line_color,
+                linewidth=1.0,
+                linestyle="--",
+            )
+        if config.show_zero_lines:
+            ax.axhline(0.0, color=config.zero_line_color, linewidth=0.8)
+            ax.axvline(0.0, color=config.zero_line_color, linewidth=0.8)
+        if config.equal_aspect:
+            ax.set_aspect("equal", adjustable="box")
+
+        metric_label = metric
+        if metric.startswith("variance."):
+            metric_label = metric.replace("variance.", "").replace("_", " ")
+        metric_label = _shorten_label(metric_label, config.label_max_len)
+        ax.set_title(metric_label)
+
+        if row == rows - 1:
+            ax.set_xlabel("All-topic presence r")
+        if col == 0:
+            ax.set_ylabel("Central-topic presence r")
+        ax.grid(axis="both", linestyle="--", alpha=0.2)
+
+    if ordered_groups and len(ordered_groups) > 1:
+        handles = [
+            Patch(color=group_colors[group], label=group)
+            for group in ordered_groups
+        ]
+        axes[0][0].legend(
+            handles=handles,
+            title=legend_title,
+            loc="best",
+            frameon=False,
+            fontsize=config.legend_fontsize,
+        )
+
+    title = config.title or ""
+    selection_title = _selection_title(selection)
+    if selection_title:
+        title = f"{title} \u2014 {selection_title}" if title else selection_title
+    if title:
+        fig.suptitle(title, fontsize=11)
+        fig.tight_layout(rect=(0, 0, 1, 0.95))
+    else:
+        fig.tight_layout()
+
+    output_dir = _output_dir(output_root, "presence_comparison_scatter")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    suffix = _selection_suffix(selection)
+    output_path = output_dir / f"all_vs_central_presence_rmz_scatter{suffix}.png"
+    _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
+    plt.close(fig)
+
+    overall_metric = "variance.overall_rms_z"
+    if overall_metric in metrics_with_points:
+        points = points_by_metric.get(overall_metric, [])
+        if points:
+            fig, ax = plt.subplots(
+                figsize=(config.panel_width, config.panel_height)
+            )
+            x_vals = [entry["topic_r"] for entry in points]
+            y_vals = [entry["central_r"] for entry in points]
+            colors = [
+                group_colors.get(entry["group_label"], "#666666") for entry in points
+            ]
+            ax.scatter(
+                x_vals,
+                y_vals,
+                s=config.point_size,
+                alpha=config.point_alpha,
+                c=colors,
+                edgecolors="none",
+            )
+
+            if config.axis_limits:
+                axis_min, axis_max = config.axis_limits
+            else:
+                bound = max([abs(val) for val in x_vals + y_vals] + [0.1])
+                axis_min, axis_max = -bound, bound
+            ax.set_xlim(axis_min, axis_max)
+            ax.set_ylim(axis_min, axis_max)
+
+            if config.show_identity_line:
+                ax.plot(
+                    [axis_min, axis_max],
+                    [axis_min, axis_max],
+                    color=config.identity_line_color,
+                    linewidth=1.0,
+                    linestyle="--",
+                )
+            if config.show_zero_lines:
+                ax.axhline(0.0, color=config.zero_line_color, linewidth=0.8)
+                ax.axvline(0.0, color=config.zero_line_color, linewidth=0.8)
+            if config.equal_aspect:
+                ax.set_aspect("equal", adjustable="box")
+
+            metric_label = overall_metric.replace("variance.", "").replace("_", " ")
+            metric_label = _shorten_label(metric_label, config.label_max_len)
+            ax.set_title(metric_label)
+            ax.set_xlabel("All-topic presence r")
+            ax.set_ylabel("Central-topic presence r")
+            ax.grid(axis="both", linestyle="--", alpha=0.2)
+
+            if ordered_groups and len(ordered_groups) > 1:
+                handles = [
+                    Patch(color=group_colors[group], label=group)
+                    for group in ordered_groups
+                ]
+                ax.legend(
+                    handles=handles,
+                    title=legend_title,
+                    loc="best",
+                    frameon=False,
+                    fontsize=config.legend_fontsize,
+                )
+            if selection_title:
+                ax.set_title(f"{metric_label} \u2014 {selection_title}")
+
+            fig.tight_layout()
+            overall_path = (
+                output_dir
+                / f"all_vs_central_presence_overall_rmz_scatter{suffix}.png"
+            )
+            _maybe_save_figure(fig, overall_path, use_existing=use_existing, dpi=200)
+            plt.close(fig)
+    return output_path
+
+
+def plot_presence_comparison_panels(
+    *,
+    genre: str,
+    author: str,
+    text_name: str,
+    config: Optional[PresenceComparisonPanelConfig] = None,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> Optional[Path]:
+    if not genre or not author or not text_name:
+        return None
+    if config is None:
+        config = DEFAULT_PRESENCE_COMPARISON_PANEL_CONFIG
+
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
+    base_dir = root / genre / author / text_name
+    central_path = base_dir / f"{text_name}{CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX}"
+    all_path = base_dir / f"{text_name}{TOPIC_PRESENCE_CORRELATIONS_SUFFIX}"
+    if not central_path.exists() or not all_path.exists():
+        return None
+
+    central_payload = load_json(central_path)
+    all_payload = load_json(all_path)
+    if not isinstance(central_payload, dict) or not isinstance(all_payload, dict):
+        return None
+    central_report = central_payload.get("report")
+    all_report = all_payload.get("report")
+    if not isinstance(central_report, dict) or not isinstance(all_report, dict):
+        return None
+
+    central_presence = central_report.get("central_topic_presence") or {}
+    all_presence = all_report.get("topic_presence") or {}
+    if not isinstance(central_presence, dict) or not isinstance(all_presence, dict):
+        return None
+
+    central_scores = central_presence.get("central_presence_scores") or []
+    all_scores = all_presence.get("topic_presence_scores") or []
+    if not isinstance(central_scores, list) or not isinstance(all_scores, list):
+        return None
+
+    window_data = _load_window_data(genre, author, text_name)
+    if not window_data:
+        return None
+    window_table = collect_window_tables(window_data)
+    if not window_table:
+        return None
+
+    metric = config.metric
+    metric_values: List[float] = []
+    for row in window_table:
+        value = row.get(metric)
+        if not _is_number(value):
+            return None
+        metric_values.append(float(value))
+
+    count = min(len(central_scores), len(all_scores), len(metric_values))
+    if count < 2:
+        return None
+
+    central_series = [float(val) for val in central_scores[:count]]
+    all_series = [float(val) for val in all_scores[:count]]
+    variance_series = metric_values[:count]
+
+    if config.normalize:
+        central_series = _normalize_series(central_series, config.normalization)
+        all_series = _normalize_series(all_series, config.normalization)
+        variance_series = _normalize_series(variance_series, config.normalization)
+
+    delta_series = [c_val - a_val for c_val, a_val in zip(central_series, all_series)]
+    if config.normalize:
+        delta_series = _normalize_series(delta_series, config.normalization)
+
+    fig, axes = plt.subplots(
+        2,
+        1,
+        figsize=(config.fig_width, config.fig_height),
+        sharex=True,
+    )
+
+    x_vals = np.arange(count)
+    axes[0].plot(
+        x_vals,
+        central_series,
+        color=config.central_color,
+        alpha=config.line_alpha,
+        linewidth=2.0,
+        label=config.central_label,
+    )
+    axes[0].plot(
+        x_vals,
+        all_series,
+        color=config.all_color,
+        alpha=config.line_alpha,
+        linewidth=1.8,
+        label=config.all_label,
+    )
+    axes[0].plot(
+        x_vals,
+        variance_series,
+        color=config.variance_color,
+        alpha=config.line_alpha,
+        linewidth=1.8,
+        label=config.variance_label,
+    )
+    axes[0].set_ylabel(
+        "Z-score" if config.normalize else "Value",
+    )
+    axes[0].legend(loc="best", fontsize=8, frameon=False)
+    axes[0].grid(axis="y", linestyle="--", alpha=0.3)
+
+    axes[1].plot(
+        x_vals,
+        delta_series,
+        color=config.delta_color,
+        alpha=config.line_alpha,
+        linewidth=2.0,
+        label=config.delta_label,
+    )
+    axes[1].plot(
+        x_vals,
+        variance_series,
+        color=config.variance_color,
+        alpha=config.line_alpha * 0.9,
+        linewidth=1.4,
+        linestyle="--",
+        label=config.variance_label,
+    )
+    if config.show_zero_line:
+        axes[1].axhline(0.0, color="#bdbdbd", linewidth=0.8)
+    axes[1].set_xlabel("Window index")
+    axes[1].set_ylabel(
+        "Delta (z)" if config.normalize else "Delta",
+    )
+    axes[1].legend(loc="best", fontsize=8, frameon=False)
+    axes[1].grid(axis="y", linestyle="--", alpha=0.3)
+
+    title = config.title
+    if not title:
+        title = f"{text_name} ({genre}) - central vs all presence and variance"
+    fig.suptitle(title, fontsize=11)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+
+    output_dir = _output_dir(output_root, "presence_comparison_panels", [genre, author])
+    output_dir.mkdir(parents=True, exist_ok=True)
+    safe_metric = metric.replace(":", "_").replace("/", "_").replace(".", "_")
+    output_path = output_dir / f"{text_name}__central_all__{safe_metric}_panels.png"
+    _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
+    plt.close(fig)
+    return output_path
+
+
+def plot_topic_variance_timeline_panel(
+    *,
+    genre: str,
+    author: str,
+    text_name: str,
+    topic_ids: Sequence[int],
+    config: Optional[PresenceTimelinePanelConfig] = None,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> Optional[Path]:
+    if not genre or not author or not text_name:
+        return None
+    if config is None:
+        config = DEFAULT_PRESENCE_TIMELINE_PANEL_CONFIG
+
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
+    base_dir = root / genre / author / text_name
+    presence_path = base_dir / f"{text_name}{CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX}"
+    if not presence_path.exists():
+        return None
+
+    presence_payload = load_json(presence_path)
+    if not isinstance(presence_payload, dict):
+        return None
+    presence_report = presence_payload.get("report")
+    if not isinstance(presence_report, dict):
+        return None
+
+    central_presence = presence_report.get("central_topic_presence") or {}
+    if not isinstance(central_presence, dict):
+        return None
+    central_scores = central_presence.get("central_presence_scores") or []
+    if not isinstance(central_scores, list) or not central_scores:
+        return None
+
+    window_data = _load_window_data(genre, author, text_name)
+    if not window_data:
+        return None
+    window_table = collect_window_tables(window_data)
+    if not window_table:
+        return None
+
+    metric = config.metric
+    variance_series: List[float] = []
+    for row in window_table:
+        value = row.get(metric)
+        if not _is_number(value):
+            return None
+        variance_series.append(float(value))
+
+    topic_path = _resolve_topic_path(presence_payload) or _resolve_topic_path(
+        presence_report
+    )
+    if topic_path is None:
+        window_metrics_path = _window_metrics_path(genre, author, text_name)
+        if window_metrics_path.exists():
+            topic_path = find_topic_file(window_metrics_path)
+    if topic_path is None or not topic_path.exists():
+        return None
+    topics_data = load_json(topic_path)
+    if not isinstance(topics_data, dict):
+        return None
+
+    window_entries = _select_window_entries(window_data)
+    if not window_entries:
+        return None
+    scores_by_window = collect_window_topic_scores(
+        topics_data,
+        window_entries=window_entries,
+    )
+    if not scores_by_window:
+        return None
+
+    count = min(len(central_scores), len(variance_series), len(scores_by_window))
+    if count < 2:
+        return None
+
+    central_series = [float(val) for val in central_scores[:count]]
+    variance_series = variance_series[:count]
+
+    if config.normalize:
+        central_series = _normalize_series(central_series, config.normalization)
+        variance_series = _normalize_series(variance_series, config.normalization)
+
+    topic_ids = [int(tid) for tid in topic_ids if isinstance(tid, (int, float))]
+    if not topic_ids:
+        return None
+
+    topic_labels: List[str] = []
+    topic_markers: List[List[int]] = []
+    for idx, topic_id in enumerate(topic_ids):
+        series = [scores.get(topic_id, 0.0) for scores in scores_by_window[:count]]
+        if not series:
+            continue
+        threshold = float(np.quantile(series, config.highlight_percentile))
+        highlight = [
+            i for i, val in enumerate(series) if val >= threshold and val > 0.0
+        ]
+        if len(highlight) < config.highlight_min_count:
+            ranked = sorted(
+                range(len(series)),
+                key=lambda i: series[i],
+                reverse=True,
+            )
+            highlight = [
+                i for i in ranked if series[i] > 0.0
+            ][: config.highlight_min_count]
+        topic_markers.append(sorted(set(highlight)))
+
+        label = f"topic {topic_id}"
+        if config.show_keywords:
+            keywords = []
+            for item in topics_data.get("topics", {}).get("items", []):
+                if item.get("topic_id") == topic_id:
+                    keywords = item.get("keywords") or []
+                    break
+            if keywords:
+                gloss = _shorten_keywords(keywords, config.label_max_len)
+                if gloss:
+                    label = f"{label}: {gloss}"
+        topic_labels.append(label)
+
+    if not topic_markers:
+        return None
+
+    fig, axes = plt.subplots(
+        2,
+        1,
+        figsize=(config.fig_width, config.fig_height),
+        sharex=True,
+        gridspec_kw={"height_ratios": [3, 1]},
+    )
+
+    x_vals = np.arange(count)
+    axes[0].plot(
+        x_vals,
+        central_series,
+        color=config.central_color,
+        alpha=config.line_alpha,
+        linewidth=2.0,
+        label="central topic presence",
+    )
+    axes[0].plot(
+        x_vals,
+        variance_series,
+        color=config.variance_color,
+        alpha=config.line_alpha,
+        linewidth=1.8,
+        label=config.metric,
+    )
+    axes[0].set_ylabel("Z-score" if config.normalize else "Value")
+    axes[0].legend(loc="best", fontsize=8, frameon=False)
+    axes[0].grid(axis="y", linestyle="--", alpha=0.3)
+
+    y_positions = np.arange(len(topic_labels))
+    color_cycle = list(config.topic_colors)
+    for row_idx, indices in enumerate(topic_markers):
+        if not indices:
+            continue
+        color = color_cycle[row_idx % len(color_cycle)] if color_cycle else None
+        axes[1].scatter(
+            indices,
+            [row_idx] * len(indices),
+            s=config.marker_size,
+            alpha=config.marker_alpha,
+            color=color,
+        )
+    axes[1].set_yticks(y_positions)
+    axes[1].set_yticklabels([_shorten_label(lbl, config.label_max_len) for lbl in topic_labels])
+    axes[1].set_xlabel("Window index")
+    axes[1].set_xlim(0, max(0, count - 1))
+    axes[1].grid(axis="x", linestyle="--", alpha=0.2)
+    axes[1].set_ylabel("Topic peaks")
+
+    title = config.title
+    if not title:
+        title = f"{text_name} ({genre}) - central presence vs variance with topic peaks"
+    fig.suptitle(title, fontsize=11)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+
+    output_dir = _output_dir(output_root, "presence_timeline_panels", [genre, author])
+    output_dir.mkdir(parents=True, exist_ok=True)
+    topic_suffix = "_".join(str(tid) for tid in topic_ids)
+    output_path = output_dir / f"{text_name}__topics_{topic_suffix}_timeline.png"
+    _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
+    plt.close(fig)
+    return output_path
+
+
+def plot_topic_centrality_quadrant(
+    *,
+    genre: str,
+    author: str,
+    text_name: str,
+    config: Optional[TopicCentralityQuadrantConfig] = None,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> Optional[Path]:
+    if not genre or not author or not text_name:
+        return None
+    if config is None:
+        config = DEFAULT_TOPIC_CENTRALITY_QUADRANT_CONFIG
+
+    root = dashboard_root or results_path("dashboard", block_size=DEFAULT_BLOCK_SIZE)
+    base_dir = root / genre / author / text_name
+    topic_path = base_dir / f"{text_name}{TOPIC_CORRELATIONS_SUFFIX}"
+    if not topic_path.exists():
+        return None
+
+    payload = load_json(topic_path)
+    if not isinstance(payload, dict):
+        return None
+    report = payload.get("report")
+    if not isinstance(report, dict):
+        return None
+
+    topic_file = payload.get("metadata", {}).get("topic_file")
+    topics_data = None
+    if topic_file:
+        candidate = Path(str(topic_file))
+        if not candidate.exists():
+            candidate = Path(str(topic_file).replace("\\", "/"))
+        if candidate.exists():
+            topics_data = load_json(candidate)
+    if topics_data is None:
+        window_metrics_path = _window_metrics_path(genre, author, text_name)
+        if window_metrics_path.exists():
+            candidate = find_topic_file(window_metrics_path)
+            if candidate and candidate.exists():
+                topics_data = load_json(candidate)
+    if not isinstance(topics_data, dict):
+        return None
+
+    centrality_rows = _collect_centrality_rows(topics_data)
+    if not centrality_rows:
+        return None
+    centrality_map = {
+        row.get("topic_id"): row.get("score") for row in centrality_rows
+    }
+    central_set = {
+        row.get("topic_id")
+        for row in central_topics(topics_data)
+        if isinstance(row.get("topic_id"), int)
+    }
+
+    topic_entries = report.get("topics") or {}
+    points = []
+    for key, topic in topic_entries.items():
+        if not isinstance(topic, dict):
+            continue
+        topic_id = topic.get("topic_id")
+        if not isinstance(topic_id, int):
+            try:
+                topic_id = int(key)
+            except (TypeError, ValueError):
+                continue
+        centrality_score = centrality_map.get(topic_id)
+        if not isinstance(centrality_score, (int, float)):
+            continue
+        correlations = topic.get("correlations") or {}
+        if not isinstance(correlations, dict):
+            continue
+        corr = correlations.get(config.metric)
+        if not isinstance(corr, dict):
+            continue
+        r_val = corr.get("pearson_r")
+        if not _is_number(r_val):
+            continue
+        r_val = float(r_val)
+        y_val = abs(r_val) if config.use_abs else r_val
+        keywords = topic.get("keywords") or []
+        points.append(
+            {
+                "topic_id": topic_id,
+                "centrality": float(centrality_score),
+                "r": r_val,
+                "y": y_val,
+                "keywords": keywords,
+                "is_central": topic_id in central_set,
+            }
+        )
+
+    if not points:
+        return None
+
+    centrality_vals = [pt["centrality"] for pt in points]
+    y_vals = [pt["y"] for pt in points]
+    x_thresh = (
+        float(config.centrality_threshold)
+        if isinstance(config.centrality_threshold, (int, float))
+        else float(np.median(centrality_vals))
+    )
+    y_thresh = (
+        float(config.variance_threshold)
+        if isinstance(config.variance_threshold, (int, float))
+        else float(np.median(y_vals))
+    )
+
+    fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
+    for point in points:
+        color = config.central_color if point["is_central"] else config.non_central_color
+        ax.scatter(
+            point["centrality"],
+            point["y"],
+            s=config.point_size,
+            alpha=config.point_alpha,
+            color=color,
+        )
+        if config.show_labels:
+            label = f"topic {point['topic_id']}"
+            if config.show_keywords:
+                gloss = _shorten_keywords(point["keywords"], config.label_max_len)
+                if gloss:
+                    label = f"{label}: {gloss}"
+            ax.text(
+                point["centrality"],
+                point["y"],
+                " " + _shorten_label(label, config.label_max_len),
+                fontsize=7,
+                va="center",
+                ha="left",
+            )
+
+    ax.axvline(x_thresh, color=config.line_color, linestyle=config.line_style, linewidth=config.line_width)
+    ax.axhline(y_thresh, color=config.line_color, linestyle=config.line_style, linewidth=config.line_width)
+    if config.regression_line and len(points) >= 2:
+        x_vals = np.array([pt["centrality"] for pt in points], dtype=float)
+        y_vals = np.array([pt["y"] for pt in points], dtype=float)
+        if np.isfinite(x_vals).all() and np.isfinite(y_vals).all():
+            slope, intercept = np.polyfit(x_vals, y_vals, 1)
+            x_line = np.linspace(float(np.min(x_vals)), float(np.max(x_vals)), 100)
+            y_line = slope * x_line + intercept
+            ax.plot(
+                x_line,
+                y_line,
+                color=config.regression_color,
+                linestyle=config.regression_style,
+                linewidth=config.regression_width,
+                label="trend",
+            )
+    ax.scatter([], [], color=config.central_color, label="central topics")
+    ax.scatter([], [], color=config.non_central_color, label="non-central topics")
+
+    y_label = "|r| with variance" if config.use_abs else "r with variance"
+    ax.set_xlabel("Centrality score")
+    ax.set_ylabel(y_label)
+    ax.grid(axis="both", linestyle="--", alpha=0.2)
+
+    title = config.title
+    if not title:
+        title = f"{text_name} ({genre}) - centrality vs variance coupling"
+    ax.set_title(title)
+    ax.legend(loc="best", fontsize=8, frameon=False)
+
+    output_dir = _output_dir(output_root, "topic_centrality_quadrants", [genre, author])
+    output_dir.mkdir(parents=True, exist_ok=True)
+    safe_metric = config.metric.replace(":", "_").replace("/", "_").replace(".", "_")
+    output_path = output_dir / f"{text_name}__centrality_vs_{safe_metric}_quadrant.png"
+    _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
+    plt.close(fig)
+    return output_path
+
+
+def plot_topic_centrality_quadrant_all_texts(
+    *,
+    config: Optional[TopicCentralityQuadrantConfig] = None,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> Optional[Path]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    if config is None:
+        config = replace(DEFAULT_TOPIC_CENTRALITY_QUADRANT_CONFIG, show_labels=False)
+
+    points = []
+    for path, payload in _iter_topic_reports(dashboard_root):
+        metadata = payload.get("metadata")
+        report = payload.get("report")
+        if not isinstance(metadata, dict) or not isinstance(report, dict):
+            continue
+        category = metadata.get("category") or ""
+        category_parts = [part for part in str(category).split("/") if part]
+        genre = category_parts[0] if category_parts else "unknown"
+        author = category_parts[1] if len(category_parts) > 1 else "unknown"
+        text_name = metadata.get("text_name") or path.parent.name
+        if not _matches_selection(genre, author, text_name, selection):
+            continue
+
+        topic_file = metadata.get("topic_file")
+        topics_data = None
+        if topic_file:
+            candidate = Path(str(topic_file))
+            if not candidate.exists():
+                candidate = Path(str(topic_file).replace("\\", "/"))
+            if candidate.exists():
+                topics_data = load_json(candidate)
+        if topics_data is None:
+            window_metrics_path = _window_metrics_path(genre, author, text_name)
+            if window_metrics_path.exists():
+                candidate = find_topic_file(window_metrics_path)
+                if candidate and candidate.exists():
+                    topics_data = load_json(candidate)
+        if not isinstance(topics_data, dict):
+            continue
+
+        centrality_rows = _collect_centrality_rows(topics_data)
+        if not centrality_rows:
+            continue
+        centrality_map = {
+            row.get("topic_id"): row.get("score") for row in centrality_rows
+        }
+        central_set = {
+            row.get("topic_id")
+            for row in central_topics(topics_data)
+            if isinstance(row.get("topic_id"), int)
+        }
+
+        topic_entries = report.get("topics") or {}
+        if not isinstance(topic_entries, dict):
+            continue
+        for key, topic in topic_entries.items():
+            if not isinstance(topic, dict):
+                continue
+            topic_id = topic.get("topic_id")
+            if not isinstance(topic_id, int):
+                try:
+                    topic_id = int(key)
+                except (TypeError, ValueError):
+                    continue
+            centrality_score = centrality_map.get(topic_id)
+            if not isinstance(centrality_score, (int, float)):
+                continue
+            correlations = topic.get("correlations") or {}
+            if not isinstance(correlations, dict):
+                continue
+            corr = correlations.get(config.metric)
+            if not isinstance(corr, dict):
+                continue
+            r_val = corr.get("pearson_r")
+            if not _is_number(r_val):
+                continue
+            r_val = float(r_val)
+            y_val = abs(r_val) if config.use_abs else r_val
+            points.append(
+                {
+                    "topic_id": topic_id,
+                    "centrality": float(centrality_score),
+                    "r": r_val,
+                    "y": y_val,
+                    "keywords": topic.get("keywords") or [],
+                    "is_central": topic_id in central_set,
+                    "genre": genre,
+                    "author": author,
+                    "text_name": text_name,
+                }
+            )
+
+    if not points:
+        return None
+
+    centrality_vals = [pt["centrality"] for pt in points]
+    y_vals = [pt["y"] for pt in points]
+    x_thresh = (
+        float(config.centrality_threshold)
+        if isinstance(config.centrality_threshold, (int, float))
+        else float(np.median(centrality_vals))
+    )
+    y_thresh = (
+        float(config.variance_threshold)
+        if isinstance(config.variance_threshold, (int, float))
+        else float(np.median(y_vals))
+    )
+
+    fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
+    for point in points:
+        color = config.central_color if point["is_central"] else config.non_central_color
+        ax.scatter(
+            point["centrality"],
+            point["y"],
+            s=config.point_size,
+            alpha=config.point_alpha,
+            color=color,
+        )
+        if config.show_labels:
+            label = f"{point['author']}/{point['text_name']} topic {point['topic_id']}"
+            if config.show_keywords:
+                gloss = _shorten_keywords(point["keywords"], config.label_max_len)
+                if gloss:
+                    label = f"{label}: {gloss}"
+            ax.text(
+                point["centrality"],
+                point["y"],
+                " " + _shorten_label(label, config.label_max_len),
+                fontsize=6,
+                va="center",
+                ha="left",
+            )
+
+    ax.axvline(x_thresh, color=config.line_color, linestyle=config.line_style, linewidth=config.line_width)
+    ax.axhline(y_thresh, color=config.line_color, linestyle=config.line_style, linewidth=config.line_width)
+    if config.regression_line and len(points) >= 2:
+        x_vals = np.array([pt["centrality"] for pt in points], dtype=float)
+        y_vals = np.array([pt["y"] for pt in points], dtype=float)
+        if np.isfinite(x_vals).all() and np.isfinite(y_vals).all():
+            slope, intercept = np.polyfit(x_vals, y_vals, 1)
+            x_line = np.linspace(float(np.min(x_vals)), float(np.max(x_vals)), 100)
+            y_line = slope * x_line + intercept
+            ax.plot(
+                x_line,
+                y_line,
+                color=config.regression_color,
+                linestyle=config.regression_style,
+                linewidth=config.regression_width,
+                label="trend",
+            )
+    ax.scatter([], [], color=config.central_color, label="central topics")
+    ax.scatter([], [], color=config.non_central_color, label="non-central topics")
+
+    y_label = "|r| with variance" if config.use_abs else "r with variance"
+    ax.set_xlabel("Centrality score")
+    ax.set_ylabel(y_label)
+    ax.grid(axis="both", linestyle="--", alpha=0.2)
+
+    title = config.title
+    if not title:
+        title = "All texts - centrality vs variance coupling"
+    ax.set_title(title)
+    ax.legend(loc="best", fontsize=8, frameon=False)
+
+    output_dir = _output_dir(output_root, "topic_centrality_quadrants")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    safe_metric = config.metric.replace(":", "_").replace("/", "_").replace(".", "_")
+    output_path = output_dir / f"all_texts__centrality_vs_{safe_metric}_quadrant.png"
+    _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
+    plt.close(fig)
+    return output_path
+
+
 def plot_mean_dispersion_trend(
     *,
     selection: Optional[DataSelectionConfig] = None,
@@ -1876,6 +3269,64 @@ def plot_mean_dispersion_trend(
     output_dir = _output_dir(output_root, "dispersion_trend")
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / "mean_dispersion_trend.png"
+    _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
+    plt.close(fig)
+    return output_path
+
+
+def plot_mean_dispersion_trend_all_topics(
+    *,
+    selection: Optional[DataSelectionConfig] = None,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> Optional[Path]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    by_genre = _collect_topic_presence_r_by_genre(
+        dashboard_root=dashboard_root,
+        selection=selection,
+    )
+    if not by_genre:
+        return None
+
+    ordered_genres = _ordered_genres(by_genre.keys())
+    values: List[float] = []
+    labels: List[str] = []
+    for genre in ordered_genres:
+        metric_map = by_genre.get(genre, {})
+        stdevs: List[float] = []
+        for vals in metric_map.values():
+            if len(vals) < 2:
+                continue
+            stdevs.append(statistics.pstdev(vals))
+        if not stdevs:
+            continue
+        labels.append(genre)
+        values.append(statistics.mean(stdevs))
+
+    if not values:
+        return None
+
+    fig, ax = plt.subplots(figsize=(8.5, 4.0))
+    x_pos = np.arange(len(labels))
+    ax.plot(
+        x_pos,
+        values,
+        marker="o",
+        linewidth=2.0,
+        markersize=6,
+    )
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(labels, rotation=20, ha="right")
+    ax.set_ylabel("Mean dispersion (std dev of r)")
+    ax.set_title("Mean dispersion across movements (all topics)")
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    plt.tight_layout()
+    output_dir = _output_dir(output_root, "dispersion_trend")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "mean_dispersion_trend_all_topics.png"
     _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
     plt.close(fig)
     return output_path
@@ -2531,6 +3982,10 @@ def write_top_correlation_tables(
     return output_paths
 
 
+CONVERGENCE_INDEX_TITLE = "Convergence index across movements (central topics)"
+CONVERGENCE_INDEX_ALL_TOPICS_TITLE = "Convergence index across movements (all topics)"
+
+
 def plot_convergence_index(
     presence_entries: Optional[List[Dict[str, object]]] = None,
     *,
@@ -2684,13 +4139,181 @@ def plot_convergence_index(
     else:
         ax.set_ylabel("Convergence index")
         ax.legend(loc="best", fontsize=8, frameon=False)
-    ax.set_title("Convergence index across movements")
+    ax.set_title(CONVERGENCE_INDEX_TITLE)
     ax.grid(axis="y", linestyle="--", alpha=0.3)
 
     plt.tight_layout()
     output_dir = _output_dir(output_root, "convergence_index")
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / "convergence_index.png"
+    _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
+    plt.close(fig)
+    return output_path
+
+
+def plot_convergence_index_all_topics(
+    topic_presence_entries: Optional[List[Dict[str, object]]] = None,
+    *,
+    config: Optional[ConvergenceIndexConfig] = None,
+    metrics: Optional[Sequence[str]] = None,
+    p_threshold: Optional[float] = None,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    selection: Optional[DataSelectionConfig] = None,
+    dashboard_root: Optional[Path] = None,
+    output_root: Optional[Path] = None,
+) -> Optional[Path]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    if config is None:
+        config = DEFAULT_CONVERGENCE_INDEX_CONFIG
+    if metrics is None:
+        metrics = config.metrics
+    if p_threshold is None:
+        p_threshold = config.p_threshold
+
+    metric_keys = [metric for metric in metrics if isinstance(metric, str)]
+    if not metric_keys:
+        return None
+
+    aggregated = _load_aggregated_topic_presence_by_genre(
+        dashboard_root=dashboard_root,
+        selection=selection,
+    )
+
+    presence_by_genre: Dict[str, List[Dict[str, object]]] = defaultdict(list)
+    if "sign_agreement" in metric_keys:
+        if topic_presence_entries is None:
+            topic_presence_entries = collect_topic_presence_entries(
+                dashboard_root=dashboard_root,
+                selection=selection,
+            )
+        else:
+            topic_presence_entries = _filter_presence_entries(
+                topic_presence_entries,
+                selection,
+            )
+        for entry in topic_presence_entries:
+            genre = entry.get("genre")
+            if isinstance(genre, str):
+                presence_by_genre[genre].append(entry)
+
+    genres = _ordered_genres(set(aggregated.keys()) | set(presence_by_genre.keys()))
+    if not genres:
+        return None
+
+    series_by_metric: Dict[str, List[Optional[float]]] = {}
+    for metric_key in metric_keys:
+        values: List[Optional[float]] = []
+        for genre in genres:
+            value: Optional[float] = None
+            if metric_key in {"significant_count", "mean_abs_r", "mean_abs_r_zeroed"}:
+                corr_map = aggregated.get(genre, {})
+                pairs = []
+                for corr in corr_map.values():
+                    if not isinstance(corr, dict):
+                        continue
+                    r_val = corr.get("pearson_r")
+                    p_val = corr.get("p_value")
+                    if isinstance(r_val, (int, float)):
+                        p_val = float(p_val) if isinstance(p_val, (int, float)) else None
+                        pairs.append((float(r_val), p_val))
+                if pairs:
+                    if metric_key == "significant_count":
+                        total = len(pairs)
+                        if total:
+                            value = (
+                                sum(
+                                    1
+                                    for _, p_val in pairs
+                                    if p_val is not None and p_val < p_threshold
+                                )
+                                / total
+                            )
+                    elif metric_key == "mean_abs_r":
+                        vals = []
+                        for r_val, p_val in pairs:
+                            if config.zero_nonsignificant and (
+                                p_val is None or p_val >= p_threshold
+                            ):
+                                vals.append(0.0)
+                            else:
+                                vals.append(abs(r_val))
+                        if vals:
+                            value = statistics.mean(vals)
+                    elif metric_key == "mean_abs_r_zeroed":
+                        vals = [
+                            abs(r_val) if (p_val is not None and p_val < p_threshold) else 0.0
+                            for r_val, p_val in pairs
+                        ]
+                        if vals:
+                            value = statistics.mean(vals)
+            elif metric_key == "sign_agreement":
+                entries = presence_by_genre.get(genre, [])
+                metric_signs: Dict[str, List[int]] = defaultdict(list)
+                for entry in entries:
+                    presence = entry.get("presence") or {}
+                    correlations = presence.get("correlations") or {}
+                    for metric_name, corr in correlations.items():
+                        if not isinstance(corr, dict):
+                            continue
+                        r_val = corr.get("pearson_r")
+                        p_val = corr.get("p_value")
+                        if not isinstance(r_val, (int, float)):
+                            continue
+                        if config.sign_agreement_use_p_threshold:
+                            if not isinstance(p_val, (int, float)) or p_val >= p_threshold:
+                                continue
+                        sign = 1 if r_val > 0 else -1 if r_val < 0 else 0
+                        if sign != 0:
+                            metric_signs[str(metric_name)].append(sign)
+                total = 0
+                consistent = 0
+                for signs in metric_signs.values():
+                    if len(signs) < config.sign_agreement_min_texts:
+                        continue
+                    total += 1
+                    if len(set(signs)) == 1:
+                        consistent += 1
+                if total > 0:
+                    value = consistent / total
+            values.append(value)
+        if any(val is not None for val in values):
+            series_by_metric[metric_key] = values
+
+    if not series_by_metric:
+        return None
+
+    fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
+    x_pos = np.arange(len(genres))
+    for metric_key, values in series_by_metric.items():
+        y_vals = [np.nan if v is None else v for v in values]
+        label = CONVERGENCE_METRIC_LABELS.get(metric_key, metric_key)
+        ax.plot(
+            x_pos,
+            y_vals,
+            marker="o",
+            linewidth=config.line_width,
+            markersize=config.marker_size,
+            label=label,
+        )
+
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(genres, rotation=20, ha="right")
+    if len(series_by_metric) == 1:
+        label = next(iter(series_by_metric.keys()))
+        ax.set_ylabel(CONVERGENCE_METRIC_LABELS.get(label, label))
+        if label in {"sign_agreement", "significant_count"}:
+            ax.set_ylim(0.0, 1.0)
+    else:
+        ax.set_ylabel("Convergence index")
+        ax.legend(loc="best", fontsize=8, frameon=False)
+    ax.set_title(CONVERGENCE_INDEX_ALL_TOPICS_TITLE)
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+    plt.tight_layout()
+    output_dir = _output_dir(output_root, "convergence_index")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "convergence_index_all_topics.png"
     _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
     plt.close(fig)
     return output_path
@@ -3046,14 +4669,11 @@ def plot_central_topic_window_heatmaps(
 
     output_paths: List[Path] = []
 
-    for path, data in _iter_central_topic_reports(dashboard_root):
+    for path, data in _iter_topic_reports(dashboard_root):
         metadata = data.get("metadata")
         report = data.get("report")
-        params = data.get("params", {})
         if not isinstance(metadata, dict) or not isinstance(report, dict):
             continue
-        if not isinstance(params, dict):
-            params = {}
         category = metadata.get("category") or ""
         category_parts = [part for part in str(category).split("/") if part]
         genre = category_parts[0] if category_parts else "unknown"
@@ -3142,7 +4762,7 @@ def plot_central_topic_window_heatmaps(
         ax.set_yticklabels(labels, fontsize=8)
         ax.set_xlabel("Window index")
         ax.set_ylabel("Central topic")
-        ax.set_title(f"Central Topic Presence (Soft Scores) - {text_name} ({genre})")
+        ax.set_title(f"Central topics (soft scores) - {text_name} ({genre})")
 
         cbar = fig.colorbar(im, ax=ax, shrink=0.8)
         cbar.set_label("Soft score")
@@ -3151,6 +4771,137 @@ def plot_central_topic_window_heatmaps(
         output_dir = _output_dir(output_root, "central_topic_window_heatmaps", [genre, author])
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f"{text_name}_central_topic_window_heatmap.png"
+        _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
+        plt.close(fig)
+        output_paths.append(output_path)
+
+    return output_paths
+
+
+def plot_topic_window_heatmaps(
+    *,
+    dashboard_root: Optional[Path] = None,
+    config: Optional[CentralTopicWindowHeatmapConfig] = None,
+    selection: Optional[DataSelectionConfig] = None,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    output_root: Optional[Path] = None,
+) -> List[Path]:
+    if selection is None:
+        selection = DEFAULT_DATA_SELECTION_CONFIG
+    if config is None:
+        config = DEFAULT_CENTRAL_TOPIC_WINDOW_HEATMAP_CONFIG
+
+    output_paths: List[Path] = []
+
+    for path, data in _iter_central_topic_reports(dashboard_root):
+        metadata = data.get("metadata")
+        report = data.get("report")
+        params = data.get("params", {})
+        if not isinstance(metadata, dict) or not isinstance(report, dict):
+            continue
+        if not isinstance(params, dict):
+            params = {}
+        category = metadata.get("category") or ""
+        category_parts = [part for part in str(category).split("/") if part]
+        genre = category_parts[0] if category_parts else "unknown"
+        author = category_parts[1] if len(category_parts) > 1 else "unknown"
+        text_name = metadata.get("text_name") or path.parent.name
+        if not _matches_selection(genre, author, text_name, selection):
+            continue
+
+        topic_path = _resolve_topic_path(data)
+        if topic_path is None:
+            window_metrics_path = _window_metrics_path(genre, author, text_name)
+            if window_metrics_path.exists():
+                topic_path = find_topic_file(window_metrics_path)
+        if topic_path is None or not topic_path.exists():
+            continue
+        topics_data = load_json(topic_path)
+        if not isinstance(topics_data, dict):
+            continue
+
+        topic_items = _topic_items(topics_data)
+        if not topic_items:
+            continue
+
+        topic_rows: List[Tuple[int, str]] = []
+        for topic in topic_items:
+            if not isinstance(topic, dict):
+                continue
+            topic_id = topic.get("topic_id")
+            if not isinstance(topic_id, int):
+                continue
+            label = str(topic_id)
+            if config.show_keywords:
+                gloss = _shorten_keywords(topic.get("keywords") or [], config.label_max_len)
+                if gloss:
+                    label = f"{topic_id}: {gloss}"
+            topic_rows.append((topic_id, label))
+        if not topic_rows:
+            continue
+
+        topic_rows.sort(key=lambda row: row[0])
+        topic_ids = [row[0] for row in topic_rows]
+        labels = [row[1] for row in topic_rows]
+
+        window_data = _load_window_data(genre, author, text_name)
+        if not window_data:
+            continue
+        window_entries = _select_window_entries(window_data)
+        if not window_entries:
+            continue
+
+        scores_by_window = collect_window_topic_scores(
+            topics_data,
+            window_entries=window_entries,
+        )
+        if not scores_by_window:
+            continue
+
+        matrix = np.array(
+            [
+                [scores.get(topic_id, 0.0) for scores in scores_by_window]
+                for topic_id in topic_ids
+            ],
+            dtype=float,
+        )
+        if matrix.size == 0:
+            continue
+
+        fig, ax = plt.subplots(
+            figsize=(
+                max(config.min_width, len(scores_by_window) * config.col_width),
+                max(config.min_height, len(topic_ids) * config.row_height),
+            )
+        )
+        cmap = plt.get_cmap(config.cmap_name).copy()
+        if config.mask_color:
+            cmap.set_bad(color=config.mask_color)
+        vmax = config.vmax
+        if vmax is None:
+            vmax = float(np.nanmax(matrix)) if np.isfinite(matrix).any() else config.vmin
+        if vmax <= config.vmin:
+            vmax = config.vmin + 1e-6
+        im = ax.imshow(matrix, aspect="auto", cmap=cmap, vmin=config.vmin, vmax=vmax)
+
+        window_count = len(scores_by_window)
+        step = max(1, math.ceil(window_count / max(1, config.max_xticks)))
+        x_ticks = np.arange(0, window_count, step)
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels([str(int(x_tick)) for x_tick in x_ticks])
+        ax.set_yticks(np.arange(len(labels)))
+        ax.set_yticklabels(labels, fontsize=8)
+        ax.set_xlabel("Window index")
+        ax.set_ylabel("Topic")
+        ax.set_title(f"All topics (soft scores) - {text_name} ({genre})")
+
+        cbar = fig.colorbar(im, ax=ax, shrink=0.8)
+        cbar.set_label("Soft score")
+        plt.tight_layout()
+
+        output_dir = _output_dir(output_root, "topic_window_heatmaps", [genre, author])
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / f"{text_name}_topic_window_heatmap.png"
         _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
         plt.close(fig)
         output_paths.append(output_path)
@@ -3203,6 +4954,38 @@ def _presence_report_path(path: Path) -> Optional[Path]:
     return candidate if candidate.exists() else None
 
 
+def _topic_presence_report_path(path: Path) -> Optional[Path]:
+    name = path.name
+    if not name.endswith(CENTRAL_TOPIC_CORRELATIONS_SUFFIX):
+        return None
+    candidate = path.with_name(
+        name.replace(
+            CENTRAL_TOPIC_CORRELATIONS_SUFFIX,
+            TOPIC_PRESENCE_CORRELATIONS_SUFFIX,
+        )
+    )
+    return candidate if candidate.exists() else None
+
+
+def _extract_presence_correlations(
+    payload: Dict[str, object],
+    *,
+    key: str,
+) -> Dict[str, Dict[str, object]]:
+    if not isinstance(payload, dict):
+        return {}
+    report = payload.get("report")
+    if not isinstance(report, dict):
+        return {}
+    presence = report.get(key) or {}
+    if not isinstance(presence, dict):
+        return {}
+    correlations = presence.get("correlations") or {}
+    if not isinstance(correlations, dict):
+        return {}
+    return correlations
+
+
 def _plot_presence_metric_line(
     *,
     genre: str,
@@ -3210,6 +4993,7 @@ def _plot_presence_metric_line(
     text_name: str,
     metric: str,
     presence_report: Dict[str, object],
+    all_presence_report: Optional[Dict[str, object]],
     window_table: Sequence[Dict[str, object]],
     config: TopicMetricLineConfig,
     stability_metrics: Optional[Dict[str, Dict[str, object]]],
@@ -3223,6 +5007,14 @@ def _plot_presence_metric_line(
     scores = presence.get("central_presence_scores") or []
     if not isinstance(scores, list) or not scores:
         return None
+
+    all_scores: Optional[List[float]] = None
+    if config.include_all_presence and isinstance(all_presence_report, dict):
+        all_presence = all_presence_report.get("topic_presence") or {}
+        if isinstance(all_presence, dict):
+            candidate = all_presence.get("topic_presence_scores") or []
+            if isinstance(candidate, list) and candidate:
+                all_scores = candidate
 
     correlations = presence.get("correlations") or {}
     if config.p_threshold is not None:
@@ -3239,10 +5031,13 @@ def _plot_presence_metric_line(
         return None
 
     count = min(len(scores), len(window_table))
+    if all_scores:
+        count = min(count, len(all_scores))
     if count < 2:
         return None
 
     presence_series: List[float] = []
+    all_presence_series: List[float] = []
     metric_series: List[float] = []
     for idx in range(count):
         score = scores[idx]
@@ -3250,10 +5045,19 @@ def _plot_presence_metric_line(
         if not _is_number(score) or not _is_number(value):
             return None
         presence_series.append(float(score))
+        if all_scores:
+            all_score = all_scores[idx]
+            if not _is_number(all_score):
+                return None
+            all_presence_series.append(float(all_score))
         metric_series.append(float(value))
 
     if config.normalize:
         presence_series = _normalize_series(presence_series, config.normalization)
+        if all_scores:
+            all_presence_series = _normalize_series(
+                all_presence_series, config.normalization
+            )
         metric_series = _normalize_series(metric_series, config.normalization)
 
     fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
@@ -3269,6 +5073,19 @@ def _plot_presence_metric_line(
         alpha=config.line_alpha,
         label=presence_label,
     )
+    if all_scores and all_presence_series:
+        all_label = "all topic presence"
+        if config.normalize:
+            all_label = "all topic presence (normalized)"
+        ax.plot(
+            x_vals,
+            all_presence_series,
+            color=config.all_presence_color,
+            linewidth=config.topic_line_width,
+            linestyle=config.all_presence_style,
+            alpha=config.line_alpha,
+            label=all_label,
+        )
 
     metric_color = config.metric_colors[0] if config.metric_colors else None
     metric_label = _shorten_label(metric, config.label_max_len)
@@ -3297,7 +5114,12 @@ def _plot_presence_metric_line(
         ax.set_ylabel("Metric value")
 
     short_metric = _shorten_label(metric, config.label_max_len)
-    ax.set_title(f"{text_name} ({genre}) - central topic presence vs {short_metric}")
+    if all_scores and all_presence_series:
+        ax.set_title(
+            f"{text_name} ({genre}) - central/all topic presence vs {short_metric}"
+        )
+    else:
+        ax.set_title(f"{text_name} ({genre}) - central topic presence vs {short_metric}")
     ax.legend(loc="best", fontsize=8, frameon=False)
     ax.grid(axis="y", linestyle="--", alpha=0.3)
 
@@ -3305,7 +5127,10 @@ def _plot_presence_metric_line(
     output_dir = _output_dir(output_root, "topic_metric_lines", [genre, author])
     output_dir.mkdir(parents=True, exist_ok=True)
     safe_metric = metric.replace(":", "_").replace("/", "_").replace(".", "_")
-    output_path = output_dir / f"{text_name}__central_presence__{safe_metric}_line.png"
+    presence_tag = "central_presence"
+    if all_scores and all_presence_series:
+        presence_tag = "central_all_presence"
+    output_path = output_dir / f"{text_name}__{presence_tag}__{safe_metric}_line.png"
     _maybe_save_figure(fig, output_path, use_existing=use_existing, dpi=200)
     plt.close(fig)
     return output_path
@@ -3454,6 +5279,12 @@ def plot_topic_metric_family_lines(
                 presence_report = presence_payload.get("report") if isinstance(
                     presence_payload, dict
                 ) else None
+                all_presence_report = None
+                topic_presence_path = _topic_presence_report_path(path)
+                if topic_presence_path is not None:
+                    topic_payload = load_json(topic_presence_path)
+                    if isinstance(topic_payload, dict):
+                        all_presence_report = topic_payload.get("report")
                 if isinstance(presence_report, dict):
                     presence_stability = presence_stability_by_genre.get(genre, {})
                     for metric in deduped_metrics:
@@ -3463,6 +5294,9 @@ def plot_topic_metric_family_lines(
                             text_name=text_name,
                             metric=metric,
                             presence_report=presence_report,
+                            all_presence_report=all_presence_report
+                            if isinstance(all_presence_report, dict)
+                            else None,
                             window_table=window_table,
                             config=config,
                             stability_metrics=presence_stability,
@@ -4054,19 +5888,61 @@ def plot_topic_similarity_graphs(
         else:
             pos = nx.spring_layout(graph, seed=config.layout_seed, weight="weight")
 
+        node_ids = list(graph.nodes)
         node_sizes = [
             config.node_size_base
             + config.node_size_scale * graph.nodes[node_id].get("central_score", 0.0)
-            for node_id in graph.nodes
+            for node_id in node_ids
         ]
         node_colors = [
             config.central_color if node_id in central_ids else config.non_central_color
-            for node_id in graph.nodes
+            for node_id in node_ids
         ]
         edge_widths = [
             max(config.edge_width_min, config.edge_width_scale * data.get("weight", 0.0))
             for _, _, data in graph.edges(data=True)
         ]
+
+        border_widths = [config.node_border_width for _ in node_ids]
+        border_metric = config.node_border_metric
+        if isinstance(border_metric, str) and border_metric:
+            topic_corr_path = path.with_name(
+                path.name.replace(CENTRAL_TOPIC_CORRELATIONS_SUFFIX, TOPIC_CORRELATIONS_SUFFIX)
+            )
+            if topic_corr_path.exists():
+                topic_corr_entry = load_json(topic_corr_path)
+                if isinstance(topic_corr_entry, dict):
+                    metric_map = _topic_metric_map(
+                        topic_corr_entry.get("report", {}),
+                        border_metric,
+                    )
+                    if metric_map:
+                        min_width = float(config.node_border_width_min)
+                        max_width = float(config.node_border_width_max)
+                        if max_width < min_width:
+                            min_width, max_width = max_width, min_width
+                        scaled_values = []
+                        for node_id in node_ids:
+                            value = metric_map.get(node_id)
+                            if value is None:
+                                continue
+                            scaled = abs(value) if config.node_border_metric_abs else max(value, 0.0)
+                            if scaled > 0:
+                                scaled_values.append(scaled)
+                        max_value = max(scaled_values) if scaled_values else 0.0
+                        if max_value > 0:
+                            border_widths = []
+                            for node_id in node_ids:
+                                value = metric_map.get(node_id)
+                                if value is None:
+                                    border_widths.append(config.node_border_width)
+                                    continue
+                                scaled = abs(value) if config.node_border_metric_abs else max(value, 0.0)
+                                if scaled <= 0:
+                                    border_widths.append(min_width)
+                                    continue
+                                frac = min(1.0, scaled / max_value)
+                                border_widths.append(min_width + (max_width - min_width) * frac)
 
         labels = {
             node_id: _topic_label(
@@ -4074,7 +5950,7 @@ def plot_topic_similarity_graphs(
                 graph.nodes[node_id].get("keywords") or [],
                 config.label_max_len,
             )
-            for node_id in graph.nodes
+            for node_id in node_ids
         }
 
         fig, ax = plt.subplots(figsize=(config.fig_width, config.fig_height))
@@ -4095,7 +5971,7 @@ def plot_topic_similarity_graphs(
             node_size=node_sizes,
             node_color=node_colors,
             edgecolors=config.node_border_color,
-            linewidths=config.node_border_width,
+            linewidths=border_widths,
         )
         nx.draw_networkx_labels(
             graph,
@@ -4384,6 +6260,7 @@ def generate_all_visualisations(
     b_config: Optional[CentralTopicWindowHeatmapConfig] = None,
     c_config: Optional[ExemplarScatterConfig] = None,
     e_config: Optional[PresenceSlopegraphConfig] = None,
+    presence_scatter_config: Optional[PresenceComparisonScatterConfig] = None,
     f_config: Optional[AggregatedHeatmapConfig] = None,
     g_config: Optional[ConvergenceIndexConfig] = None,
     h_config: Optional[ForestPlotConfig] = None,
@@ -4423,6 +6300,9 @@ def generate_all_visualisations(
         e_config = DEFAULT_PRESENCE_SLOPEGRAPH_CONFIG
     if slope_p_threshold is not None:
         e_config = replace(e_config, p_threshold=slope_p_threshold)
+
+    if presence_scatter_config is None:
+        presence_scatter_config = DEFAULT_PRESENCE_COMPARISON_SCATTER_CONFIG
 
     if f_config is None:
         f_config = DEFAULT_AGGREGATED_HEATMAP_CONFIG
@@ -4492,6 +6372,13 @@ def generate_all_visualisations(
             dashboard_root=dashboard_root,
             output_root=output_root,
         ),
+        "B_all_topics": plot_topic_window_heatmaps(
+            config=b_config,
+            selection=selection,
+            use_existing=use_existing,
+            dashboard_root=dashboard_root,
+            output_root=output_root,
+        ),
         "C": plot_exemplar_scatter(
             entries_by_genre,
             config=c_config,
@@ -4515,8 +6402,15 @@ def generate_all_visualisations(
             dashboard_root=dashboard_root,
             output_root=output_root,
         ),
-        "G": plot_convergence_index(
+        CONVERGENCE_INDEX_TITLE: plot_convergence_index(
             presence_entries,
+            config=g_config,
+            selection=selection,
+            use_existing=use_existing,
+            dashboard_root=dashboard_root,
+            output_root=output_root,
+        ),
+        CONVERGENCE_INDEX_ALL_TOPICS_TITLE: plot_convergence_index_all_topics(
             config=g_config,
             selection=selection,
             use_existing=use_existing,
@@ -4597,6 +6491,12 @@ def generate_all_visualisations(
             dashboard_root=dashboard_root,
             output_root=output_root,
         ),
+        "O_all_topics": plot_mean_dispersion_trend_all_topics(
+            selection=selection,
+            use_existing=use_existing,
+            dashboard_root=dashboard_root,
+            output_root=output_root,
+        ),
         "P": plot_author_dispersion_summaries(
             presence_entries,
             config=author_dispersion_config,
@@ -4607,6 +6507,13 @@ def generate_all_visualisations(
         ),
         "Q": plot_internal_stability_ranked(
             config=internal_stability_config,
+            selection=selection,
+            use_existing=use_existing,
+            dashboard_root=dashboard_root,
+            output_root=output_root,
+        ),
+        "R": plot_presence_comparison_scatter(
+            config=presence_scatter_config,
             selection=selection,
             use_existing=use_existing,
             dashboard_root=dashboard_root,
@@ -4639,6 +6546,7 @@ def generate_all_visualisations_with_config(
     b_config: Optional[CentralTopicWindowHeatmapConfig] = None,
     c_config: Optional[ExemplarScatterConfig] = None,
     e_config: Optional[PresenceSlopegraphConfig] = None,
+    presence_scatter_config: Optional[PresenceComparisonScatterConfig] = None,
     f_config: Optional[AggregatedHeatmapConfig] = None,
     g_config: Optional[ConvergenceIndexConfig] = None,
     h_config: Optional[ForestPlotConfig] = None,
@@ -4666,6 +6574,7 @@ def generate_all_visualisations_with_config(
             b_config=b_config,
             c_config=c_config,
             e_config=e_config,
+            presence_scatter_config=presence_scatter_config,
             f_config=f_config,
             g_config=g_config,
             h_config=h_config,
@@ -4714,6 +6623,7 @@ def generate_all_visualisations_with_config(
             b_config=b_config,
             c_config=c_config,
             e_config=e_config,
+            presence_scatter_config=presence_scatter_config,
             f_config=f_config,
             g_config=g_config,
             h_config=h_config,

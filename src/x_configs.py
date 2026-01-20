@@ -759,7 +759,10 @@ CENTRALITY_METRICS = ("coherence", "exclusivity", "prevalence", "persistence", "
 
 TOPIC_CORRELATIONS_SUFFIX = "_topic_correlations.json"
 CENTRAL_TOPIC_CORRELATIONS_SUFFIX = "_central_topic_correlations.json"
+TOPIC_PRESENCE_CORRELATIONS_SUFFIX = "_topic_presence_correlations.json"
 CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX = "_central_topic_presence_correlations.json"
+NON_CENTRAL_TOPIC_PRESENCE_CORRELATIONS_SUFFIX = "_non_central_topic_presence_correlations.json"
+WINDOW_VARIANCE_SUFFIX = "_window_variances.json"
 
 GENRE_CENTRAL_PRESENCE_FILENAME = "00_genre_central_topic_presence_correlations.json"
 TOPIC_SPLIT_HALF_FILENAME = "00_topic_split_half_stability.json"
@@ -780,6 +783,7 @@ TABLE_P_VALUE_MIN_DISPLAY = 0.001
 
 DEFAULT_CENTRAL_PRESENCE_P = 2.0
 DEFAULT_CENTRAL_PRESENCE_NORMALIZE = True
+DEFAULT_PRESENCE_K_REFERENCE = "central"
 DEFAULT_CENTRAL_TOPIC_NEAR_TOP_ALPHA = 0.8
 DEFAULT_CENTRALITY_TOP_SCORE_FRACTION = 0.1
 DEFAULT_CENTRALITY_COHERENCE_FLOOR = 0.25
@@ -796,7 +800,6 @@ class DashboardCorrelationConfig:
 @dataclass(frozen=True)
 class CentralTopicSelectionConfig:
     near_top_alpha: float = DEFAULT_CENTRAL_TOPIC_NEAR_TOP_ALPHA
-    max_topics: Optional[int] = None
     top_score_fraction: float = DEFAULT_CENTRALITY_TOP_SCORE_FRACTION
     coherence_floor: float = DEFAULT_CENTRALITY_COHERENCE_FLOOR
     exclusivity_floor: float = DEFAULT_CENTRALITY_EXCLUSIVITY_FLOOR
@@ -837,6 +840,117 @@ class PresenceSlopegraphConfig:
     row_height: float = 0.4
     positive_color: str = "#2c7fb8"
     negative_color: str = "#d95f0e"
+
+
+@dataclass(frozen=True)
+class PresenceComparisonScatterConfig:
+    metrics: Sequence[str] = (
+        "variance.syntax_rms_z",
+        "variance.lexico_semantics_rms_z",
+        "variance.discourse_rms_z",
+        "variance.log_prob_rms_z",
+        "variance.overall_rms_z",
+    )
+    cols: int = 3
+    panel_width: float = 4.2
+    panel_height: float = 3.4
+    point_size: float = 20.0
+    point_alpha: float = 0.7
+    cmap_name: str = "tab10"
+    axis_limits: Optional[Tuple[float, float]] = (-1.0, 1.0)
+    show_identity_line: bool = True
+    show_zero_lines: bool = True
+    identity_line_color: str = "#9e9e9e"
+    zero_line_color: str = "#d0d0d0"
+    label_max_len: int = 36
+    legend_max_cols: int = 3
+    legend_fontsize: float = 8.0
+    title: Optional[str] = "All-topic vs central-topic presence (RMZ correlations)"
+    equal_aspect: bool = True
+
+
+@dataclass(frozen=True)
+class PresenceComparisonPanelConfig:
+    metric: str = "variance.overall_rms_z"
+    normalize: bool = True
+    normalization: str = "zscore"
+    fig_width: float = 11.0
+    fig_height: float = 6.2
+    line_alpha: float = 0.85
+    central_color: str = "#222222"
+    all_color: str = "#4c78a8"
+    variance_color: str = "#d95f02"
+    delta_color: str = "#1b9e77"
+    central_label: str = "central topic presence"
+    all_label: str = "all topic presence"
+    variance_label: str = "variance (overall rms z)"
+    delta_label: str = "central - all"
+    show_zero_line: bool = True
+    title: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class PresenceTimelinePanelConfig:
+    metric: str = "variance.overall_rms_z"
+    normalize: bool = True
+    normalization: str = "zscore"
+    fig_width: float = 12.0
+    fig_height: float = 5.5
+    central_color: str = "#222222"
+    variance_color: str = "#d95f02"
+    topic_colors: Sequence[str] = ("#1b9e77", "#7570b3", "#66a61e")
+    line_alpha: float = 0.85
+    marker_alpha: float = 0.85
+    marker_size: float = 28.0
+    highlight_percentile: float = 0.9
+    highlight_min_count: int = 3
+    label_max_len: int = 48
+    show_keywords: bool = True
+    title: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class TopicCentralityQuadrantConfig:
+    metric: str = "variance.overall_rms_z"
+    use_abs: bool = True
+    centrality_threshold: Optional[float] = None
+    variance_threshold: Optional[float] = None
+    fig_width: float = 7.8
+    fig_height: float = 6.2
+    point_size: float = 55.0
+    point_alpha: float = 0.85
+    central_color: str = "#d95f02"
+    non_central_color: str = "#1b9e77"
+    line_color: str = "#8c8c8c"
+    line_style: str = "--"
+    line_width: float = 1.0
+    regression_line: bool = True
+    regression_color: str = "#4c4c4c"
+    regression_style: str = "-"
+    regression_width: float = 1.6
+    label_max_len: int = 36
+    show_labels: bool = True
+    show_keywords: bool = True
+    title: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class QualitativePassageTimelineConfig:
+    metric: str = "variance.overall_rms_z"
+    normalize: bool = True
+    normalization: str = "zscore"
+    top_n_per_topic: int = 3
+    excerpt_sentences: int = 2
+    excerpt_max_len: int = 140
+    fig_width: float = 12.5
+    fig_height: float = 6.5
+    marker_size: float = 40.0
+    marker_alpha: float = 0.9
+    line_alpha: float = 0.85
+    topic_colors: Sequence[str] = ("#1b9e77", "#7570b3", "#66a61e")
+    variance_color: str = "#d95f02"
+    annotation_offset: float = 0.35
+    title: Optional[str] = None
 
 
 DEFAULT_EXCLUDE_METRICS = (
@@ -1025,6 +1139,9 @@ class TopicMetricLineConfig:
     topic_line_width: float = 2.2
     metric_line_width: float = 1.4
     line_alpha: float = 0.85
+    include_all_presence: bool = False
+    all_presence_color: str = "#4c78a8"
+    all_presence_style: str = "--"
     label_max_len: int = 45
     max_xticks: int = 12
     presence_metric_targets: Sequence[Dict[str, object]] = ()
@@ -1050,6 +1167,10 @@ class TopicGraphConfig:
     non_central_color: str = "#1b9e77"
     node_border_color: str = "#1a1a1a"
     node_border_width: float = 0.8
+    node_border_metric: Optional[str] = "variance.overall_rms_z"
+    node_border_metric_abs: bool = True
+    node_border_width_min: float = 0.8
+    node_border_width_max: float = 2.4
     label_font_size: float = 7.5
     label_color: str = "#111111"
     label_max_len: int = 36
@@ -1106,6 +1227,10 @@ DEFAULT_EXEMPLAR_SCATTER_CONFIG = ExemplarScatterConfig(
     )
 )
 DEFAULT_PRESENCE_SLOPEGRAPH_CONFIG = PresenceSlopegraphConfig()
+DEFAULT_PRESENCE_COMPARISON_SCATTER_CONFIG = PresenceComparisonScatterConfig()
+DEFAULT_PRESENCE_COMPARISON_PANEL_CONFIG = PresenceComparisonPanelConfig()
+DEFAULT_PRESENCE_TIMELINE_PANEL_CONFIG = PresenceTimelinePanelConfig()
+DEFAULT_TOPIC_CENTRALITY_QUADRANT_CONFIG = TopicCentralityQuadrantConfig()
 DEFAULT_CONVERGENCE_INDEX_CONFIG = ConvergenceIndexConfig()
 DEFAULT_AGGREGATED_HEATMAP_CONFIG = AggregatedHeatmapConfig()
 DEFAULT_TOPIC_METRIC_HEATMAP_CONFIG = TopicMetricHeatmapConfig()

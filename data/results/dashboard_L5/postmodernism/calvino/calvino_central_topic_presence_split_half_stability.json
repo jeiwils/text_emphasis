@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 102,
+  "pair_count": 117,
   "overall": {
-    "sign_agreement_rate": 0.8235294117647058,
-    "mean_abs_delta_r": 0.07171051154358106,
-    "median_abs_delta_r": 0.06412241263522114
+    "sign_agreement_rate": 0.8290598290598291,
+    "mean_abs_delta_r": 0.07073216919648714,
+    "median_abs_delta_r": 0.06387880906541996
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.6666666666666666,
       "mean_abs_delta_r": 0.09528336395503113,
       "median_abs_delta_r": 0.07716435633122704
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.05584531643708577,
+      "median_abs_delta_r": 0.06387880906541996
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.07402444329809024,
+      "median_abs_delta_r": 0.07304374219762147
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.057497179633200626,
+      "median_abs_delta_r": 0.038161924758251226
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.05679920385969492,
+      "median_abs_delta_r": 0.06378483101922425
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.07623106295317086,
+      "median_abs_delta_r": 0.05129669113912351
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "postmodernism/calvino",
       "text_name": "all_at_one_point",
       "filename": "all_at_one_point_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.07989594870911415,
-      "median_abs_delta_r": 0.06786921438167647
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8461538461538461,
+      "mean_abs_delta_r": 0.0782554197516345,
+      "median_abs_delta_r": 0.06757995261578702
     },
     {
       "category": "postmodernism/calvino",
       "text_name": "the_distance_of_the_moon",
       "filename": "the_distance_of_the_moon_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.060928876763040665,
-      "median_abs_delta_r": 0.04984835151382394
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8205128205128205,
+      "mean_abs_delta_r": 0.060169286781662015,
+      "median_abs_delta_r": 0.056047363112496196
     },
     {
       "category": "postmodernism/calvino",
       "text_name": "the_spiral",
       "filename": "the_spiral_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8235294117647058,
-      "mean_abs_delta_r": 0.07430670915858838,
-      "median_abs_delta_r": 0.06291110077114098
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8205128205128205,
+      "mean_abs_delta_r": 0.07377180105616492,
+      "median_abs_delta_r": 0.06378483101922425
     }
   ],
   "params": {

@@ -1,10 +1,10 @@
 {
   "text_count": 8,
-  "pair_count": 272,
+  "pair_count": 312,
   "overall": {
-    "sign_agreement_rate": 0.8676470588235294,
-    "mean_abs_delta_r": 0.059852007972673586,
-    "median_abs_delta_r": 0.043324451663952795
+    "sign_agreement_rate": 0.8589743589743589,
+    "mean_abs_delta_r": 0.058748073136731464,
+    "median_abs_delta_r": 0.04293081207982534
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 1,
       "mean_abs_delta_r": 0.04799187331258974,
       "median_abs_delta_r": 0.028343473667628346
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.875,
+      "mean_abs_delta_r": 0.02104959799917268,
+      "median_abs_delta_r": 0.0201119875785478
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.875,
+      "mean_abs_delta_r": 0.061908055455459444,
+      "median_abs_delta_r": 0.049372777877696714
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.75,
+      "mean_abs_delta_r": 0.0424140368150665,
+      "median_abs_delta_r": 0.04402939257185669
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.75,
+      "mean_abs_delta_r": 0.038203309098577304,
+      "median_abs_delta_r": 0.030439158246703964
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 8,
+      "sign_agreement_rate": 0.75,
+      "mean_abs_delta_r": 0.09263158189334933,
+      "median_abs_delta_r": 0.08671201239431975
     }
   },
   "texts": [
@@ -217,73 +247,73 @@
       "category": "modernism/joyce",
       "text_name": "Araby",
       "filename": "Araby_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8529411764705882,
-      "mean_abs_delta_r": 0.06375717456977541,
-      "median_abs_delta_r": 0.06282069036006649
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8461538461538461,
+      "mean_abs_delta_r": 0.060238495503501306,
+      "median_abs_delta_r": 0.05504374085881632
     },
     {
       "category": "modernism/joyce",
       "text_name": "eveline",
       "filename": "eveline_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.7352941176470589,
-      "mean_abs_delta_r": 0.05087738436802212,
-      "median_abs_delta_r": 0.029464877989804142
+      "pair_count": 39,
+      "sign_agreement_rate": 0.7435897435897436,
+      "mean_abs_delta_r": 0.04829733251592714,
+      "median_abs_delta_r": 0.030802303067373554
     },
     {
       "category": "modernism/joyce",
       "text_name": "the_dead",
       "filename": "the_dead_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8529411764705882,
-      "mean_abs_delta_r": 0.019739089062724723,
-      "median_abs_delta_r": 0.015419397609870683
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8717948717948718,
+      "mean_abs_delta_r": 0.02026969145561346,
+      "median_abs_delta_r": 0.014689302673747186
     },
     {
       "category": "modernism/kafka",
       "text_name": "in_the_penal_colony",
       "filename": "in_the_penal_colony_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.9705882352941176,
-      "mean_abs_delta_r": 0.030186279645253555,
-      "median_abs_delta_r": 0.02634327312240866
+      "pair_count": 39,
+      "sign_agreement_rate": 0.9487179487179487,
+      "mean_abs_delta_r": 0.03009760109012864,
+      "median_abs_delta_r": 0.025723252787282404
     },
     {
       "category": "modernism/kafka",
       "text_name": "the_judgement",
       "filename": "the_judgement_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.8823529411764706,
-      "mean_abs_delta_r": 0.09777969939127955,
-      "median_abs_delta_r": 0.07883103887302711
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8717948717948718,
+      "mean_abs_delta_r": 0.09614536635219886,
+      "median_abs_delta_r": 0.07813190254847348
     },
     {
       "category": "modernism/woolf",
       "text_name": "an_unwritten_novel",
       "filename": "an_unwritten_novel_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.9411764705882353,
-      "mean_abs_delta_r": 0.07056873329614377,
-      "median_abs_delta_r": 0.0648880303116007
+      "pair_count": 39,
+      "sign_agreement_rate": 0.8717948717948718,
+      "mean_abs_delta_r": 0.06902977295683163,
+      "median_abs_delta_r": 0.06010771981272189
     },
     {
       "category": "modernism/woolf",
       "text_name": "kew_gardens",
       "filename": "kew_gardens_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.9411764705882353,
-      "mean_abs_delta_r": 0.07129048432593288,
-      "median_abs_delta_r": 0.047914018094080746
+      "pair_count": 39,
+      "sign_agreement_rate": 0.9230769230769231,
+      "mean_abs_delta_r": 0.06964633520136108,
+      "median_abs_delta_r": 0.04960937882847971
     },
     {
       "category": "modernism/woolf",
       "text_name": "the_mark_on_the_wall",
       "filename": "the_mark_on_the_wall_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.7647058823529411,
-      "mean_abs_delta_r": 0.07461721912225666,
-      "median_abs_delta_r": 0.07242796071749655
+      "pair_count": 39,
+      "sign_agreement_rate": 0.7948717948717948,
+      "mean_abs_delta_r": 0.07625999001828959,
+      "median_abs_delta_r": 0.07242664172374814
     }
   ],
   "params": {

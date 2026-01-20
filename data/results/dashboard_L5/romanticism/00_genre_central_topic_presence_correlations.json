@@ -35,7 +35,12 @@
     "syntax.depth_skew",
     "syntax.max_depth",
     "syntax.median_depth",
-    "syntax.punctuation_per_token"
+    "syntax.punctuation_per_token",
+    "variance.discourse_rms_z",
+    "variance.lexico_semantics_rms_z",
+    "variance.log_prob_rms_z",
+    "variance.overall_rms_z",
+    "variance.syntax_rms_z"
   ],
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -343,6 +348,51 @@
       "total_effective_windows": 557,
       "fisher_z": 0.12180441113513521,
       "fisher_z_weight_sum": 533
+    },
+    "variance.discourse_rms_z": {
+      "pearson_r": 0.04046429311492179,
+      "p_value": 0.15003747035047743,
+      "text_count": 8,
+      "total_windows": 2763,
+      "total_effective_windows": 557,
+      "fisher_z": 0.04048639969523769,
+      "fisher_z_weight_sum": 533
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pearson_r": 0.039592907953141084,
+      "p_value": 0.19204743016488512,
+      "text_count": 8,
+      "total_windows": 2763,
+      "total_effective_windows": 557,
+      "fisher_z": 0.03961361602632568,
+      "fisher_z_weight_sum": 533
+    },
+    "variance.log_prob_rms_z": {
+      "pearson_r": -0.006732974398175523,
+      "p_value": 0.8489255092765124,
+      "text_count": 8,
+      "total_windows": 2763,
+      "total_effective_windows": 557,
+      "fisher_z": -0.006733076142793969,
+      "fisher_z_weight_sum": 533
+    },
+    "variance.overall_rms_z": {
+      "pearson_r": 0.010471628343734982,
+      "p_value": 0.925284582060687,
+      "text_count": 8,
+      "total_windows": 2763,
+      "total_effective_windows": 557,
+      "fisher_z": 0.010472011124388853,
+      "fisher_z_weight_sum": 533
+    },
+    "variance.syntax_rms_z": {
+      "pearson_r": -0.023913195558794856,
+      "p_value": 0.4920147737115692,
+      "text_count": 8,
+      "total_windows": 2763,
+      "total_effective_windows": 557,
+      "fisher_z": -0.02391775530463079,
+      "fisher_z_weight_sum": 533
     }
   },
   "texts": [
@@ -354,7 +404,7 @@
       "window_count": 523,
       "effective_window_count": 105,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "romanticism/hawthorne",
@@ -364,7 +414,7 @@
       "window_count": 242,
       "effective_window_count": 49,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "romanticism/hawthorne",
@@ -374,7 +424,7 @@
       "window_count": 233,
       "effective_window_count": 47,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "romanticism/kleist",
@@ -384,7 +434,7 @@
       "window_count": 176,
       "effective_window_count": 36,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "romanticism/kleist",
@@ -394,7 +444,7 @@
       "window_count": 650,
       "effective_window_count": 130,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "romanticism/shelley",
@@ -404,7 +454,7 @@
       "window_count": 262,
       "effective_window_count": 53,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "romanticism/shelley",
@@ -414,7 +464,7 @@
       "window_count": 281,
       "effective_window_count": 57,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     },
     {
       "category": "romanticism/shelley",
@@ -424,7 +474,7 @@
       "window_count": 396,
       "effective_window_count": 80,
       "block_size": 5,
-      "metric_count": 34
+      "metric_count": 39
     }
   ],
   "params": {

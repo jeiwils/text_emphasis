@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 340,
+  "pair_count": 390,
   "overall": {
-    "sign_agreement_rate": 0.8235294117647058,
-    "mean_abs_delta_r": 0.03492025085759164,
-    "median_abs_delta_r": 0.029308170289427303
+    "sign_agreement_rate": 0.8333333333333334,
+    "mean_abs_delta_r": 0.034124670524300044,
+    "median_abs_delta_r": 0.028266782448660717
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 0.9,
       "mean_abs_delta_r": 0.018194819741025357,
       "median_abs_delta_r": 0.013598077973807764
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 10,
+      "sign_agreement_rate": 0.8,
+      "mean_abs_delta_r": 0.035030073858211205,
+      "median_abs_delta_r": 0.02213562218896063
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 10,
+      "sign_agreement_rate": 0.9,
+      "mean_abs_delta_r": 0.042828553654658194,
+      "median_abs_delta_r": 0.031560903165889255
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 10,
+      "sign_agreement_rate": 0.9,
+      "mean_abs_delta_r": 0.02768418317942434,
+      "median_abs_delta_r": 0.02632522083914068
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 10,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.01863748086458832,
+      "median_abs_delta_r": 0.014002304488461244
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 10,
+      "sign_agreement_rate": 0.9,
+      "mean_abs_delta_r": 0.01939332973270388,
+      "median_abs_delta_r": 0.014616051601481505
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "gothic/fanu",
       "text_name": "green_tea",
       "filename": "green_tea_window_metrics.syntax.json",
-      "pair_count": 102,
-      "sign_agreement_rate": 0.7843137254901961,
-      "mean_abs_delta_r": 0.028960065156006073,
-      "median_abs_delta_r": 0.02644119413261179
+      "pair_count": 117,
+      "sign_agreement_rate": 0.8034188034188035,
+      "mean_abs_delta_r": 0.029104848209273892,
+      "median_abs_delta_r": 0.025483216353844568
     },
     {
       "category": "gothic/fanu",
       "text_name": "mr_justice_harbottle",
       "filename": "mr_justice_harbottle_window_metrics.syntax.json",
-      "pair_count": 136,
-      "sign_agreement_rate": 0.8602941176470589,
-      "mean_abs_delta_r": 0.036474896713681586,
-      "median_abs_delta_r": 0.032481346803926614
+      "pair_count": 156,
+      "sign_agreement_rate": 0.8717948717948718,
+      "mean_abs_delta_r": 0.0348921557427462,
+      "median_abs_delta_r": 0.030994001333140092
     },
     {
       "category": "gothic/fanu",
       "text_name": "the_familiar",
       "filename": "the_familiar_window_metrics.syntax.json",
-      "pair_count": 102,
-      "sign_agreement_rate": 0.8137254901960784,
-      "mean_abs_delta_r": 0.038807575417723957,
-      "median_abs_delta_r": 0.031336667633254406
+      "pair_count": 117,
+      "sign_agreement_rate": 0.811965811965812,
+      "mean_abs_delta_r": 0.03812117921473133,
+      "median_abs_delta_r": 0.029932160279144603
     }
   ],
   "params": {

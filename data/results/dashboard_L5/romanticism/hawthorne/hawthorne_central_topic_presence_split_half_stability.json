@@ -1,10 +1,10 @@
 {
   "text_count": 3,
-  "pair_count": 102,
+  "pair_count": 117,
   "overall": {
-    "sign_agreement_rate": 0.8823529411764706,
-    "mean_abs_delta_r": 0.0521432861215625,
-    "median_abs_delta_r": 0.036566183216026706
+    "sign_agreement_rate": 0.8547008547008547,
+    "mean_abs_delta_r": 0.05549213264559193,
+    "median_abs_delta_r": 0.039388983885571965
   },
   "metrics": {
     "discourse.connective_counts_per_token.Comparison": {
@@ -210,6 +210,36 @@
       "sign_agreement_rate": 1,
       "mean_abs_delta_r": 0.021664605980509708,
       "median_abs_delta_r": 0.018989502075462517
+    },
+    "variance.discourse_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.052955529504056444,
+      "median_abs_delta_r": 0.06647838059853313
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 1,
+      "mean_abs_delta_r": 0.09281390040505126,
+      "median_abs_delta_r": 0.08805590158931202
+    },
+    "variance.log_prob_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.08524854566484943,
+      "median_abs_delta_r": 0.05952546166247731
+    },
+    "variance.overall_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.3333333333333333,
+      "mean_abs_delta_r": 0.07735385034488317,
+      "median_abs_delta_r": 0.051136628998711076
+    },
+    "variance.syntax_rms_z": {
+      "pair_count": 3,
+      "sign_agreement_rate": 0.6666666666666666,
+      "mean_abs_delta_r": 0.08294961912611977,
+      "median_abs_delta_r": 0.09639974960306254
     }
   },
   "texts": [
@@ -217,28 +247,28 @@
       "category": "romanticism/hawthorne",
       "text_name": "Rappaccinis_Daughter",
       "filename": "Rappaccinis_Daughter_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.9705882352941176,
-      "mean_abs_delta_r": 0.02814205376614732,
-      "median_abs_delta_r": 0.021556069740738093
+      "pair_count": 39,
+      "sign_agreement_rate": 0.9230769230769231,
+      "mean_abs_delta_r": 0.030769804770376982,
+      "median_abs_delta_r": 0.023253893340035442
     },
     {
       "category": "romanticism/hawthorne",
       "text_name": "Young_Goodman_Brown",
       "filename": "Young_Goodman_Brown_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.7352941176470589,
-      "mean_abs_delta_r": 0.07913261369559557,
-      "median_abs_delta_r": 0.06592662742174893
+      "pair_count": 39,
+      "sign_agreement_rate": 0.717948717948718,
+      "mean_abs_delta_r": 0.08556437433994818,
+      "median_abs_delta_r": 0.07567705061460162
     },
     {
       "category": "romanticism/hawthorne",
       "text_name": "the_ministers_black_veil",
       "filename": "the_ministers_black_veil_window_metrics.syntax.json",
-      "pair_count": 34,
-      "sign_agreement_rate": 0.9411764705882353,
-      "mean_abs_delta_r": 0.04915519090294461,
-      "median_abs_delta_r": 0.03894908124545078
+      "pair_count": 39,
+      "sign_agreement_rate": 0.9230769230769231,
+      "mean_abs_delta_r": 0.05014221882645062,
+      "median_abs_delta_r": 0.04335619428149312
     }
   ],
   "params": {
