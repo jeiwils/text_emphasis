@@ -1,0 +1,488 @@
+{
+  "genre": "modernism",
+  "text_count": 8,
+  "metric_names": [
+    "discourse.connective_counts_per_token.Comparison",
+    "discourse.connective_counts_per_token.Contingency",
+    "discourse.connective_counts_per_token.Expansion",
+    "discourse.connective_counts_per_token.Temporal",
+    "discourse.content_overlap_per_token",
+    "discourse.content_overlap_ratio",
+    "discourse.entity_overlap_per_token",
+    "discourse.entity_overlap_ratio",
+    "discourse.explicit_connectives_per_token",
+    "discourse.modality_per_token",
+    "discourse.pronoun_ratio",
+    "discourse.tense_shift",
+    "lexico_semantics.avg_word_freq",
+    "lexico_semantics.information_content",
+    "lexico_semantics.lexical_density_per_token",
+    "lexico_semantics.lexical_diversity_mattr.mattr_score",
+    "lexico_semantics.normalized_freq",
+    "log_prob.max_token_surprisal",
+    "log_prob.token_weighted_mean_surprisal",
+    "log_prob.token_weighted_surprisal_variance",
+    "syntax.avg_dependents_per_head.coordinate_clause",
+    "syntax.avg_dependents_per_head.main_clause",
+    "syntax.avg_dependents_per_head.subordinate_clause",
+    "syntax.avg_mean_dependency_distance",
+    "syntax.avg_tokens_per_sentence",
+    "syntax.clause_counts_per_token.coordinate",
+    "syntax.clause_counts_per_token.main",
+    "syntax.clause_counts_per_token.subordinate",
+    "syntax.clause_ratios.coordination_ratio",
+    "syntax.clause_ratios.subordination_ratio",
+    "syntax.depth_skew",
+    "syntax.max_depth",
+    "syntax.median_depth",
+    "syntax.punctuation_per_token",
+    "variance.discourse_rms_z",
+    "variance.lexico_semantics_rms_z",
+    "variance.log_prob_rms_z",
+    "variance.overall_rms_z",
+    "variance.syntax_rms_z"
+  ],
+  "metrics": {
+    "discourse.connective_counts_per_token.Comparison": {
+      "pearson_r": -3.77217436040794e-05,
+      "p_value": 0.9896583857226775,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -3.7721743621971204e-05,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.connective_counts_per_token.Contingency": {
+      "pearson_r": 0.019197914343106956,
+      "p_value": 0.5120821542119194,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.019200273392026415,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.connective_counts_per_token.Expansion": {
+      "pearson_r": 0.034579609885554675,
+      "p_value": 0.2568461922832872,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.03459340263199522,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.connective_counts_per_token.Temporal": {
+      "pearson_r": 0.015792112615618897,
+      "p_value": 0.5681339477620431,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.01579342561473725,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.content_overlap_per_token": {
+      "pearson_r": -0.03502430843567277,
+      "p_value": 0.25700465713278753,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.03503864045100791,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.content_overlap_ratio": {
+      "pearson_r": -0.03235015529464871,
+      "p_value": 0.3328705610409215,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.032361447549603094,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.entity_overlap_per_token": {
+      "pearson_r": -0.0195725706101654,
+      "p_value": 0.6833914747369743,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.0195750705075938,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.entity_overlap_ratio": {
+      "pearson_r": -0.01004973103258581,
+      "p_value": 0.8199942873574018,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.010050069384298916,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.explicit_connectives_per_token": {
+      "pearson_r": 0.045353061858244115,
+      "p_value": 0.16185977711473143,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.04538419586531704,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.modality_per_token": {
+      "pearson_r": 0.027494787266439065,
+      "p_value": 0.4388536355519186,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.027501718760968304,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.pronoun_ratio": {
+      "pearson_r": 0.040471222452545,
+      "p_value": 0.2656246793207253,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.040493340399231394,
+      "fisher_z_weight_sum": 486
+    },
+    "discourse.tense_shift": {
+      "pearson_r": 0.021967142729964494,
+      "p_value": 0.45653849267133095,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.021970677207523614,
+      "fisher_z_weight_sum": 486
+    },
+    "lexico_semantics.avg_word_freq": {
+      "pearson_r": 0.05423494566260111,
+      "p_value": 0.09862066247702295,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.054288215795097135,
+      "fisher_z_weight_sum": 486
+    },
+    "lexico_semantics.information_content": {
+      "pearson_r": -0.07500256378833657,
+      "p_value": 0.015601086981153811,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.07514367981639228,
+      "fisher_z_weight_sum": 486
+    },
+    "lexico_semantics.lexical_density_per_token": {
+      "pearson_r": 0.0005255550427323769,
+      "p_value": 0.9453199552792224,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.0005255550911199054,
+      "fisher_z_weight_sum": 486
+    },
+    "lexico_semantics.lexical_diversity_mattr.mattr_score": {
+      "pearson_r": -0.015902386843511637,
+      "p_value": 0.6570307042985459,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.015903727543452484,
+      "fisher_z_weight_sum": 486
+    },
+    "lexico_semantics.normalized_freq": {
+      "pearson_r": 0.05423468823929144,
+      "p_value": 0.09841984821828009,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.0542879576123648,
+      "fisher_z_weight_sum": 486
+    },
+    "log_prob.max_token_surprisal": {
+      "pearson_r": 0.009141067777744767,
+      "p_value": 0.956283049056299,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.00914132239703716,
+      "fisher_z_weight_sum": 486
+    },
+    "log_prob.token_weighted_mean_surprisal": {
+      "pearson_r": 0.021246118705552725,
+      "p_value": 0.4936210030626016,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.021249316387034194,
+      "fisher_z_weight_sum": 486
+    },
+    "log_prob.token_weighted_surprisal_variance": {
+      "pearson_r": 0.04419505301591468,
+      "p_value": 0.12625732486230956,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.044223860749653496,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.avg_dependents_per_head.coordinate_clause": {
+      "pearson_r": 0.020012083707682468,
+      "p_value": 0.5519030581987492,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.020014755852872535,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.avg_dependents_per_head.main_clause": {
+      "pearson_r": -0.04748082715389301,
+      "p_value": 0.1258772048265171,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.047516556212591717,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.avg_dependents_per_head.subordinate_clause": {
+      "pearson_r": 0.0577931556606003,
+      "p_value": 0.05512430082159492,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.05785762890380539,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.avg_mean_dependency_distance": {
+      "pearson_r": -0.010145952480689018,
+      "p_value": 0.6832722909330795,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.01014630064483239,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.avg_tokens_per_sentence": {
+      "pearson_r": -0.04410239852103626,
+      "p_value": 0.343273329638611,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.0441310253082221,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.clause_counts_per_token.coordinate": {
+      "pearson_r": 0.05423434764276999,
+      "p_value": 0.11636047335267374,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.05428761601106312,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.clause_counts_per_token.main": {
+      "pearson_r": -0.00790707631973722,
+      "p_value": 0.8408744433707256,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.007907241114281373,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.clause_counts_per_token.subordinate": {
+      "pearson_r": 0.05563113398031875,
+      "p_value": 0.07820222430583312,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.05568863028825991,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.clause_ratios.coordination_ratio": {
+      "pearson_r": 0.015654455257201865,
+      "p_value": 0.6920637971408556,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.015655734215806672,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.clause_ratios.subordination_ratio": {
+      "pearson_r": 0.015327694565829518,
+      "p_value": 0.6115976918247603,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.015328895088826231,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.depth_skew": {
+      "pearson_r": -0.01620969630614829,
+      "p_value": 0.5913409146710933,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.016211116252235126,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.max_depth": {
+      "pearson_r": 0.0008667910270802978,
+      "p_value": 0.9743752001808705,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.0008667912441614719,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.median_depth": {
+      "pearson_r": -0.020072879901415642,
+      "p_value": 0.6752217479714311,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.02007557647833522,
+      "fisher_z_weight_sum": 486
+    },
+    "syntax.punctuation_per_token": {
+      "pearson_r": -0.019168124676767023,
+      "p_value": 0.6432073548062416,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.019170472759401997,
+      "fisher_z_weight_sum": 486
+    },
+    "variance.discourse_rms_z": {
+      "pearson_r": 0.00886995362142438,
+      "p_value": 0.6223200312722676,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": 0.008870186250124631,
+      "fisher_z_weight_sum": 486
+    },
+    "variance.lexico_semantics_rms_z": {
+      "pearson_r": -0.018830360777293314,
+      "p_value": 0.6869215187045836,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.018832586889635305,
+      "fisher_z_weight_sum": 486
+    },
+    "variance.log_prob_rms_z": {
+      "pearson_r": -0.026919809944949136,
+      "p_value": 0.40353694017582176,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.026926315488731006,
+      "fisher_z_weight_sum": 486
+    },
+    "variance.overall_rms_z": {
+      "pearson_r": -0.030437611147540043,
+      "p_value": 0.42720658684481516,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.030447015999031286,
+      "fisher_z_weight_sum": 486
+    },
+    "variance.syntax_rms_z": {
+      "pearson_r": -0.048149960378769736,
+      "p_value": 0.14145333554840578,
+      "text_count": 8,
+      "total_windows": 2539,
+      "total_effective_windows": 510,
+      "fisher_z": -0.04818722281574446,
+      "fisher_z_weight_sum": 486
+    }
+  },
+  "texts": [
+    {
+      "category": "modernism/joyce",
+      "author": "joyce",
+      "text_name": "Araby",
+      "filename": "Araby_window_metrics.syntax.json",
+      "window_count": 143,
+      "effective_window_count": 29,
+      "block_size": 5,
+      "metric_count": 39
+    },
+    {
+      "category": "modernism/joyce",
+      "author": "joyce",
+      "text_name": "eveline",
+      "filename": "eveline_window_metrics.syntax.json",
+      "window_count": 125,
+      "effective_window_count": 25,
+      "block_size": 5,
+      "metric_count": 39
+    },
+    {
+      "category": "modernism/joyce",
+      "author": "joyce",
+      "text_name": "the_dead",
+      "filename": "the_dead_window_metrics.syntax.json",
+      "window_count": 968,
+      "effective_window_count": 194,
+      "block_size": 5,
+      "metric_count": 39
+    },
+    {
+      "category": "modernism/kafka",
+      "author": "kafka",
+      "text_name": "in_the_penal_colony",
+      "filename": "in_the_penal_colony_window_metrics.syntax.json",
+      "window_count": 525,
+      "effective_window_count": 105,
+      "block_size": 5,
+      "metric_count": 39
+    },
+    {
+      "category": "modernism/kafka",
+      "author": "kafka",
+      "text_name": "the_judgement",
+      "filename": "the_judgement_window_metrics.syntax.json",
+      "window_count": 220,
+      "effective_window_count": 44,
+      "block_size": 5,
+      "metric_count": 39
+    },
+    {
+      "category": "modernism/woolf",
+      "author": "woolf",
+      "text_name": "an_unwritten_novel",
+      "filename": "an_unwritten_novel_window_metrics.syntax.json",
+      "window_count": 340,
+      "effective_window_count": 68,
+      "block_size": 5,
+      "metric_count": 39
+    },
+    {
+      "category": "modernism/woolf",
+      "author": "woolf",
+      "text_name": "kew_gardens",
+      "filename": "kew_gardens_window_metrics.syntax.json",
+      "window_count": 86,
+      "effective_window_count": 18,
+      "block_size": 5,
+      "metric_count": 39
+    },
+    {
+      "category": "modernism/woolf",
+      "author": "woolf",
+      "text_name": "the_mark_on_the_wall",
+      "filename": "the_mark_on_the_wall_window_metrics.syntax.json",
+      "window_count": 132,
+      "effective_window_count": 27,
+      "block_size": 5,
+      "metric_count": 39
+    }
+  ],
+  "params": {
+    "r_aggregation": "fisher_z",
+    "p_value_aggregation": "stouffer",
+    "r_weight": "n_eff-3",
+    "p_weight": "sqrt(n_eff-3)",
+    "n_eff_method": "ceil(n_windows / block_size), min 1",
+    "block_size": 5
+  }
+}

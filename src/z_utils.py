@@ -1,6 +1,6 @@
 
 
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from pathlib import Path
 import json
 import numpy as np
@@ -8,15 +8,25 @@ from statistics import mean
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import HDBSCAN
 
+from .x_configs import DEFAULT_METRIC_WINDOW_STRIDE
 
 
 
+
+
+def _category_parts(category: Optional[Union[str, Sequence[str]]]) -> List[str]:
+    if category is None:
+        return []
+    if isinstance(category, (list, tuple)):
+        return [str(part) for part in category if part]
+    category_str = str(category)
+    return [part for part in category_str.replace("\\", "/").split("/") if part]
 
 
 def text_path(
     kind: str,
     subfolder: Optional[str] = None,
-    category: Optional[str] = None,
+    category: Optional[Union[str, Sequence[str]]] = None,
     filename: Optional[str] = None,
 ) -> Path:
     """
@@ -33,109 +43,171 @@ def text_path(
     else:
         raise ValueError('kind must be "raw" or "processed"')
 
-    if category:
-        path = path / category
+    category_parts = _category_parts(category)
+    if category_parts:
+        path = path.joinpath(*category_parts)
     if filename:
         path = path / filename
     return path
 
 
 
-def analytics_path(kind: str, category: Optional[str] = None, filename: Optional[str] = None) -> Path:
+def analytics_path(
+    kind: str,
+    category: Optional[Union[str, Sequence[str]]] = None,
+    filename: Optional[str] = None,
+) -> Path:
     """
     Unified helper for analytics outputs under data/analytics.
-    kind: "corpus", "window", "topic", or "dashboard".
+    kind: "corpus", "window", "topic", or "embeddings".
     """
     base = Path("data") / "analytics"
     folder_map = {
         "corpus": base / "corpus_analytics",
         "window": base / "window_metrics",
         "topic": base / "topic_modelling",
-        "dashboard": base / "dashboard",
+        "embeddings": base / "embeddings",
     }
     if kind not in folder_map:
         raise ValueError(f"kind must be one of {list(folder_map.keys())}")
     path = folder_map[kind]
-    if category:
-        path = path / category
+    category_parts = _category_parts(category)
+    if category_parts:
+        path = path.joinpath(*category_parts)
     if filename:
         path = path / filename
     return path
 
 
-
-def embeddings_path(
-    embedding_type: str,
-    filename: Optional[str] = None,
-) -> Path:
-    """
-
-    
-    """
-    base_dir = "data/embeddings"
-
-    folder_map = {
-        "concept": "concept_embeddings",
-        "passage": "passage_embeddings",
-    }
-
-    if embedding_type not in folder_map:
-        raise ValueError(f"embedding_type must be one of {list(folder_map.keys())}")
-
-    path = Path(base_dir) / folder_map[embedding_type]
-
-    if filename:
-        path = path / filename
-
-    return path
-
-
-
-def graph_path(
-    graph_type: str,
+def results_path(
+    kind: str,
     subfolder: Optional[str] = None,
+    category: Optional[Union[str, Sequence[str]]] = None,
     filename: Optional[str] = None,
+    block_size: Optional[int] = None,
 ) -> Path:
     """
-
+    Unified helper for results outputs under data/results.
+    kind: "figures" or "dashboard".
+    block_size: optional block size to target <kind>_L{block_size}.
     """
-    base_dir = "data/graphs"
-
+    base = Path("data") / "results"
     folder_map = {
-        "network": "network_analysis",
-        "syntactic": "syntactic_graphs",
+        "figures": base / "figures",
+        "dashboard": base / "dashboard",
     }
-
-    if graph_type not in folder_map:
-        raise ValueError(f"graph_type must be one of {list(folder_map.keys())}")
-
-    path = Path(base_dir) / folder_map[graph_type]
+    if kind not in folder_map:
+        raise ValueError(f"kind must be one of {list(folder_map.keys())}")
+    if block_size is not None:
+        if not isinstance(block_size, int):
+            raise ValueError("block_size must be an int")
+        if block_size <= 0:
+            raise ValueError("block_size must be positive")
+        path = base / f"{kind}_L{block_size}"
+    else:
+        path = folder_map[kind]
     if subfolder:
         path = path / subfolder
+    category_parts = _category_parts(category)
+    if category_parts:
+        path = path.joinpath(*category_parts)
     if filename:
         path = path / filename
     return path
 
 
+def find_topic_file(window_metrics_path: Path) -> Optional[Path]:
+    """Return the topic JSON for a window metrics file, preferring clustered topics."""
+    text_dir = window_metrics_path.parent
+    author_dir = window_metrics_path.parent.parent
+    genre_dir = window_metrics_path.parent.parent.parent
+    topic_root = analytics_path("topic") / genre_dir.name / author_dir.name / text_dir.name
+    candidates = [
+        topic_root / f"{text_dir.name}_clustered_topics.json",
+        topic_root / f"{text_dir.name}_topics.json",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
 
 
+def find_window_metrics_files() -> List[Path]:
+    """Return sorted syntax window metrics JSON paths under data/analytics/window_metrics."""
+    root = analytics_path("window")
+    if not root.exists():
+        return []
+    return sorted(root.glob("*/*/*/*_window_metrics.syntax.json"))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-def sliding_windows(seq, n, step: int = 1):
+def iter_dirs(
+    root: Path,
+    *,
+    genres: Optional[Sequence[str]] = None,
+    authors: Optional[Sequence[str]] = None,
+    depth: Optional[int] = None,
+) -> Iterable[Tuple[str, Path]]:
     """
-    Sliding windows of width `n` with stride `step` (default 1).
+    Yield (category_key, dir_path) pairs for category directories.
+    depth=1 yields <root>/<category>, depth=2 yields <root>/<genre>/<author>.
+    depth=None auto-detects leaf categories by file presence.
+    Optional genres/authors filter first/second level names.
+    """
+    if not root.exists():
+        return
+    if depth is not None and depth not in (1, 2):
+        raise ValueError("depth must be 1, 2, or None")
+
+    if depth is None:
+        for entry in root.iterdir():
+            if not entry.is_dir():
+                continue
+            if genres and entry.name not in genres:
+                continue
+            if any(child.is_file() for child in entry.iterdir()):
+                yield entry.name, entry
+                continue
+            for child in entry.iterdir():
+                if not child.is_dir():
+                    continue
+                if authors and child.name not in authors:
+                    continue
+                if any(grandchild.is_file() for grandchild in child.iterdir()):
+                    category_key = f"{entry.name}/{child.name}"
+                    yield category_key, child
+        return
+
+    if depth == 1:
+        entries = (
+            [root / genre for genre in genres]
+            if genres
+            else [path for path in root.iterdir() if path.is_dir()]
+        )
+        for entry in entries:
+            if entry.is_dir():
+                yield entry.name, entry
+        return
+
+    genre_dirs = (
+        [root / genre for genre in genres]
+        if genres
+        else [path for path in root.iterdir() if path.is_dir()]
+    )
+    for genre_dir in genre_dirs:
+        if not genre_dir.is_dir():
+            continue
+        if authors:
+            author_dirs = [genre_dir / author for author in authors]
+        else:
+            author_dirs = [path for path in genre_dir.iterdir() if path.is_dir()]
+        for author_dir in author_dirs:
+            if author_dir.is_dir():
+                category_key = f"{genre_dir.name}/{author_dir.name}"
+                yield category_key, author_dir
+
+def sliding_windows(seq, n, step: int = DEFAULT_METRIC_WINDOW_STRIDE):
+    """
+    Sliding windows of width `n` with stride `step` (default DEFAULT_METRIC_WINDOW_STRIDE).
     """
     seq = list(seq)
     if n <= 0:
@@ -164,25 +236,40 @@ def aggregate_windows(sent_metrics, window_size):
     for i, window_sents in enumerate(sliding_windows(sent_metrics, window_size)):
         agg = {}
 
-        for key in window_sents[0]:
+        all_keys = set()
+        for sent in window_sents:
+            all_keys.update(sent.keys())
+
+        for key in all_keys:
             if key in {"sentence_text", "sentences"}:
                 # skip raw text emission
                 continue
-            if isinstance(window_sents[0][key], dict):
-                # Average numeric values in nested dict
+            dict_values = [d[key] for d in window_sents if isinstance(d.get(key), dict)]
+            if dict_values:
+                # Average numeric values in nested dicts.
                 agg[key] = {}
-                all_inner_keys = set(k for d in window_sents for k in d[key].keys())
+                all_inner_keys = set(k for d in dict_values for k in d.keys())
                 for k in all_inner_keys:
-                    nums = [d[key][k] for d in window_sents
-                            if k in d[key] and isinstance(d[key][k], (int, float))]
+                    nums = [
+                        d[k]
+                        for d in dict_values
+                        if k in d and isinstance(d[k], (int, float))
+                    ]
                     agg[key][k] = round(mean(nums), 2) if nums else 0
-            elif isinstance(window_sents[0][key], (int, float)):
-                # Average numeric values
-                nums = [d[key] for d in window_sents if isinstance(d[key], (int, float))]
-                agg[key] = round(mean(nums), 2) if nums else 0
+                continue
+
+            nums = [
+                d.get(key)
+                for d in window_sents
+                if isinstance(d.get(key), (int, float))
+            ]
+            if nums:
+                # Average numeric values, ignoring None.
+                agg[key] = round(mean(nums), 2)
             else:
-                # Keep non-numeric fields (e.g., strings)
-                agg[key] = window_sents[0][key]
+                # Keep first non-None non-numeric value.
+                first_value = next((d.get(key) for d in window_sents if d.get(key) is not None), None)
+                agg[key] = first_value
 
         # Add window metadata
         agg["start_sentence"] = i
@@ -210,12 +297,25 @@ def load_json(path):
 def encode_texts(
     encoder: SentenceTransformer,
     texts: Sequence[str],
+    normalize: bool = True,
 ) -> np.ndarray:
     """Encode texts into embeddings using a shared encoder."""
     if not texts:
         dim = encoder.get_sentence_embedding_dimension()
         return np.empty((0, dim))
-    return encoder.encode(list(texts))
+    embeddings = encoder.encode(list(texts))
+    if normalize:
+        return l2_normalize_embeddings(embeddings)
+    return embeddings
+
+
+def l2_normalize_embeddings(embeddings: np.ndarray) -> np.ndarray:
+    """L2-normalize embeddings row-wise, keeping zero vectors unchanged."""
+    if embeddings.size == 0:
+        return embeddings
+    norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    return embeddings / norms
 
 
 def hdbscan_cluster_labels(

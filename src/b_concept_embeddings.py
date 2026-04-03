@@ -1,3 +1,27 @@
+"""
+Concept embeddings from normalized text (noun phrase extraction + embeddings).
+
+Input (generate_embeddings):
+{
+  "normalised_text_path": "data/texts/processed/normalised_texts/<category>/<name>_normalised.json",
+  "file_contents": {"text": "<normalized text string>"},
+  "top_n": 100
+}
+
+Output (return values):
+{
+  "normalised_text": "<string>",
+  "phrases": ["noun phrase 1", "noun phrase 2", "..."],
+  "embeddings": "numpy ndarray of shape (len(phrases), embedding_dim)"
+}
+
+Output files (written under data/analytics/embeddings/<genre>/<author>/<name>/):
+- "<name>_phrases.pkl": List[str]
+- "<name>_phrase_counts.json": Dict[str, int] (top-N phrase counts)
+- "<name>_embeddings.pkl": numpy ndarray (raw)
+- "<name>_embeddings_l2.pkl": numpy ndarray (L2-normalized)
+"""
+
 from typing import List, Dict, Tuple
 from collections import Counter
 from pathlib import Path
@@ -8,18 +32,32 @@ import nltk
 import re
 import json
 
-from x_configs import MODEL_CONFIGS, load_spacy_model
-from z_utils import embeddings_path, encode_texts, hdbscan_cluster_labels, labels_to_clusters
+from .x_configs import (
+    DEFAULT_CONCEPT_TOP_N,
+    DEFAULT_SPACY_MODEL,
+    DEFAULT_USE_EXISTING,
+    GENRES,
+    MODEL_CONFIGS,
+    load_spacy_model,
+)
+from .z_utils import (
+    analytics_path,
+    encode_texts,
+    hdbscan_cluster_labels,
+    labels_to_clusters,
+    l2_normalize_embeddings,
+)
 
 
 class ConceptExtractor:
     def __init__(
         self,
         model_name: str = MODEL_CONFIGS["sentence_embedding"],
-        language: str = "en_core_web_sm",
+        language: str = DEFAULT_SPACY_MODEL,
+        encoder: SentenceTransformer | None = None,
     ):
         """Initialize with specified models."""
-        self.encoder = SentenceTransformer(model_name)
+        self.encoder = encoder or SentenceTransformer(model_name)
         self.nlp = load_spacy_model(language)
         try:
             self.stop_words = set(stopwords.words("english"))
@@ -27,8 +65,14 @@ class ConceptExtractor:
             nltk.download("stopwords", quiet=True)
             self.stop_words = set(stopwords.words("english"))
 
-    def extract_noun_phrases(self, text: str, lemmatize: bool = True) -> List[str]:
-        """Extract noun phrases from text, optionally lemmatized, deduplicated in order."""
+    def extract_noun_phrases(
+        self,
+        text: str,
+        lemmatize: bool = True,
+        *,
+        dedupe: bool = True,
+    ) -> List[str]:
+        """Extract noun phrases from text, optionally lemmatized and deduped in order."""
         doc = self.nlp(text)
         phrases = [chunk.text for chunk in doc.noun_chunks]
 
@@ -70,6 +114,9 @@ class ConceptExtractor:
                 continue
             cleaned_phrases.append(clean_phrase)
 
+        if not dedupe:
+            return cleaned_phrases
+
         # Deduplicate while preserving order
         seen = set()
         unique_phrases = []
@@ -98,46 +145,96 @@ class ConceptExtractor:
         return phrase_clusters
 
 
-def filter_top_n_phrases(phrases: List[str], n: int = 100) -> Tuple[List[str], List[int]]:
-    """Keep only the top-n most frequent phrases and return them with their indices."""
+def filter_top_n_phrases(
+    phrases: List[str], n: int = DEFAULT_CONCEPT_TOP_N
+) -> Tuple[List[str], Dict[str, int]]:
+    """Keep only the top-n most frequent unique phrases and return them with counts."""
     counts = Counter(phrases)
+    if n is None or n <= 0:
+        return [], {}
     top_phrases = [phrase for phrase, _ in counts.most_common(n)]
-    filtered_indices = [i for i, p in enumerate(phrases) if p in top_phrases]
-    filtered_phrases = [phrases[i] for i in filtered_indices]
-    return filtered_phrases, filtered_indices
+    top_counts = {phrase: int(counts[phrase]) for phrase in top_phrases}
+    return top_phrases, top_counts
 
 
-def generate_embeddings(normalised_text_path: Path, top_n: int = 100, use_existing: bool = True):
+def generate_embeddings(
+    normalised_text_path: Path,
+    top_n: int = DEFAULT_CONCEPT_TOP_N,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    extractor: ConceptExtractor | None = None,
+    *,
+    quiet: bool = False,
+):
     """Extract top-N noun phrases and generate or load embeddings."""
     base_name = normalised_text_path.stem.replace("_normalised", "")
-    category = normalised_text_path.parent.name
+    parent_genre = normalised_text_path.parent.parent.name if normalised_text_path.parent.parent else ""
+    author = normalised_text_path.parent.name
+    category_parts = [author, base_name]
+    if parent_genre in GENRES:
+        category_parts.insert(0, parent_genre)
 
-    concept_dir = embeddings_path("concept") / category / base_name
+    concept_dir = analytics_path("embeddings", category_parts)
     concept_dir.mkdir(parents=True, exist_ok=True)
     phrases_path = concept_dir / f"{base_name}_phrases.pkl"
-    embeddings_file = concept_dir / f"{base_name}_embeddings.pkl"
+    counts_path = concept_dir / f"{base_name}_phrase_counts.json"
+    embeddings_raw_file = concept_dir / f"{base_name}_embeddings.pkl"
+    embeddings_norm_file = concept_dir / f"{base_name}_embeddings_l2.pkl"
 
-    if use_existing and phrases_path.exists() and embeddings_file.exists():
-        print(f"[INFO] Skipping concept embeddings for {base_name} (exists)")
-        return None, None, None
+    if use_existing and phrases_path.exists() and (embeddings_norm_file.exists() or embeddings_raw_file.exists()):
+        with open(normalised_text_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            normalised_text = data.get("text", "")
 
-    extractor = ConceptExtractor()
+        with open(phrases_path, "rb") as f:
+            phrases = pickle.load(f)
+
+        if embeddings_norm_file.exists():
+            with open(embeddings_norm_file, "rb") as f:
+                embeddings = pickle.load(f)
+        else:
+            with open(embeddings_raw_file, "rb") as f:
+                raw_embeddings = pickle.load(f)
+            embeddings = l2_normalize_embeddings(raw_embeddings)
+            with open(embeddings_norm_file, "wb") as f:
+                pickle.dump(embeddings, f)
+
+        if not quiet:
+            print(f"[INFO] Skipping concept embeddings for {base_name} (exists)")
+        return normalised_text, phrases, embeddings
+
+    extractor = extractor or ConceptExtractor()
     with open(normalised_text_path, "r", encoding="utf-8") as f:
         data = json.load(f)
         normalised_text = data.get("text", "")
 
-    all_phrases = extractor.extract_noun_phrases(normalised_text, lemmatize=True)
-    phrases, _ = filter_top_n_phrases(all_phrases, n=top_n)
+    all_phrases = extractor.extract_noun_phrases(
+        normalised_text,
+        lemmatize=True,
+        dedupe=False,
+    )
+    phrases, phrase_counts = filter_top_n_phrases(all_phrases, n=top_n)
 
     with open(phrases_path, "wb") as f:
         pickle.dump(phrases, f)
+    if phrase_counts:
+        with open(counts_path, "w", encoding="utf-8") as f:
+            json.dump(phrase_counts, f, indent=2)
 
-    if use_existing and embeddings_file.exists():
-        with open(embeddings_file, "rb") as f:
+    if use_existing and embeddings_norm_file.exists():
+        with open(embeddings_norm_file, "rb") as f:
             embeddings = pickle.load(f)
+    elif use_existing and embeddings_raw_file.exists():
+        with open(embeddings_raw_file, "rb") as f:
+            raw_embeddings = pickle.load(f)
+        embeddings = l2_normalize_embeddings(raw_embeddings)
+        with open(embeddings_norm_file, "wb") as f:
+            pickle.dump(embeddings, f)
     else:
-        embeddings = encode_texts(extractor.encoder, phrases)
-        with open(embeddings_file, "wb") as f:
+        raw_embeddings = encode_texts(extractor.encoder, phrases, normalize=False)
+        with open(embeddings_raw_file, "wb") as f:
+            pickle.dump(raw_embeddings, f)
+        embeddings = l2_normalize_embeddings(raw_embeddings)
+        with open(embeddings_norm_file, "wb") as f:
             pickle.dump(embeddings, f)
 
     return normalised_text, phrases, embeddings

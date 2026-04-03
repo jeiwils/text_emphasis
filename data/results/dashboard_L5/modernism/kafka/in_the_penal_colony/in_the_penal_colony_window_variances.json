@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "category": "modernism/kafka",
+    "text_name": "in_the_penal_colony",
+    "filename": "in_the_penal_colony_window_metrics.syntax.json"
+  },
+  "report": {
+    "window_count": 525,
+    "window_counts": {
+      "syntax": 525,
+      "lexico_semantics": 525,
+      "discourse": 525,
+      "log_prob": 525
+    },
+    "metric_variances": {
+      "syntax": {
+        "syntax.avg_dependents_per_head.coordinate_clause": 2.408365,
+        "syntax.avg_dependents_per_head.main_clause": 1.433024,
+        "syntax.avg_dependents_per_head.subordinate_clause": 1.216221,
+        "syntax.avg_mean_dependency_distance": 0.367873,
+        "syntax.avg_tokens_per_sentence": 99.221789,
+        "syntax.clause_counts_per_token.coordinate": 0.000581,
+        "syntax.clause_counts_per_token.main": 0.000773,
+        "syntax.clause_counts_per_token.subordinate": 0.001143,
+        "syntax.clause_ratios.coordination_ratio": 0.463511,
+        "syntax.clause_ratios.subordination_ratio": 1.274686,
+        "syntax.depth_skew": 0.036054,
+        "syntax.max_depth": 4.842253,
+        "syntax.median_depth": 0.314601,
+        "syntax.punctuation_per_token": 0.002743
+      },
+      "lexico_semantics": {
+        "lexico_semantics.avg_word_freq": 1542.730401,
+        "lexico_semantics.information_content": 0.066287,
+        "lexico_semantics.lexical_density_per_token": 0.002311,
+        "lexico_semantics.lexical_diversity_mattr.mattr_score": 0.003511,
+        "lexico_semantics.normalized_freq": 48.654238
+      },
+      "discourse": {
+        "discourse.connective_counts_per_token.Comparison": 0.000121,
+        "discourse.connective_counts_per_token.Contingency": 0.000108,
+        "discourse.connective_counts_per_token.Expansion": 0.000263,
+        "discourse.connective_counts_per_token.Temporal": 9.5e-05,
+        "discourse.content_overlap_per_token": 0.000457,
+        "discourse.content_overlap_ratio": 0.003035,
+        "discourse.entity_overlap_per_token": 0.000249,
+        "discourse.entity_overlap_ratio": 0.009073,
+        "discourse.explicit_connectives_per_token": 0.000485,
+        "discourse.modality_per_token": 5.8e-05,
+        "discourse.pronoun_ratio": 0.001784,
+        "discourse.tense_shift": 0.077661
+      },
+      "log_prob": {
+        "log_prob.max_token_surprisal": 3.909361,
+        "log_prob.token_weighted_mean_surprisal": 0.193535,
+        "log_prob.token_weighted_surprisal_variance": 2.62809
+      }
+    },
+    "metric_counts": {
+      "syntax": 14,
+      "lexico_semantics": 5,
+      "discourse": 12,
+      "log_prob": 3
+    },
+    "rms_z": {
+      "domain_means": {
+        "syntax": 0.934762,
+        "lexico_semantics": 0.905659,
+        "discourse": 0.934702,
+        "log_prob": 0.869785
+      },
+      "domain_variances": {
+        "syntax": 0.126221,
+        "lexico_semantics": 0.179782,
+        "discourse": 0.126333,
+        "log_prob": 0.243473
+      },
+      "overall_mean": 0.96478,
+      "overall_variance": 0.069199,
+      "metric_counts": {
+        "syntax": 14,
+        "lexico_semantics": 5,
+        "discourse": 12,
+        "log_prob": 3
+      },
+      "overall_metric_count": 34
+    },
+    "params": {
+      "metric_variance_method": "pvariance",
+      "rms_z_method": "rms_z",
+      "rms_z_variance_method": "pvariance",
+      "window_metric_filter": "DASHBOARD_WINDOW_CONFIG"
+    }
+  }
+}

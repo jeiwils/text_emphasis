@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "category": "romanticism/hawthorne",
+    "text_name": "Rappaccinis_Daughter",
+    "filename": "Rappaccinis_Daughter_window_metrics.syntax.json"
+  },
+  "report": {
+    "window_count": 523,
+    "window_counts": {
+      "syntax": 523,
+      "lexico_semantics": 523,
+      "discourse": 523,
+      "log_prob": 523
+    },
+    "metric_variances": {
+      "syntax": {
+        "syntax.avg_dependents_per_head.coordinate_clause": 2.491094,
+        "syntax.avg_dependents_per_head.main_clause": 2.56314,
+        "syntax.avg_dependents_per_head.subordinate_clause": 2.040987,
+        "syntax.avg_mean_dependency_distance": 0.424208,
+        "syntax.avg_tokens_per_sentence": 117.565637,
+        "syntax.clause_counts_per_token.coordinate": 0.000559,
+        "syntax.clause_counts_per_token.main": 0.003533,
+        "syntax.clause_counts_per_token.subordinate": 0.000856,
+        "syntax.clause_ratios.coordination_ratio": 0.57389,
+        "syntax.clause_ratios.subordination_ratio": 0.586431,
+        "syntax.depth_skew": 0.049256,
+        "syntax.max_depth": 6.918813,
+        "syntax.median_depth": 0.47465,
+        "syntax.punctuation_per_token": 0.004499
+      },
+      "lexico_semantics": {
+        "lexico_semantics.avg_word_freq": 583.70126,
+        "lexico_semantics.information_content": 0.057089,
+        "lexico_semantics.lexical_density_per_token": 0.003068,
+        "lexico_semantics.lexical_diversity_mattr.mattr_score": 0.003291,
+        "lexico_semantics.normalized_freq": 25.738196
+      },
+      "discourse": {
+        "discourse.connective_counts_per_token.Comparison": 0.000137,
+        "discourse.connective_counts_per_token.Contingency": 0.000106,
+        "discourse.connective_counts_per_token.Expansion": 0.000307,
+        "discourse.connective_counts_per_token.Temporal": 6.5e-05,
+        "discourse.content_overlap_per_token": 0.000342,
+        "discourse.content_overlap_ratio": 0.001915,
+        "discourse.entity_overlap_per_token": 0.000126,
+        "discourse.entity_overlap_ratio": 0.002809,
+        "discourse.explicit_connectives_per_token": 0.000668,
+        "discourse.modality_per_token": 4.8e-05,
+        "discourse.pronoun_ratio": 0.001733,
+        "discourse.tense_shift": 0.079478
+      },
+      "log_prob": {
+        "log_prob.max_token_surprisal": 3.000403,
+        "log_prob.token_weighted_mean_surprisal": 0.118337,
+        "log_prob.token_weighted_surprisal_variance": 2.805708
+      }
+    },
+    "metric_counts": {
+      "syntax": 14,
+      "lexico_semantics": 5,
+      "discourse": 12,
+      "log_prob": 3
+    },
+    "rms_z": {
+      "domain_means": {
+        "syntax": 0.931533,
+        "lexico_semantics": 0.868874,
+        "discourse": 0.91042,
+        "log_prob": 0.861814
+      },
+      "domain_variances": {
+        "syntax": 0.132246,
+        "lexico_semantics": 0.245058,
+        "discourse": 0.171136,
+        "log_prob": 0.257277
+      },
+      "overall_mean": 0.948385,
+      "overall_variance": 0.100565,
+      "metric_counts": {
+        "syntax": 14,
+        "lexico_semantics": 5,
+        "discourse": 12,
+        "log_prob": 3
+      },
+      "overall_metric_count": 34
+    },
+    "params": {
+      "metric_variance_method": "pvariance",
+      "rms_z_method": "rms_z",
+      "rms_z_variance_method": "pvariance",
+      "window_metric_filter": "DASHBOARD_WINDOW_CONFIG"
+    }
+  }
+}

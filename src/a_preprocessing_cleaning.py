@@ -1,50 +1,185 @@
+"""Preprocessing utilities for cleaning and segmenting source texts."""
 
-
-
-"""
-
-TO DO:
-- get these functinons from other scripts - maybe get a standard preprocessing script that I use, upload to github
-- get configs for the_black_cat, the_telltale_heart
-- "chapter" removing from animal farm 
-
-
-
-"""
-
-from pathlib import Path
-from typing import List, Optional, Dict
-import re
 import json
+import re
+import unicodedata
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.request import Request, urlopen
 
-import pdfplumber
-from transformers import pipeline
+try:
+    import pdfplumber
+except ModuleNotFoundError:  # pragma: no cover - optional dependency
+    pdfplumber = None
+from bs4 import BeautifulSoup
 
-from x_configs import MODEL_CONFIGS, load_spacy_model
-from z_utils import text_path
+from .x_configs import (
+    BOOK_CONFIGS,
+    DEFAULT_BOOK_CONFIG,
+    DEFAULT_SPACY_MODEL,
+    DEFAULT_USE_EXISTING,
+    GENRES,
+    load_spacy_model,
+)
+from .z_utils import text_path
+
+def _html_to_text(html: str, selector: Optional[str] = None) -> str:
+    """
+    Convert HTML to plain text. Optional CSS selector narrows to main content.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Drop non-content
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+
+    root = soup.select_one(selector) if selector else (soup.body or soup)
+    if root is None:
+        root = soup
+
+    text = root.get_text("\n")
+
+    # Normalize common web whitespace artefacts BEFORE marker matching
+    text = text.replace("\xa0", " ")
+    text = re.sub(r"[ \t]+\n", "\n", text)
+    return text
+
+
+def scrape_web_text(
+    url: str,
+    start_marker: Optional[str] = None,
+    end_marker: Optional[str] = None,
+    patterns: Optional[List[str]] = None,
+    selector: Optional[str] = None,
+) -> str:
+    """
+    Fetch HTML, extract readable text, then slice/clean using markers + regex patterns.
+    """
+    request = Request(url, headers={"User-Agent": "text_emphasis/1.0 (local)"})
+    with urlopen(request) as response:  # noqa: S310
+        # Try to respect page encoding if provided
+        charset = response.headers.get_content_charset() or "utf-8"
+        html_content = response.read().decode(charset, errors="replace")
+
+    raw_text = _html_to_text(html_content, selector=selector)
+
+    return remove_boilerplate(
+        raw_text,
+        patterns=patterns,
+        start_marker=start_marker,
+        end_marker=end_marker,
+    )
+
+def _resolve_web_category(config: dict) -> str:
+    """
+    Map a web config to the same <genre>/<author> category layout used by PDFs.
+    Falls back to the provided category or a "web/<author>" bucket.
+    """
+    author = config.get("author")
+    genre = config.get("genre")
+    if author and genre:
+        return f"{genre}/{author}"
+    if author:
+        raw_root = text_path("raw")
+        for candidate_genre in GENRES:
+            candidate = raw_root / candidate_genre / author
+            if candidate.exists():
+                return f"{candidate_genre}/{author}"
+    return config.get("category") or (f"web/{author}" if author else "web")
+
+
+def preprocess_web_story(
+    story_key: str,
+    preproc: "TextPreprocessor",
+    config: dict,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    category_override: Optional[str] = None,
+):
+    """
+    Scrape -> clean -> save JSON + JSONL (cleaned + normalised), aligned with preprocess_pdf().
+    """
+    url = config["url"]
+    category = category_override or _resolve_web_category(config)
+
+    cleaned_dir = text_path("processed", "cleaned_texts", category)
+    cleaned_dir.mkdir(parents=True, exist_ok=True)
+    cleaned_path = cleaned_dir / f"{story_key}_cleaned.json"
+
+    cleaned_segmented_dir = text_path("processed", "cleaned_segmented_texts", category)
+    cleaned_segmented_dir.mkdir(parents=True, exist_ok=True)
+    cleaned_segmented_path = cleaned_segmented_dir / f"{story_key}_cleaned_segmented.jsonl"
+
+    normalised_dir = text_path("processed", "normalised_texts", category)
+    normalised_dir.mkdir(parents=True, exist_ok=True)
+    normalised_path = normalised_dir / f"{story_key}_normalised.json"
+
+    normalised_segmented_dir = text_path("processed", "normalised_segmented_texts", category)
+    normalised_segmented_dir.mkdir(parents=True, exist_ok=True)
+    normalised_segmented_path = normalised_segmented_dir / f"{story_key}_normalised_segmented.jsonl"
+
+    if (
+        use_existing
+        and cleaned_path.exists()
+        and cleaned_segmented_path.exists()
+        and normalised_path.exists()
+        and normalised_segmented_path.exists()
+    ):
+        print(f"[INFO] Skipping {story_key} (outputs exist)")
+        return cleaned_path
+
+    raw_text = scrape_web_text(
+        url,
+        start_marker=config.get("start_marker"),
+        end_marker=config.get("end_marker"),
+        patterns=config.get("patterns"),
+        selector=config.get("selector"),
+    )
+
+    cleaned_text = preproc.clean_text(raw_text)
+    cleaned_path.write_text(json.dumps({"text": cleaned_text}, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    cleaned_sentences = preproc.segment_sentences_with_offsets(cleaned_text)
+    with open(cleaned_segmented_path, "w", encoding="utf-8") as f:
+        for idx, sent in enumerate(cleaned_sentences):
+            f.write(json.dumps({
+                "sentence_id": idx,
+                "text": sent["text"],
+                "start_char": sent["start_char"],
+                "end_char": sent["end_char"],
+            }, ensure_ascii=False) + "\n")
+
+    normalised_text, normalised_segmented_entries = preproc.normalize_sentences_with_offsets(
+        cleaned_sentences
+    )
+    normalised_path.write_text(
+        json.dumps({"text": normalised_text}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    with open(normalised_segmented_path, "w", encoding="utf-8") as f:
+        for entry in normalised_segmented_entries:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    print(f"[INFO] Web cleaned text saved to {cleaned_path}")
+    return cleaned_path
+
+
+
+
+
 
 
 
 
 class TextPreprocessor:
-    def __init__(self, language: str = "en_core_web_sm"):
+    def __init__(self, language: str = DEFAULT_SPACY_MODEL):
         """Initialize the preprocessor with specified language model."""
         self.nlp = load_spacy_model(language)
-        self._asr_pipeline = None
-        self._asr_model_name = None
-        self._asr_chunk_length_s = None
-        self._asr_device = None
-    
 
-
-    
     def tokenize_text(self, text: str) -> List[str]:
         """Tokenize text into words."""
         doc = self.nlp(text)
         return [token.text for token in doc]
-    
-
-
 
     def clean_text(self, text: str) -> str:
         """Clean text while preserving punctuation and capitalization."""
@@ -96,7 +231,7 @@ class TextPreprocessor:
             Collapse spaced-out headings like 'C 1 HAPTER' or 'C HAPTER' and
             abbreviations like 'M r.' -> 'Mr.' that leak into tokens.
             """
-            # Remove interspersed numerals (often OCR'd chapter numbers) and glue the word.
+            # Remove interspersed numerals (often chapter numbers) and glue the word.
             value = re.sub(
                 r'\b([A-Z])\s+(?:[0-9IVXLC]+\s+)?([A-Z][A-Za-z]+)\b',
                 lambda m: f"{m.group(1)}{m.group(2).lower()}".capitalize(),
@@ -120,14 +255,95 @@ class TextPreprocessor:
             pattern = re.compile(r'([A-Z][a-z]+)((?:\s+[A-Z]{2,}\b)+)')
             return pattern.sub(replacer, value)
 
+        def fix_split_words(value: str) -> str:
+            """
+            Join common split-word artefacts like 'dis cover' -> 'discover'.
+            Keep this list small to avoid unintended merges.
+            """
+            value = re.sub(r"\bdis\s+cover(ed|ing|s)?\b", r"discover\1", value, flags=re.IGNORECASE)
+            return value
+
+        def remove_inline_headers(value: str) -> str:
+            """
+            Strip embedded page headers like "254] THE MARQUISE OF O".
+            """
+            value = re.sub(r"\b\d{2,4}\]\s+[A-Z][A-Z\s]{2,}", " ", value)
+            value = re.sub(r"\b\d{2,4}\]\b", " ", value)
+            return value
+
+        def dehyphenate_linebreaks(value: str) -> str:
+            """
+            Join words split across line breaks, e.g., "con-\nvent" -> "convent".
+            """
+            return re.sub(r"(?<=\w)-\s*\n\s*(?=\w)", "", value)
+
+        def dehyphenate_common_splits(value: str) -> str:
+            """
+            Merge obvious OCR line-break hyphenations while leaving real compounds.
+            """
+            prefixes = {
+                "al", "ar", "be", "com", "con", "de", "dis", "en", "em", "ex",
+                "in", "im", "inter", "mis", "non", "pre", "pro", "re", "sub",
+                "trans", "un", "under", "over",
+            }
+            lowered = value.lower()
+            candidates = set(re.findall(r"\b[a-z]{2,}-[a-z]{2,}\b", value))
+            replacements = {}
+            for token in candidates:
+                left, right = token.split("-")
+                merged = left + right
+                if merged in lowered:
+                    replacements[token] = merged
+                elif left in prefixes and len(right) > 2:
+                    replacements[token] = merged
+            for token in sorted(replacements, key=len, reverse=True):
+                value = re.sub(rf"\b{re.escape(token)}\b", replacements[token], value)
+            return value
+
+        def fix_digit_glue(value: str) -> str:
+            """
+            Remove OCR line-number glue like "Belfast1" or "4Letizia".
+            Keep ordinals and common currency suffixes (e.g., 30th, 11s, 6d).
+            """
+            allowed_suffixes = {"st", "nd", "rd", "th", "s", "d"}
+
+            def strip_trailing_digits(match: re.Match) -> str:
+                word, digits = match.group(1), match.group(2)
+                if len(digits) <= 2 and len(word) >= 2:
+                    return word
+                return match.group(0)
+
+            def strip_leading_digits(match: re.Match) -> str:
+                digits, word = match.group(1), match.group(2)
+                if word.lower() in allowed_suffixes:
+                    return match.group(0)
+                if len(digits) <= 3 and len(word) >= 2:
+                    return word
+                return match.group(0)
+
+            value = re.sub(r"\b([A-Za-z]{2,})(\d{1,3})\b", strip_trailing_digits, value)
+            value = re.sub(r"\b(\d{1,3})([A-Za-z]{2,})\b", strip_leading_digits, value)
+            return value
+
         text = fix_mojibake(text)
         text = despace_dropcaps(text)
         text = fix_letter_spacing_headers(text)
         text = normalize_shouting(text)
+        text = fix_split_words(text)
+        text = re.sub(r"\bL/n\b", "In", text)
+        text = remove_inline_headers(text)
+        text = dehyphenate_linebreaks(text)
+        text = fix_digit_glue(text)
+        text = text.replace("\xad", "")
+        text = re.sub(r"(?<=\w)-\s+(?=\w)", "-", text)
         text = re.sub(r'\s+', ' ', text).strip()
-        return text  # No lowercasing, no punctuation removal
+        text = dehyphenate_common_splits(text)
+        # Common PDF artefacts
+        text = re.sub(r"\(cid:\d+\)", "", text)   # removes (cid:20) etc
+        text = text.replace("−", "-")             # normalize U+2212 to hyphen
+        text = text.replace("\xa0", " ")          # NBSP -> space
 
-    
+        return text  # No lowercasing, no punctuation removal
 
     def segment_sentences_with_offsets(self, text: str) -> List[Dict[str, object]]:
         """
@@ -137,7 +353,7 @@ class TextPreprocessor:
         doc = self.nlp(text)
         sentences = []
         for sent in doc.sents:
-            sent_text = sent.text.strip()
+            sent_text = text[sent.start_char:sent.end_char] # or sent_text = sent.text.strip()???
             if not sent_text:
                 continue
             sentences.append(
@@ -155,6 +371,10 @@ class TextPreprocessor:
 
     def normalize_text(self, text: str) -> str:
         """Normalize text for embedding/topic workflows (lowercase lemmas, no punctuation)."""
+        # Replace dash-like separators before ASCII folding to prevent word glue.
+        text = re.sub(r"[\u2010\u2011\u2012\u2013\u2014\u2015]", " ", text)
+        # ASCII-fold to keep downstream normalization stable (e.g., "æ" -> "ae").
+        text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
         doc = self.nlp(text)
         tokens = []
         for token in doc:
@@ -166,56 +386,57 @@ class TextPreprocessor:
             tokens.append(lemma)
         return " ".join(tokens)
 
+    def normalize_sentences_with_offsets(
+        self,
+        sentences: List[Dict[str, object]],
+    ) -> Tuple[str, List[Dict[str, object]]]:
+        """
+        Normalize pre-segmented sentences while preserving sentence IDs and offsets.
+        Returns the normalized text plus JSONL-ready entries aligned to the input order.
+        """
+        if not sentences:
+            return "", []
+
+        normalized_entries: List[Dict[str, object]] = []
+        parts: List[str] = []
+        cursor = 0
+        last_idx = len(sentences) - 1
+
+        for idx, sentence in enumerate(sentences):
+            sentence_id = sentence.get("sentence_id", idx)
+            raw_text = sentence.get("text", "") if isinstance(sentence, dict) else ""
+            normalized_sentence = self.normalize_text(str(raw_text))
+
+            start_char = cursor
+            end_char = start_char + len(normalized_sentence)
+            normalized_entries.append(
+                {
+                    "sentence_id": int(sentence_id),
+                    "text": normalized_sentence,
+                    "start_char": start_char,
+                    "end_char": end_char,
+                }
+            )
+
+            parts.append(normalized_sentence)
+            cursor = end_char
+            if idx < last_idx:
+                parts.append(" ")
+                cursor += 1
+
+        normalized_text = "".join(parts)
+        return normalized_text, normalized_entries
+
     def lemmatize_tokens(self, tokens: List[str]) -> List[str]:
         """Lemmatize tokens to their base form."""
         doc = self.nlp(' '.join(tokens))
         return [token.lemma_ for token in doc]
     
 
-    def transcribe_audio(
-        self,
-        audio_path: str,
-        model_name: str = MODEL_CONFIGS["asr"],
-        chunk_length_s: int = 30,
-        device: Optional[int] = None,
-    ) -> str:
-        """
-        Transcribe spoken audio to text using a Whisper ASR model.
-
-        Audio can be any format supported by ffmpeg. Requires the model to be
-        available locally (or network access for first-time download).
-        """
-        needs_new_pipeline = (
-            self._asr_pipeline is None
-            or self._asr_model_name != model_name
-            or self._asr_chunk_length_s != chunk_length_s
-            or self._asr_device != device
-        )
-
-        if needs_new_pipeline:
-            try:
-                self._asr_pipeline = pipeline(
-                    task="automatic-speech-recognition",
-                    model=model_name,
-                    chunk_length_s=chunk_length_s,
-                    device=device,
-                )
-                self._asr_model_name = model_name
-                self._asr_chunk_length_s = chunk_length_s
-                self._asr_device = device
-            except Exception as exc:  # noqa: BLE001
-                raise RuntimeError(
-                    f"Failed to load ASR model '{model_name}'. Ensure it is installed locally "
-                    "or downloadable in your environment."
-                ) from exc
-
-        result = self._asr_pipeline(audio_path)
-        transcript = result["text"]
-        return self.clean_text(transcript)
-
-
     def pdf_to_text(self, pdf_path: str) -> str:
         """Extract text from a text-based PDF."""
+        if pdfplumber is None:
+            raise RuntimeError("pdfplumber is required to extract PDF text.")
         text = ""
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
@@ -225,114 +446,6 @@ class TextPreprocessor:
         return text
     
 
-
-
-
-
-BOOK_CONFIGS = {
-    # "siddhartha": {
-    #     "pages": list(range(1, 54)),
-    #     "start_marker": "In the shade of the house",
-    #     "end_marker": "****",  # Anything after this on page 53 will be removed
-    #     "patterns": [
-    #         r"Part\s+(One|Two|Three|Four|Five|Six|Seven|Eight|Nine|Ten)",
-    #         r"\n\s*[A-Z][A-Za-z\s]{1,40}\s*\n",  # Likely detects centralized headers/titles
-    #     ],
-    # },
-
-    "the_dead": {
-        "pages": list(range(1, 27)),
-        "start_marker": "Lily, the caretaker's daughter",
-        "end_marker": None,
-        "patterns": [
-            r"^\s*\d{1,3}\s*$",  # Remove numeric page numbers
-        ],
-    },
-
-    "the_metamorphosis": {
-        "pages": list(range(2, 71)),
-        "start_marker": "One morning, when Gregor Samsa woke",
-        "end_marker": "stretch out her young body.",
-        "patterns": [
-            r"E-BooksDirectory\.com",
-            r"\b[IVXLC]+\b(?!\w)",  # Roman numerals for chapters
-        ],
-    },
-
-    "the_case_of_charles_dexter_ward": {
-        "pages": list(range(3, 97)),
-        "start_marker": "From a private hospital for the insane near Providence,",
-        "end_marker": "thin coating of fine bluish-grey dust.",
-        "patterns": [
-            r"chapter\s+\w+",
-            r"\bCHAPTER\s+[IVXLC]+\b",
-            r"page\s+\d+",
-            r"PART\s+[IVXLC]+\s*.*?(?=CHAPTER)",  # PART I ... CHAPTER
-        ],
-    },
-
-    "a_clockwork_orange": {
-        "pages": list(range(10, 178)),
-        "start_marker": None,
-        "end_marker": None,
-        "patterns": [
-            r"PART\s+(ONE|TWO|THREE|FOUR)",
-            r"chapter\s+\w+",
-            r"(?m)^\s*[IVXLC]+\s*$",  # Roman numerals on their own line
-        ],
-    },
-
-    "coraline": {
-        "pages": list(range(11, 119)),
-        "start_marker": None,
-        "end_marker": None,
-        "patterns": [
-            r"(?m)^\s*[IVXLC]+\.\s*$",  # Roman numerals with period on their own line
-        ],
-    },
-
-    "animal_farm": {
-        "pages": list(range(5, 108)),
-        "start_marker": None,
-        "end_marker": "was impossible to say which was which.",
-        "patterns": [
-            r"\bCHAPTER\s+[IVXLC]+\b",
-            r"page\s+\d+",
-            r"Animal Farm, by George Orwell",
-            r"https://ebooks\.adelaide\.edu\.au/o/orwell/george/o79a/chapter\d+\.html",
-            r"Last updated\s+[A-Za-z]+,\s+[A-Za-z]+\s+\d{1,2},\s+\d{4},\s+at\s+\d{1,2}:\d{2}",
-        ],
-    },
-
-    "american_psycho": {
-        "pages": list(range(6, 458)),
-        "start_marker": None,
-        "end_marker": None,
-        "patterns": [
-            r"(?m)^[A-Z][a-zA-Z\s']{1,40}$",  # Matches chapter headings like 'Morning'
-        ],
-    },
-
-    "the_handmaids_tale": {
-        "pages": list(range(8, 270)),
-        "start_marker": None,
-        "end_marker": None,
-        "patterns": [
-            r"(?m)^\s*[IVXLC]+\s*\n[A-Z\s]{2,50}(?=\n)",  # Roman numeral + caps section name
-        ],
-    },
-}
-
-
-DEFAULT_BOOK_CONFIG = {
-    "pages": None,
-    "start_marker": None,
-    "end_marker": None,
-    "patterns": None,
-}
-
-
-
 def _normalize_book_key(name: str) -> str:
     """
     Normalize a filename stem to a config key: lowercase and collapse non-alnum to underscores.
@@ -340,7 +453,12 @@ def _normalize_book_key(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
 
-def extract_pdf_pages(pdf_path: Path, pages: Optional[List[int]] = None) -> str:
+def extract_pdf_pages(
+    pdf_path: Path,
+    pages: Optional[List[int]] = None,
+    use_text_flow: bool = False,
+    extract_kwargs: Optional[Dict[str, Any]] = None,
+) -> str:
     """
     Extract text from specific PDF pages.
     If `pages` is None, extracts all pages.
@@ -348,9 +466,13 @@ def extract_pdf_pages(pdf_path: Path, pages: Optional[List[int]] = None) -> str:
     Note: page indices provided via `pages` are expected to be 1-based and are
     normalized to zero-based before iteration to align with pdfplumber's
     indexing.
+
     """
+    if pdfplumber is None:
+        raise RuntimeError("pdfplumber is required to extract PDF text.")
     text = ""
     processed_pages = 0
+    extract_kwargs = extract_kwargs or {}
 
     with pdfplumber.open(pdf_path) as pdf:
         total_pages = len(pdf.pages)
@@ -367,7 +489,10 @@ def extract_pdf_pages(pdf_path: Path, pages: Optional[List[int]] = None) -> str:
         for idx in normalized_indices:
             try:
                 page = pdf.pages[idx]
-                page_text = page.extract_text()
+                page_text = page.extract_text(
+                    use_text_flow=use_text_flow,
+                    **extract_kwargs,
+                )
                 if page_text:
                     text += page_text + "\n"
                 processed_pages += 1
@@ -415,12 +540,13 @@ def preprocess_pdf(
     config: Optional[dict] = None,
     book_name: Optional[str] = None,
     allow_default_config: bool = True,
-    use_existing: bool = True,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    category_override: Optional[str] = None,
 ):
     """Extract, clean, and save a single PDF with optional page and boilerplate filtering."""
     base_name = pdf_path.stem
     book_label = book_name or base_name
-    category = pdf_path.parent.name
+    category = category_override or pdf_path.parent.name
     if config is None:
         active_config = DEFAULT_BOOK_CONFIG if allow_default_config else None
     else:
@@ -433,7 +559,7 @@ def preprocess_pdf(
     if config is None:
         print(
             f"[WARN] No config found for '{book_label}'. Using default processing (all pages, no boilerplate removal). "
-            "Add an entry to BOOK_CONFIGS in src/a_preprocessing_cleaning.py to customize page ranges or patterns."
+            "Add an entry to BOOK_CONFIGS in src/x_configs.py to customize page ranges or patterns."
         )
 
     cleaned_dir = text_path("processed", "cleaned_texts", category)
@@ -464,7 +590,14 @@ def preprocess_pdf(
 
     # Extract selected pages
     pages = active_config.get("pages")
-    raw_text = extract_pdf_pages(pdf_path, pages)
+    use_text_flow = bool(active_config.get("use_text_flow", False))
+    extract_kwargs = active_config.get("extract_kwargs")
+    raw_text = extract_pdf_pages(
+        pdf_path,
+        pages,
+        use_text_flow=use_text_flow,
+        extract_kwargs=extract_kwargs,
+    )
 
     # Remove boilerplate, trim start/end markers, apply regex patterns
     cleaned_text = remove_boilerplate(
@@ -494,33 +627,14 @@ def preprocess_pdf(
         for entry in cleaned_segmented_entries:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-    normalised_text = preproc.normalize_text(cleaned_text)
+    normalised_text, normalised_segmented_entries = preproc.normalize_sentences_with_offsets(
+        cleaned_segmented_entries
+    )
     normalised_path.write_text(
         json.dumps({"text": normalised_text}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
-    normalised_sentences = [
-        {
-            "sentence_id": idx,
-            "text": preproc.normalize_text(sentence["text"]),
-            "start_char": sentence["start_char"],
-            "end_char": sentence["end_char"],
-        }
-        for idx, sentence in enumerate(cleaned_sentences)
-    ]
-    normalised_segmented_entries: List[Dict[str, object]] = []
-    for sentence in normalised_sentences:
-        if not sentence["text"]:
-            continue
-        normalised_segmented_entries.append(
-            {
-                "sentence_id": sentence["sentence_id"],
-                "text": sentence["text"],
-                "start_char": sentence["start_char"],
-                "end_char": sentence["end_char"],
-            }
-        )
     with open(normalised_segmented_path, "w", encoding="utf-8") as f:
         for entry in normalised_segmented_entries:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -533,70 +647,47 @@ def preprocess_pdf(
 
 
 
-def preprocess_audio_file(
-    audio_path: Path,
-    preproc: "TextPreprocessor",
-    model_name: str = "openai/whisper-small", ### CONFIGS SHOULD BE INTEGRATED HERE
-    chunk_length_s: int = 30,
-    device: Optional[int] = None,
-    save: bool = True,
-    category: Optional[str] = None,
+def preprocess_all_pdfs(
+    process_unknown: bool = True,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    authors: Optional[List[str]] = None,
 ):
-    """
-    Transcribe and clean an audio file; optionally save the transcript.
-
-    Returns the cleaned transcript path when saving, otherwise the text.
-    """
-    transcript = preproc.transcribe_audio(
-        str(audio_path),
-        model_name=model_name,
-        chunk_length_s=chunk_length_s,
-        device=device,
-    )
-
-    if not save:
-        return transcript
-
-    category_name = category or audio_path.parent.name
-    save_dir = text_path("processed", "audio_transcripts", category_name)
-    save_dir.mkdir(parents=True, exist_ok=True)
-    transcript_path = save_dir / f"{audio_path.stem}_transcript.txt"
-    transcript_path.write_text(transcript, encoding="utf-8")
-    print(f"[INFO] Transcript saved to {transcript_path}")
-    return transcript_path
-
-
-
-def preprocess_all_pdfs(process_unknown: bool = True, use_existing: bool = True):
     preproc = TextPreprocessor()
     base_raw_dir = text_path("raw")
-
-    subdirs = ["novels", "novellas", "short_stories", "speech"]
-
-    for subdir in subdirs:
-        subdir_path = base_raw_dir / subdir
-        if not subdir_path.exists():
-            print(f"[WARN] Directory not found: {subdir_path}")
+    for genre in GENRES:
+        genre_dir = base_raw_dir / genre
+        if not genre_dir.exists():
+            print(f"[WARN] Directory not found: {genre_dir}")
             continue
+        if authors:
+            author_dirs = [genre_dir / author for author in authors]
+        else:
+            author_dirs = [path for path in genre_dir.iterdir() if path.is_dir()]
 
-        pdf_files = list(subdir_path.glob("*.pdf"))
-        if not pdf_files:
-            print(f"[INFO] No PDFs found in {subdir_path}")
-            continue
+        for author_dir in author_dirs:
+            if not author_dir.exists():
+                print(f"[WARN] Directory not found: {author_dir}")
+                continue
+            pdf_files = list(author_dir.glob("*.pdf"))
+            if not pdf_files:
+                print(f"[INFO] No PDFs found in {author_dir}")
+                continue
 
-        print(f"[INFO] Processing {len(pdf_files)} PDFs in {subdir}...")
+            category_key = f"{genre}/{author_dir.name}"
+            print(f"[INFO] Processing {len(pdf_files)} PDFs in {category_key}...")
 
-        for pdf_file in pdf_files:
-            normalized_name = _normalize_book_key(pdf_file.stem)
-            config = BOOK_CONFIGS.get(normalized_name)
-            preprocess_pdf(
-                pdf_file,
-                preproc,
-                config=config,
-                book_name=normalized_name,
-                allow_default_config=process_unknown,
-                use_existing=use_existing,
-            )
+            for pdf_file in pdf_files:
+                normalized_name = _normalize_book_key(pdf_file.stem)
+                config = BOOK_CONFIGS.get(normalized_name)
+                preprocess_pdf(
+                    pdf_file,
+                    preproc,
+                    config=config,
+                    book_name=normalized_name,
+                    allow_default_config=process_unknown,
+                    use_existing=use_existing,
+                    category_override=category_key,
+                )
 
 
 

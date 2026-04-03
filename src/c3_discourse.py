@@ -1,62 +1,74 @@
+"""
+Discourse-level metrics and cohesion across sentences (heuristic, no training).
+
+Input (DiscourseAnalyzer.analyze_text):
+{
+  "text": "<raw text string>",
+  "window_size": 3
+}
+
+Output:
+{
+  "meta": {"window_size": 3, "num_sentences": 80},
+  "sentences": [
+    {
+      "sentence_index": 0,
+      "num_tokens": 12,
+      "pronoun_count": 1,
+      "explicit_connectives": 1,
+      "explicit_connectives_per_token": 0.083333,
+      "connective_counts": {"Temporal": 1, "Contingency": 0, "Comparison": 0, "Expansion": 0},
+      "connective_counts_per_token": {"Temporal": 0.083333, "Contingency": 0.0, "Comparison": 0.0, "Expansion": 0.0},
+      "entity_overlap": 0,
+      "entity_overlap_ratio": 0.0,
+      "entity_overlap_per_token": 0.0,
+      "content_overlap": 0,
+      "content_overlap_ratio": 0.0,
+      "content_overlap_per_token": 0.0,
+      "pronoun_ratio": 0.083,
+      "tense_shift": 0,
+      "dominant_relation": "Temporal",
+      "verb_tense": "past",
+      "noun_lemma_count": 5,
+      "content_lemma_count": 9
+    }
+  ],
+  "windows": [
+    {
+      "start_sentence": 0,
+      "end_sentence": 2,
+      "num_tokens": 36,
+      "pronoun_count": 3,
+      "explicit_connectives": 2,
+      "connective_counts": {"Temporal": 2, "Contingency": 0, "Comparison": 0, "Expansion": 0},
+      "entity_overlap": 1,
+      "content_overlap": 2,
+      "noun_lemma_count": 12,
+      "content_lemma_count": 18,
+      "explicit_connectives_per_token": 0.055556,
+      "connective_counts_per_token": {"Temporal": 0.055556, "Contingency": 0.0, "Comparison": 0.0, "Expansion": 0.0},
+      "entity_overlap_per_token": 0.027778,
+      "content_overlap_per_token": 0.055556,
+      "pronoun_ratio": 0.083,
+      "entity_overlap_ratio": 0.083,
+      "content_overlap_ratio": 0.111,
+      "pronoun_ratio_per_token": 0.083,
+      "explicit_connectives_count": 2,
+      "entity_overlap_count": 1,
+      "content_overlap_count": 2,
+      "entity_overlap_ratio_per_noun_lemma": 0.083,
+      "content_overlap_ratio_per_content_lemma": 0.111
+    }
+  ]
+}
+"""
+
 import statistics
 from collections import Counter
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-from x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
-from z_utils import aggregate_windows
-
-"""
-Discourse-level metrics and cohesion across sentences (heuristic, no training).
-
-
-Output shape (no IO):
-{
-  "meta": {"window_size": 3, "num_sentences": 80},
-
-  "sentences": [
-    {
-      "sentence_index": 0, 
-      "num_tokens": 12,
-      "explicit_connectives": 1, 
-      "connective_counts": {
-        "Temporal": 1, 
-        ...
-        },
-      "entity_overlap": 0, 
-      "entity_overlap_ratio": 0.0,
-      "content_overlap": 0, 
-      "content_overlap_ratio": 0.0,
-      "pronoun_ratio": 0.08, 
-      "tense_shift": 0,
-      "dominant_relation": "Temporal", 
-      "verb_tense": "past"
-    },
-    ...
-  ],
-
-  "windows": [ # averaged over the window
-    {
-      "start_sentence": 0,
-      "end_sentence": 2,
-      "num_tokens": 11, 
-      "explicit_connectives": 0.3, 
-      "connective_counts": {
-        "Temporal": 0.3, 
-        ...
-        },
-      "entity_overlap": 0.3, 
-      "entity_overlap_ratio": 0.1,
-      "content_overlap": 0.6, 
-      "content_overlap_ratio": 0.2,
-      "pronoun_ratio": 0.05, 
-      "tense_shift": 0.3
-    },
-    ...
-  ]
-}
-
-
-"""
+from .x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
+from .z_utils import aggregate_windows, sliding_windows
 
 
 CONNECTIVE_LEXICON: Dict[str, Sequence[str]] = {
@@ -105,11 +117,30 @@ CONNECTIVE_LEXICON: Dict[str, Sequence[str]] = {
     ],
 }
 
+MODALITY_MARKERS: Sequence[str] = [
+    "seem",
+    "as if",
+    "as though",
+    "maybe",
+    "perhaps",
+    "probably",
+    "possibly",
+    "apparently",
+]
+
 
 class DiscourseAnalyzer:
     def __init__(self, nlp=None):
         self.nlp = nlp or load_spacy_model()
         self._lexicon_phrases = self._prepare_lexicon()
+        self._modality_phrases = self._prepare_marker_phrases(MODALITY_MARKERS)
+
+    def _prepare_marker_phrases(self, markers: Sequence[str]) -> List[Tuple[List[str], str]]:
+        phrases = []
+        for marker in markers:
+            cleaned = marker.lower()
+            phrases.append((cleaned.split(), cleaned))
+        return sorted(phrases, key=lambda x: len(x[0]), reverse=True)
 
     def _prepare_lexicon(self) -> List[Tuple[str, List[str], str]]:
         phrases = []
@@ -163,10 +194,14 @@ class DiscourseAnalyzer:
             overlap = None
             if prev_sent_content is not None:
                 overlap = len(set(words) & set(prev_sent_content))
+            overlap_ratio = None
+            if overlap is not None:
+                overlap_ratio = round(overlap / max(len(words), 1), 3) if words else 0.0
 
             sent_metrics.append(
                 {
                     "cohesion_overlap": overlap,
+                    "cohesion_overlap_ratio": overlap_ratio,
                 }
             )
 
@@ -197,6 +232,25 @@ class DiscourseAnalyzer:
                     )
         return matches
 
+    def find_modality_markers(self, sent) -> List[Dict[str, object]]:
+        tokens = [t.lemma_.lower() for t in sent if not t.is_space]
+        matches: List[Dict[str, object]] = []
+
+        for marker_tokens, marker_str in self._modality_phrases:
+            span_len = len(marker_tokens)
+            if span_len == 0 or len(tokens) < span_len:
+                continue
+            for i in range(len(tokens) - span_len + 1):
+                if tokens[i : i + span_len] == marker_tokens:
+                    matches.append(
+                        {
+                            "marker": marker_str,
+                            "start": i,
+                            "end": i + span_len - 1,
+                        }
+                    )
+        return matches
+
     def _empty_connective_counts(self) -> Dict[str, int]:
         return {category: 0 for category in CONNECTIVE_LEXICON}
 
@@ -216,6 +270,7 @@ class DiscourseAnalyzer:
         for idx, sent in enumerate(doc.sents):
             tokens = [t for t in sent if not t.is_space]
             connectives = self.find_connectives(sent)
+            modality_markers = self.find_modality_markers(sent)
             connective_counts = self._empty_connective_counts()
             for c in connectives:
                 connective_counts[c["category"]] += 1
@@ -226,12 +281,22 @@ class DiscourseAnalyzer:
                 for t in sent
                 if t.pos_ in {"NOUN", "PROPN", "VERB", "ADJ", "ADV"} and t.is_alpha
             }
+            noun_lemma_count = len(noun_lemmas)
+            content_lemma_count = len(content_lemmas)
 
             entity_overlap, entity_ratio = self._overlap(prev_entities, noun_lemmas)
             content_overlap, content_ratio = self._overlap(prev_content, content_lemmas)
 
             pronoun_count = sum(1 for t in sent if t.pos_ == "PRON")
             pronoun_ratio = round(pronoun_count / len(tokens), 3) if tokens else 0.0
+
+            explicit_connectives_per_token = round(len(connectives) / len(tokens), 6) if tokens else 0.0
+            modality_per_token = round(len(modality_markers) / len(tokens), 6) if tokens else 0.0
+            connective_counts_per_token = {
+                k: round(v / len(tokens), 6) if tokens else 0.0 for k, v in connective_counts.items()
+            }
+            entity_overlap_per_token = round(entity_overlap / len(tokens), 6) if tokens else 0.0
+            content_overlap_per_token = round(content_overlap / len(tokens), 6) if tokens else 0.0
 
             tense = self._infer_tense(sent)
             tense_shift = int(prev_tense is not None and tense is not None and tense != prev_tense)
@@ -240,16 +305,25 @@ class DiscourseAnalyzer:
                 {
                     "sentence_index": idx,
                     "num_tokens": len(tokens),
+                    "pronoun_count": pronoun_count,
                     "explicit_connectives": len(connectives),
+                    "explicit_connectives_per_token": explicit_connectives_per_token,
+                    "modality_count": len(modality_markers),
+                    "modality_per_token": modality_per_token,
                     "connective_counts": connective_counts,
+                    "connective_counts_per_token": connective_counts_per_token,
                     "entity_overlap": entity_overlap,
                     "entity_overlap_ratio": entity_ratio,
+                    "entity_overlap_per_token": entity_overlap_per_token,
                     "content_overlap": content_overlap,
                     "content_overlap_ratio": content_ratio,
+                    "content_overlap_per_token": content_overlap_per_token,
                     "pronoun_ratio": pronoun_ratio,
                     "tense_shift": tense_shift,
                     "dominant_relation": self._dominant_relation(connective_counts),
                     "verb_tense": tense,
+                    "noun_lemma_count": noun_lemma_count,
+                    "content_lemma_count": content_lemma_count,
                 }
             )
 
@@ -258,6 +332,72 @@ class DiscourseAnalyzer:
             prev_tense = tense
 
         windowed_metrics = aggregate_windows(sent_metrics, window_size) if window_size and window_size > 1 else []
+        if windowed_metrics:
+            window_slices = list(sliding_windows(sent_metrics, window_size))
+            for idx, window in enumerate(windowed_metrics):
+                if idx >= len(window_slices):
+                    break
+                window_sents = window_slices[idx]
+                total_tokens = sum(sent.get("num_tokens", 0) for sent in window_sents)
+                total_connectives = sum(sent.get("explicit_connectives", 0) for sent in window_sents)
+                total_modality = sum(sent.get("modality_count", 0) for sent in window_sents)
+                total_entity_overlap = sum(sent.get("entity_overlap", 0) for sent in window_sents)
+                total_content_overlap = sum(sent.get("content_overlap", 0) for sent in window_sents)
+                total_pronouns = sum(sent.get("pronoun_count", 0) for sent in window_sents)
+                total_noun_lemmas = sum(sent.get("noun_lemma_count", 0) for sent in window_sents)
+                total_content_lemmas = sum(sent.get("content_lemma_count", 0) for sent in window_sents)
+                connective_counts_total: Dict[str, int] = self._empty_connective_counts()
+                for sent in window_sents:
+                    for key, value in sent.get("connective_counts", {}).items():
+                        connective_counts_total[key] = connective_counts_total.get(key, 0) + value
+                if total_tokens > 0:
+                    window["num_tokens"] = total_tokens
+                    window["pronoun_count"] = total_pronouns
+                    window["explicit_connectives"] = total_connectives
+                    window["modality_count"] = total_modality
+                    window["connective_counts"] = connective_counts_total
+                    window["entity_overlap"] = total_entity_overlap
+                    window["content_overlap"] = total_content_overlap
+                    window["noun_lemma_count"] = total_noun_lemmas
+                    window["content_lemma_count"] = total_content_lemmas
+                    window["explicit_connectives_per_token"] = round(total_connectives / total_tokens, 6)
+                    window["modality_per_token"] = round(total_modality / total_tokens, 6)
+                    window["connective_counts_per_token"] = {
+                        k: round(v / total_tokens, 6) for k, v in connective_counts_total.items()
+                    }
+                    window["entity_overlap_per_token"] = round(total_entity_overlap / total_tokens, 6)
+                    window["content_overlap_per_token"] = round(total_content_overlap / total_tokens, 6)
+                    window["pronoun_ratio"] = round(total_pronouns / total_tokens, 3)
+                else:
+                    window["num_tokens"] = 0
+                    window["pronoun_count"] = 0
+                    window["explicit_connectives"] = 0
+                    window["modality_count"] = 0
+                    window["connective_counts"] = connective_counts_total
+                    window["entity_overlap"] = 0
+                    window["content_overlap"] = 0
+                    window["noun_lemma_count"] = 0
+                    window["content_lemma_count"] = 0
+                    window["explicit_connectives_per_token"] = 0.0
+                    window["modality_per_token"] = 0.0
+                    window["connective_counts_per_token"] = {k: 0.0 for k in connective_counts_total}
+                    window["entity_overlap_per_token"] = 0.0
+                    window["content_overlap_per_token"] = 0.0
+                    window["pronoun_ratio"] = 0.0
+                if total_noun_lemmas > 0:
+                    window["entity_overlap_ratio"] = round(total_entity_overlap / total_noun_lemmas, 3)
+                else:
+                    window["entity_overlap_ratio"] = 0.0
+                if total_content_lemmas > 0:
+                    window["content_overlap_ratio"] = round(total_content_overlap / total_content_lemmas, 3)
+                else:
+                    window["content_overlap_ratio"] = 0.0
+                window["pronoun_ratio_per_token"] = window.get("pronoun_ratio", 0.0)
+                window["explicit_connectives_count"] = window.get("explicit_connectives", 0)
+                window["entity_overlap_count"] = window.get("entity_overlap", 0)
+                window["content_overlap_count"] = window.get("content_overlap", 0)
+                window["entity_overlap_ratio_per_noun_lemma"] = window.get("entity_overlap_ratio", 0.0)
+                window["content_overlap_ratio_per_content_lemma"] = window.get("content_overlap_ratio", 0.0)
 
         return sent_metrics, windowed_metrics
 
