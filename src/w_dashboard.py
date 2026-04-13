@@ -10,7 +10,7 @@ from c4_topic_modeling import (
     collect_soft_topic_mentions,
     collect_topic_mentions,
 )
-from z_utils import analytics_path
+from z_utils import analytics_path, find_topic_file as _find_topic_file, find_window_metrics_files as _find_window_metrics_files
 
 """
 Dashboard orchestrator: summarize key metrics into a compact table.
@@ -115,20 +115,6 @@ def _collect_window_tables(window_data: Dict[str, object]) -> List[Dict[str, flo
             row.update(_flatten_numeric_metrics(entries[idx], name))
         table.append(row)
     return table
-
-
-def _find_topic_file(window_metrics_path: Path) -> Optional[Path]:
-    category_dir = window_metrics_path.parent.parent
-    text_dir = window_metrics_path.parent
-    topic_root = analytics_path("topic") / category_dir.name / text_dir.name
-    candidates = [
-        topic_root / f"{text_dir.name}_clustered_topics.json",
-        topic_root / f"{text_dir.name}_topics.json",
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return None
 
 
 def _pearson_correlation(x: List[float], y: List[float]) -> Optional[float]:
@@ -399,13 +385,6 @@ def build_dashboard_row(window_metrics_path: Path) -> Dict[str, object]:
     row.update(_extract_structure_metrics(window_data))
     row.update(_extract_role_metrics(window_data))
     return row
-
-
-def _find_window_metrics_files() -> List[Path]:
-    root = analytics_path("window")
-    if not root.exists():
-        return []
-    return sorted(root.glob("*/*/*_window_metrics.json"))
 
 
 def _build_topic_dashboard_entry(

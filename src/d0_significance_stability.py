@@ -277,7 +277,7 @@ from .x_configs import (
     GENRE_TOPIC_SPLIT_HALF_FILENAME,
     TOPIC_SPLIT_HALF_FILENAME,
 )
-from .z_utils import find_topic_file, load_json
+from .z_utils import find_topic_file, load_json, results_root_path
 
 
 def _as_float(value: object) -> Optional[float]:
@@ -1269,7 +1269,7 @@ def _write_cross_block_consistency_summary(
     if len(output_roots) < 2:
         return
     if output_path is None:
-        output_path = Path("data") / "results" / CROSS_BLOCK_CONSISTENCY_FILENAME
+        output_path = results_root_path(CROSS_BLOCK_CONSISTENCY_FILENAME)
     if use_existing and output_path.exists():
         return
 

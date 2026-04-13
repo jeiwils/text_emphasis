@@ -73,8 +73,8 @@ import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from .x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS, load_spacy_model
-from .z_utils import aggregate_windows
+from .x_configs import DEFAULT_WINDOW_SIZE, MODEL_CONFIGS
+from .z_utils import aggregate_windows, load_spacy_model
 
 
 class WholeTextMetrics:
@@ -236,16 +236,104 @@ class WholeTextMetrics:
 
         return sent_metrics
 
+    @staticmethod
+    def _distribution_tokens(text, nlp=None, lowercase=True, alpha_only=True):
+        nlp = nlp or load_spacy_model()
+        doc = nlp.make_doc(text or "")
+        tokens = []
+        for token in doc:
+            if token.is_space or token.is_punct:
+                continue
+            if alpha_only and not token.is_alpha:
+                continue
+            token_text = token.text.lower() if lowercase else token.text
+            if token_text:
+                tokens.append(token_text)
+        return tokens
+
+    @classmethod
+    def compare_text_distributions(
+        cls,
+        reference_text,
+        comparison_text,
+        *,
+        nlp=None,
+        lowercase=True,
+        alpha_only=True,
+        smoothing=1e-9,
+    ):
+        """Compare two texts via cross-entropy and KL divergence over token distributions."""
+        reference_tokens = cls._distribution_tokens(
+            reference_text,
+            nlp=nlp,
+            lowercase=lowercase,
+            alpha_only=alpha_only,
+        )
+        comparison_tokens = cls._distribution_tokens(
+            comparison_text,
+            nlp=nlp,
+            lowercase=lowercase,
+            alpha_only=alpha_only,
+        )
+
+        if not reference_tokens or not comparison_tokens:
+            return {
+                "cross_entropy": 0.0,
+                "kl_divergence": 0.0,
+                "reference_entropy": 0.0,
+                "vocabulary_size": 0,
+                "reference_token_count": len(reference_tokens),
+                "comparison_token_count": len(comparison_tokens),
+            }
+
+        reference_counts = Counter(reference_tokens)
+        comparison_counts = Counter(comparison_tokens)
+        vocabulary = sorted(set(reference_counts) | set(comparison_counts))
+        if not vocabulary:
+            return {
+                "cross_entropy": 0.0,
+                "kl_divergence": 0.0,
+                "reference_entropy": 0.0,
+                "vocabulary_size": 0,
+                "reference_token_count": len(reference_tokens),
+                "comparison_token_count": len(comparison_tokens),
+            }
+
+        reference_total = float(sum(reference_counts.values()))
+        comparison_total = float(sum(comparison_counts.values()))
+        epsilon = max(float(smoothing), 1e-12)
+        smoothing_mass = epsilon * len(vocabulary)
+
+        reference_entropy = 0.0
+        cross_entropy = 0.0
+        kl_divergence = 0.0
+        for token in vocabulary:
+            p = (reference_counts.get(token, 0.0) + epsilon) / (reference_total + smoothing_mass)
+            q = (comparison_counts.get(token, 0.0) + epsilon) / (comparison_total + smoothing_mass)
+            reference_entropy -= p * math.log2(p)
+            cross_entropy -= p * math.log2(q)
+            kl_divergence += p * math.log2(p / q)
+
+        return {
+            "cross_entropy": round(cross_entropy, 6),
+            "kl_divergence": round(max(kl_divergence, 0.0), 6),
+            "reference_entropy": round(reference_entropy, 6),
+            "vocabulary_size": len(vocabulary),
+            "reference_token_count": len(reference_tokens),
+            "comparison_token_count": len(comparison_tokens),
+        }
+
     def compute_corpus_frequencies(self, texts, nlp=None, lowercase=True, min_freq=1):
         """
         Computes corpus-level word frequencies from a list of texts.
         Tokenization is aligned with spaCy's token.is_alpha when available.
         """
         nlp = nlp or load_spacy_model()
+
         word_counter = Counter()
         total_tokens = 0
         for text in texts:
-            doc = nlp(text)
+            doc = nlp.make_doc(text)
             words = [
                 (token.text.lower() if lowercase else token.text)
                 for token in doc

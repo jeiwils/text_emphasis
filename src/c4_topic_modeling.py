@@ -105,12 +105,13 @@ from .x_configs import (
     DEFAULT_SOFT_TOP_K,
     DEFAULT_TOPIC_KEYWORD_NGRAM_RANGE,
     DEFAULT_TOPIC_KEYWORD_TOP_N,
+    DEFAULT_TOPIC_MIN_CLUSTER_SIZE,
+    DEFAULT_TOPIC_MIN_SAMPLES,
     DEFAULT_TOPIC_WINDOW_MULTIPLE,
     DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
     DEFAULT_USE_EXISTING,
     DEFAULT_USE_PCA,
     DEFAULT_WINDOW_SIZE,
-    GENRES,
     MODEL_CONFIGS,
 )
 
@@ -894,8 +895,8 @@ def run_topic_modelling(
     window_stride: Optional[int] = None,
     authors: Optional[List[str]] = None,
     texts: Optional[List[str]] = None,
-    min_cluster_size: Optional[int] = None,
-    min_samples: Optional[int] = None,
+    min_cluster_size: Optional[int] = DEFAULT_TOPIC_MIN_CLUSTER_SIZE,
+    min_samples: Optional[int] = DEFAULT_TOPIC_MIN_SAMPLES,
     soft_score_threshold: Optional[float] = DEFAULT_SOFT_SCORE_THRESHOLD,
     soft_top_k_topics: Optional[int] = DEFAULT_SOFT_TOP_K,
     use_pca: bool = DEFAULT_USE_PCA,
@@ -915,7 +916,7 @@ def run_topic_modelling(
     output_root.mkdir(parents=True, exist_ok=True)
     stride = window_stride or (base_window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE)
 
-    categories = list(iter_dirs(normalised_root, genres=GENRES, authors=authors, depth=2))
+    categories = list(iter_dirs(normalised_root, authors=authors, depth=2))
     text_filter = set(texts) if texts else None
     processed = 0
     skipped = 0

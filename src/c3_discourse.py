@@ -67,8 +67,8 @@ import statistics
 from collections import Counter
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-from .x_configs import DEFAULT_WINDOW_SIZE, load_spacy_model
-from .z_utils import aggregate_windows, sliding_windows
+from .x_configs import DEFAULT_WINDOW_SIZE
+from .z_utils import aggregate_windows, load_spacy_model, sliding_windows
 
 
 CONNECTIVE_LEXICON: Dict[str, Sequence[str]] = {

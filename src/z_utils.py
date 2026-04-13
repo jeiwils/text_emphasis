@@ -1,17 +1,33 @@
 
 
+from functools import lru_cache
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from pathlib import Path
 import json
 import numpy as np
+import spacy
 from statistics import mean
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import HDBSCAN
 
-from .x_configs import DEFAULT_METRIC_WINDOW_STRIDE
+from .x_configs import (
+    DEFAULT_METRIC_WINDOW_STRIDE,
+    DEFAULT_SPACY_DISABLE,
+    DEFAULT_SPACY_MAX_LENGTH,
+    DEFAULT_SPACY_MODEL,
+)
 
 
-
+@lru_cache(maxsize=None)
+def load_spacy_model(
+    model_name: str = DEFAULT_SPACY_MODEL,
+    disable: Optional[Sequence[str]] = None,
+):
+    """Load and cache a spaCy pipeline using the shared project defaults."""
+    disable_components = tuple(disable) if disable else DEFAULT_SPACY_DISABLE
+    nlp = spacy.load(model_name, disable=list(disable_components))
+    nlp.max_length = max(getattr(nlp, "max_length", 1_000_000), DEFAULT_SPACY_MAX_LENGTH)
+    return nlp
 
 
 def _category_parts(category: Optional[Union[str, Sequence[str]]]) -> List[str]:
@@ -116,6 +132,69 @@ def results_path(
     return path
 
 
+def results_root_path(filename: Optional[str] = None) -> Path:
+    """Return the root `data/results` path, optionally with a filename appended."""
+    path = Path("data") / "results"
+    if filename:
+        path = path / filename
+    return path
+
+
+def block_results_path(
+    kind: str,
+    block_size: int,
+    *,
+    template: Optional[str] = None,
+    subfolder: Optional[str] = None,
+    filename: Optional[str] = None,
+) -> Path:
+    """Return a block-specific results path while preserving any custom template override."""
+    default_template = f"{kind}_L{{block_size}}"
+    if template and template != default_template:
+        path = results_root_path(template.format(block_size=block_size))
+        if subfolder:
+            path = path / subfolder
+        if filename:
+            path = path / filename
+        return path
+    return results_path(kind, subfolder=subfolder, filename=filename, block_size=block_size)
+
+
+def window_metrics_filename(domain: str) -> str:
+    """Return the standardized filename for a window-metrics JSON file."""
+    domain_name = str(domain).strip()
+    if not domain_name:
+        raise ValueError("domain must be a non-empty string")
+    return f"window_metrics.{domain_name}.json"
+
+
+def window_metrics_path(
+    *,
+    domain: str,
+    text_dir: Optional[Path] = None,
+    genre: Optional[str] = None,
+    author: Optional[str] = None,
+    text_name: Optional[str] = None,
+) -> Path:
+    """Return the standardized window-metrics path for a text."""
+    if text_dir is not None:
+        return Path(text_dir) / window_metrics_filename(domain)
+    if not all((genre, author, text_name)):
+        raise ValueError("Provide `text_dir` or all of `genre`, `author`, and `text_name`.")
+    return analytics_path("window", [genre, author, text_name], window_metrics_filename(domain))
+
+
+def dashboard_report_candidates(base_dir: Path, text_name: str, suffix: str) -> List[Path]:
+    """Return the standardized dashboard report path for a text."""
+    resolved_base_dir = Path(base_dir)
+    return [resolved_base_dir / f"text{suffix}"]
+
+
+def dashboard_report_path(base_dir: Path, text_name: str, suffix: str) -> Path:
+    """Return the standardized dashboard report path for a text."""
+    return dashboard_report_candidates(base_dir, text_name, suffix)[0]
+
+
 def find_topic_file(window_metrics_path: Path) -> Optional[Path]:
     """Return the topic JSON for a window metrics file, preferring clustered topics."""
     text_dir = window_metrics_path.parent
@@ -137,7 +216,8 @@ def find_window_metrics_files() -> List[Path]:
     root = analytics_path("window")
     if not root.exists():
         return []
-    return sorted(root.glob("*/*/*/*_window_metrics.syntax.json"))
+    standard_name = window_metrics_filename("syntax")
+    return sorted(root.glob(f"*/*/*/{standard_name}"))
 
 
 def iter_dirs(

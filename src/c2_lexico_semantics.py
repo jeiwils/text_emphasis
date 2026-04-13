@@ -82,13 +82,14 @@ Output:
 }
 """
 
+import math
 import statistics
 from collections import Counter
 
 import numpy as np
 
-from .x_configs import DEFAULT_MATTR_WINDOW_SIZE, DEFAULT_WINDOW_SIZE, load_spacy_model
-from .z_utils import sliding_windows, aggregate_windows
+from .x_configs import DEFAULT_MATTR_WINDOW_SIZE, DEFAULT_WINDOW_SIZE
+from .z_utils import aggregate_windows, load_spacy_model, sliding_windows
 
 def _tokenize_words_from_tokens(tokens, lowercase: bool = True):
     """Tokenize using spaCy tokens for lexical diversity (MATTR)."""
@@ -137,6 +138,31 @@ def _moving_average_type_token_ratio(
         ttr_values.append(len(counts) / window_size)
 
     return round(statistics.mean(ttr_values), 3)
+
+
+def _shannon_entropy_from_tokens(tokens) -> dict:
+    """Compute Shannon lexical entropy over a token sequence."""
+    cleaned = [token for token in tokens if token]
+    token_count = len(cleaned)
+    if token_count == 0:
+        return {
+            "lexical_entropy": 0.0,
+            "normalized_lexical_entropy": 0.0,
+            "unique_token_count": 0,
+            "token_count": 0,
+        }
+
+    counts = Counter(cleaned)
+    probabilities = [count / token_count for count in counts.values() if count > 0]
+    entropy = -sum(prob * math.log2(prob) for prob in probabilities)
+    max_entropy = math.log2(len(counts)) if len(counts) > 1 else 0.0
+    normalized_entropy = (entropy / max_entropy) if max_entropy > 0 else 0.0
+    return {
+        "lexical_entropy": round(entropy, 6),
+        "normalized_lexical_entropy": round(normalized_entropy, 6),
+        "unique_token_count": len(counts),
+        "token_count": token_count,
+    }
 
 
 def compute_mattr_metrics(
@@ -214,6 +240,31 @@ class LexicoSemanticsAnalyzer:
             })
         return metrics
 
+    # ---------------------
+    # Lexical entropy (Shannon)
+    # ---------------------
+    def compute_lexical_entropy(
+        self,
+        doc,
+        window_size: int = DEFAULT_WINDOW_SIZE,
+        lowercase: bool = True,
+    ):
+        """Compute Shannon lexical entropy over tokens for each sentence and sentence window."""
+        sentences = list(doc.sents)
+        sentence_tokens = [
+            _tokenize_words_from_tokens(sent, lowercase=lowercase) for sent in sentences
+        ]
+        sent_metrics = [_shannon_entropy_from_tokens(tokens) for tokens in sentence_tokens]
+
+        windowed_metrics = []
+        for idx, window in enumerate(sliding_windows(sentence_tokens, window_size)):
+            tokens = [token for sent_tokens in window for token in sent_tokens]
+            payload = _shannon_entropy_from_tokens(tokens)
+            payload["start_sentence"] = idx
+            payload["end_sentence"] = idx + len(window) - 1
+            windowed_metrics.append(payload)
+
+        return sent_metrics, windowed_metrics
 
     # ---------------------
     # Information Content
@@ -411,6 +462,11 @@ class LexicoSemanticsAnalyzer:
         semantic_structures_sent, semantic_structures_win = self.extract_semantic_structures(
             doc, window_size=window_size
         )
+        lexical_entropy_sent, lexical_entropy_win = self.compute_lexical_entropy(
+            doc,
+            window_size=window_size,
+            lowercase=lowercase,
+        )
         mattr_windows = self.compute_windowed_mattr(
             doc,
             window_size=window_size,
@@ -428,6 +484,9 @@ class LexicoSemanticsAnalyzer:
                     "content_count": lexical_density_sent[idx].get("content_count") if idx < len(lexical_density_sent) else 0,
                     "information_content": info_content_sent[idx].get("information_content") if idx < len(info_content_sent) else None,
                     "information_content_token_count": info_content_sent[idx].get("token_count") if idx < len(info_content_sent) else 0,
+                    "lexical_entropy": lexical_entropy_sent[idx].get("lexical_entropy") if idx < len(lexical_entropy_sent) else 0.0,
+                    "normalized_lexical_entropy": lexical_entropy_sent[idx].get("normalized_lexical_entropy") if idx < len(lexical_entropy_sent) else 0.0,
+                    "unique_token_count": lexical_entropy_sent[idx].get("unique_token_count") if idx < len(lexical_entropy_sent) else 0,
                     "role_count": semantic_roles_sent[idx].get("role_count") if idx < len(semantic_roles_sent) else 0,
                     "role_counts": semantic_roles_sent[idx].get("role_counts") if idx < len(semantic_roles_sent) else {},
                     "role_count_per_token": 0.0,
@@ -465,6 +524,8 @@ class LexicoSemanticsAnalyzer:
         window_inputs = [
             {
                 "lexical_density": sent.get("lexical_density"),
+                "lexical_entropy": sent.get("lexical_entropy"),
+                "normalized_lexical_entropy": sent.get("normalized_lexical_entropy"),
                 "information_content": sent.get("information_content"),
                 "avg_word_freq": sent.get("avg_word_freq"),
                 "normalized_freq": sent.get("normalized_freq"),
@@ -691,6 +752,15 @@ class LexicoSemanticsAnalyzer:
                 win["avg_word_freq_window"] = freq_win
             if idx < len(semantic_structures_win):
                 win["semantic_structures_window"] = semantic_structures_win[idx]
+            if idx < len(lexical_entropy_win):
+                entropy_win = lexical_entropy_win[idx]
+                win["lexical_entropy"] = entropy_win.get("lexical_entropy", win.get("lexical_entropy", 0.0))
+                win["normalized_lexical_entropy"] = entropy_win.get(
+                    "normalized_lexical_entropy",
+                    win.get("normalized_lexical_entropy", 0.0),
+                )
+                win["unique_token_count"] = entropy_win.get("unique_token_count", win.get("unique_token_count", 0))
+                win["lexical_entropy_window"] = entropy_win
             if idx < len(mattr_windows):
                 win["lexical_diversity_mattr"] = mattr_windows[idx]
 

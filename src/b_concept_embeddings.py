@@ -36,11 +36,10 @@ from .x_configs import (
     DEFAULT_CONCEPT_TOP_N,
     DEFAULT_SPACY_MODEL,
     DEFAULT_USE_EXISTING,
-    GENRES,
     MODEL_CONFIGS,
-    load_spacy_model,
 )
 from .z_utils import (
+    load_spacy_model,
     analytics_path,
     encode_texts,
     hdbscan_cluster_labels,
@@ -58,7 +57,7 @@ class ConceptExtractor:
     ):
         """Initialize with specified models."""
         self.encoder = encoder or SentenceTransformer(model_name)
-        self.nlp = load_spacy_model(language)
+        self.nlp = load_spacy_model(language, disable=("ner",))
         try:
             self.stop_words = set(stopwords.words("english"))
         except LookupError:
@@ -76,10 +75,13 @@ class ConceptExtractor:
         doc = self.nlp(text)
         phrases = [chunk.text for chunk in doc.noun_chunks]
 
-        if lemmatize:
+        if lemmatize and phrases:
             lemmatized = []
-            for phrase in phrases:
-                phrase_doc = self.nlp(phrase)
+            for phrase_doc in self.nlp.pipe(
+                phrases,
+                batch_size=256,
+                disable=["parser", "ner"],
+            ):
                 tokens = []
                 for token in phrase_doc:
                     if token.is_punct or token.is_space:
@@ -167,11 +169,11 @@ def generate_embeddings(
 ):
     """Extract top-N noun phrases and generate or load embeddings."""
     base_name = normalised_text_path.stem.replace("_normalised", "")
-    parent_genre = normalised_text_path.parent.parent.name if normalised_text_path.parent.parent else ""
+    parent_category = normalised_text_path.parent.parent.name if normalised_text_path.parent.parent else ""
     author = normalised_text_path.parent.name
     category_parts = [author, base_name]
-    if parent_genre in GENRES:
-        category_parts.insert(0, parent_genre)
+    if parent_category:
+        category_parts.insert(0, parent_category)
 
     concept_dir = analytics_path("embeddings", category_parts)
     concept_dir.mkdir(parents=True, exist_ok=True)

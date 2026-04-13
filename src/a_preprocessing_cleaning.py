@@ -14,14 +14,14 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency
 from bs4 import BeautifulSoup
 
 from .x_configs import (
-    BOOK_CONFIGS,
     DEFAULT_BOOK_CONFIG,
+    DEFAULT_TEXT_BOOK_CONFIG,
     DEFAULT_SPACY_MODEL,
     DEFAULT_USE_EXISTING,
-    GENRES,
-    load_spacy_model,
+    TXT_AUTHOR_DIRS,
+    TXT_BOOK_CONFIGS,
 )
-from .z_utils import text_path
+from .z_utils import load_spacy_model, text_path
 
 def _html_to_text(html: str, selector: Optional[str] = None) -> str:
     """
@@ -72,19 +72,14 @@ def scrape_web_text(
 
 def _resolve_web_category(config: dict) -> str:
     """
-    Map a web config to the same <genre>/<author> category layout used by PDFs.
+    Map an ad-hoc web config into the same <author>/<author> layout used by the TXT corpus.
     Falls back to the provided category or a "web/<author>" bucket.
     """
     author = config.get("author")
-    genre = config.get("genre")
-    if author and genre:
-        return f"{genre}/{author}"
     if author:
         raw_root = text_path("raw")
-        for candidate_genre in GENRES:
-            candidate = raw_root / candidate_genre / author
-            if candidate.exists():
-                return f"{candidate_genre}/{author}"
+        if author in TXT_AUTHOR_DIRS and (raw_root / author).exists():
+            return f"{author}/{author}"
     return config.get("category") or (f"web/{author}" if author else "web")
 
 
@@ -325,6 +320,17 @@ class TextPreprocessor:
             value = re.sub(r"\b(\d{1,3})([A-Za-z]{2,})\b", strip_leading_digits, value)
             return value
 
+        def normalize_pause_dashes(value: str) -> str:
+            """
+            Normalize pause-mark dashes (em/en dashes and double hyphens) to a
+            single em-dash form while leaving hyphenated compounds untouched.
+            """
+            value = value.replace("\u2013", "—").replace("\u2014", "—")
+            value = re.sub(r"(?<=\s)--+(?=\s)", " — ", value)
+            value = re.sub(r"(?<=\w)\s*(?:--+|—)\s*(?=\w)", " — ", value)
+            value = re.sub(r"\s*—\s*", " — ", value)
+            return value
+
         text = fix_mojibake(text)
         text = despace_dropcaps(text)
         text = fix_letter_spacing_headers(text)
@@ -334,6 +340,7 @@ class TextPreprocessor:
         text = remove_inline_headers(text)
         text = dehyphenate_linebreaks(text)
         text = fix_digit_glue(text)
+        text = normalize_pause_dashes(text)
         text = text.replace("\xad", "")
         text = re.sub(r"(?<=\w)-\s+(?=\w)", "-", text)
         text = re.sub(r'\s+', ' ', text).strip()
@@ -351,19 +358,19 @@ class TextPreprocessor:
         Returns a list of dicts: text, start_char, end_char.
         """
         doc = self.nlp(text)
-        sentences = []
+        result = []
         for sent in doc.sents:
-            sent_text = text[sent.start_char:sent.end_char] # or sent_text = sent.text.strip()???
+            sent_text = text[sent.start_char:sent.end_char]
             if not sent_text:
                 continue
-            sentences.append(
+            result.append(
                 {
                     "text": sent_text,
                     "start_char": sent.start_char,
                     "end_char": sent.end_char,
                 }
             )
-        return sentences
+        return result
 
     def segment_sentences(self, text: str) -> List[str]:
         """Segment text into sentence strings (compat wrapper)."""
@@ -559,7 +566,7 @@ def preprocess_pdf(
     if config is None:
         print(
             f"[WARN] No config found for '{book_label}'. Using default processing (all pages, no boilerplate removal). "
-            "Add an entry to BOOK_CONFIGS in src/x_configs.py to customize page ranges or patterns."
+            "Pass an explicit PDF config if you need custom page ranges or cleanup patterns."
         )
 
     cleaned_dir = text_path("processed", "cleaned_texts", category)
@@ -646,52 +653,156 @@ def preprocess_pdf(
     return cleaned_path
 
 
+def preprocess_text_file(
+    text_file: Path,
+    preproc: "TextPreprocessor",
+    config: Optional[dict] = None,
+    book_name: Optional[str] = None,
+    allow_default_config: bool = True,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    category_override: Optional[str] = None,
+):
+    """Clean and save a single raw .txt file with optional marker/pattern filtering."""
+    base_name = text_file.stem
+    book_label = book_name or base_name
+    category = category_override or f"{text_file.parent.name}/{text_file.parent.name}"
+    if config is None:
+        active_config = DEFAULT_TEXT_BOOK_CONFIG if allow_default_config else None
+    else:
+        active_config = config
+
+    if active_config is None:
+        print(f"[WARN] No config found for {book_label}, skipping because default processing is disabled.")
+        return None
+
+    cleaned_dir = text_path("processed", "cleaned_texts", category)
+    cleaned_dir.mkdir(parents=True, exist_ok=True)
+    cleaned_path = cleaned_dir / f"{base_name}_cleaned.json"
+
+    cleaned_segmented_dir = text_path("processed", "cleaned_segmented_texts", category)
+    cleaned_segmented_dir.mkdir(parents=True, exist_ok=True)
+    cleaned_segmented_path = cleaned_segmented_dir / f"{base_name}_cleaned_segmented.jsonl"
+
+    normalised_dir = text_path("processed", "normalised_texts", category)
+    normalised_dir.mkdir(parents=True, exist_ok=True)
+    normalised_path = normalised_dir / f"{base_name}_normalised.json"
+
+    normalised_segmented_dir = text_path("processed", "normalised_segmented_texts", category)
+    normalised_segmented_dir.mkdir(parents=True, exist_ok=True)
+    normalised_segmented_path = normalised_segmented_dir / f"{base_name}_normalised_segmented.jsonl"
+
+    if (
+        use_existing
+        and cleaned_path.exists()
+        and cleaned_segmented_path.exists()
+        and normalised_path.exists()
+        and normalised_segmented_path.exists()
+    ):
+        print(f"[INFO] Skipping {base_name} (outputs exist)")
+        return cleaned_path
+
+    raw_text = text_file.read_text(encoding="utf-8", errors="replace")
+
+    cleaned_text = remove_boilerplate(
+        raw_text,
+        patterns=active_config.get("patterns"),
+        start_marker=active_config.get("start_marker"),
+        end_marker=active_config.get("end_marker"),
+    )
+    cleaned_text = preproc.clean_text(cleaned_text)
+
+    cleaned_path.write_text(json.dumps({"text": cleaned_text}, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    cleaned_sentences = preproc.segment_sentences_with_offsets(cleaned_text)
+    cleaned_segmented_entries: List[Dict[str, object]] = []
+    for idx, sentence in enumerate(cleaned_sentences):
+        cleaned_segmented_entries.append(
+            {
+                "sentence_id": idx,
+                "text": sentence["text"],
+                "start_char": sentence["start_char"],
+                "end_char": sentence["end_char"],
+            }
+        )
+
+    with open(cleaned_segmented_path, "w", encoding="utf-8") as f:
+        for entry in cleaned_segmented_entries:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    normalised_text, normalised_segmented_entries = preproc.normalize_sentences_with_offsets(
+        cleaned_segmented_entries
+    )
+    normalised_path.write_text(
+        json.dumps({"text": normalised_text}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    with open(normalised_segmented_path, "w", encoding="utf-8") as f:
+        for entry in normalised_segmented_entries:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    print(f"[INFO] Cleaned text saved to {cleaned_path}")
+    print(f"[INFO] Cleaned segmented text saved to {cleaned_segmented_path}")
+    print(f"[INFO] Normalised text saved to {normalised_path}")
+    print(f"[INFO] Normalised segmented text saved to {normalised_segmented_path}")
+    return cleaned_path
+
+
+def preprocess_all_texts(
+    process_unknown: bool = True,
+    use_existing: bool = DEFAULT_USE_EXISTING,
+    authors: Optional[List[str]] = None,
+):
+    """Preprocess all raw `.txt` files from `data/texts/raw/<author>` using `TXT_BOOK_CONFIGS`."""
+    preproc = TextPreprocessor()
+    base_raw_dir = text_path("raw")
+    allowed_authors = set(authors) if authors else None
+
+    author_dirs = [
+        path for path in sorted(base_raw_dir.iterdir())
+        if path.is_dir() and path.name in TXT_AUTHOR_DIRS
+    ]
+
+    for author_dir in author_dirs:
+        author = author_dir.name
+        if allowed_authors and author not in allowed_authors:
+            continue
+
+        text_files = sorted(author_dir.glob("*.txt"))
+        if not text_files:
+            print(f"[INFO] No text files found in {author_dir}")
+            continue
+
+        category_key = f"{author}/{author}"
+        print(f"[INFO] Processing {len(text_files)} text files in {category_key}...")
+
+        for text_file in text_files:
+            normalized_name = _normalize_book_key(text_file.stem)
+            config = TXT_BOOK_CONFIGS.get(normalized_name)
+            preprocess_text_file(
+                text_file,
+                preproc,
+                config=config,
+                book_name=normalized_name,
+                allow_default_config=process_unknown,
+                use_existing=use_existing,
+                category_override=category_key,
+            )
+
+
 
 def preprocess_all_pdfs(
     process_unknown: bool = True,
     use_existing: bool = DEFAULT_USE_EXISTING,
     authors: Optional[List[str]] = None,
 ):
-    preproc = TextPreprocessor()
-    base_raw_dir = text_path("raw")
-    for genre in GENRES:
-        genre_dir = base_raw_dir / genre
-        if not genre_dir.exists():
-            print(f"[WARN] Directory not found: {genre_dir}")
-            continue
-        if authors:
-            author_dirs = [genre_dir / author for author in authors]
-        else:
-            author_dirs = [path for path in genre_dir.iterdir() if path.is_dir()]
-
-        for author_dir in author_dirs:
-            if not author_dir.exists():
-                print(f"[WARN] Directory not found: {author_dir}")
-                continue
-            pdf_files = list(author_dir.glob("*.pdf"))
-            if not pdf_files:
-                print(f"[INFO] No PDFs found in {author_dir}")
-                continue
-
-            category_key = f"{genre}/{author_dir.name}"
-            print(f"[INFO] Processing {len(pdf_files)} PDFs in {category_key}...")
-
-            for pdf_file in pdf_files:
-                normalized_name = _normalize_book_key(pdf_file.stem)
-                config = BOOK_CONFIGS.get(normalized_name)
-                preprocess_pdf(
-                    pdf_file,
-                    preproc,
-                    config=config,
-                    book_name=normalized_name,
-                    allow_default_config=process_unknown,
-                    use_existing=use_existing,
-                    category_override=category_key,
-                )
+    """PDF preprocessing is disabled; the project now uses the TXT-only corpus config."""
+    _ = (process_unknown, use_existing, authors)
+    print("[INFO] PDF preprocessing is disabled; only TXT_BOOK_CONFIGS are used.")
 
 
 
 
 
 if __name__ == "__main__":
-    preprocess_all_pdfs()
+    preprocess_all_texts()

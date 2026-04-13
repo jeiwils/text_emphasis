@@ -4,10 +4,7 @@ Defaults defined here are the single source of truth for runtime arguments and d
 """
 
 from dataclasses import dataclass
-from functools import lru_cache
 from typing import Dict, Optional, Sequence, Tuple
-
-import spacy
 
 DEFAULT_USE_EXISTING = True
 DEFAULT_RNG_SEED: int = 42
@@ -25,6 +22,7 @@ MODEL_CONFIGS = {
 # Default spaCy pipeline configuration
 DEFAULT_SPACY_MODEL = "en_core_web_sm"
 DEFAULT_SPACY_DISABLE: Sequence[str] = ()
+DEFAULT_SPACY_MAX_LENGTH: int = 5_000_000
 # Shared window size (in sentences) for sliding window metrics
 DEFAULT_WINDOW_SIZE: int = 3
 # Default stride (in sentences) for sliding window metrics
@@ -33,9 +31,12 @@ DEFAULT_METRIC_WINDOW_STRIDE: int = 1
 DEFAULT_TOPIC_WINDOW_MULTIPLE: int = 5
 # Topic window stride uses base_window_size * stride_multiple
 DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE: int = 2
+# Shared HDBSCAN defaults for corpus-wide novel topic modelling.
+DEFAULT_TOPIC_MIN_CLUSTER_SIZE: Optional[int] = 12
+DEFAULT_TOPIC_MIN_SAMPLES: Optional[int] = 3
 # Default soft topic-score filtering for topic modelling + dashboard
-DEFAULT_SOFT_SCORE_THRESHOLD: float = 0.35
-DEFAULT_SOFT_TOP_K: int = 3
+DEFAULT_SOFT_SCORE_THRESHOLD: float = 0.08
+DEFAULT_SOFT_TOP_K: int = 2
 # Short-text fallback (low window count) to avoid empty topic scores.
 DEFAULT_SHORT_TEXT_WINDOW_COUNT: int = 10
 DEFAULT_SHORT_TEXT_SOFT_SCORE_THRESHOLD: float = 0.25
@@ -43,652 +44,284 @@ DEFAULT_SHORT_TEXT_SOFT_TOP_K: int = 3
 DEFAULT_SHORT_TEXT_MIN_CLUSTER_SIZE: int = 2
 DEFAULT_SHORT_TEXT_MIN_SAMPLES: int = 1
 DEFAULT_SHORT_TEXT_WINDOW_MULTIPLE: int = 4
-DEFAULT_USE_PCA: bool = True
+DEFAULT_USE_PCA: bool = False
 DEFAULT_PCA_COMPONENTS: int = 50
 DEFAULT_TOPIC_KEYWORD_TOP_N: int = 8
 DEFAULT_TOPIC_KEYWORD_NGRAM_RANGE: Tuple[int, int] = (1, 3)
 
 DEFAULT_MATTR_WINDOW_SIZE: int = 50
 DEFAULT_CONCEPT_TOP_N: int = 100
-# Genre layout for raw/processed text folders
-GENRES = [
-    "gothic",
-    "romanticism",
-    "realism",
-    "modernism",
-    "postmodernism",
-]
 
-WEB_CONFIGS = {
-    "indian_uprising": {
-        "author": "barthelme",
-        "url": "https://xpressenglish.com/our-stories/indian-uprising/",
-        # Short + robust markers (don’t cross newlines)
-        "start_marker": "WE DEFENDED the city as best we could.",
-        "end_marker": "paint, feathers, beads.",
-        # Optional cleanup; markers already cut most boilerplate
+# Ordered author directories for the 6x8 TXT corpus.
+TXT_AUTHOR_DIRS: Tuple[str, ...] = (
+    "james",
+    "conrad",
+    "scott",
+    "stevenson",
+    "huxley",
+    "tarkington",
+    "collins",
+    "hearn",
+)
+
+
+TXT_BOOK_CONFIGS = {
+    # ==========================================
+    # WILKIE COLLINS
+    # ==========================================
+    "wilkie_collins_the_antonina_1850": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "wilkie_collins_the_legacy_of_cain_1889": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "wilkie_collins_the_moonstone_1868": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "wilkie_collins_basil_1852": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "wilkie_collins_heart_and_science_1883": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "wilkie_collins_man_and_wife_1870": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+
+    # ==========================================
+    # JOSEPH CONRAD
+    # ==========================================
+    "joseph_conrad_almayers_folly_1895": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "joseph_conrad_lord_jim_1900": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "joseph_conrad_nostromo_1904": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "joseph_conrad_the_arrow_of_gold_1919": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "joseph_conrad_the_rover_1923": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "joseph_conrad_the_secret_agent_1907": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+
+    # ==========================================
+    # ALDOUS HUXLEY
+    # ==========================================
+    "aldous_huxley_antic_hay_1923": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "aldous_huxley_brave_new_world_1932": {
+        "start_marker": "Chapter One \n\n\n\nA SQUAT grey building",
         "patterns": [
-            r"^\s*©\s*\d{4}.*xpressenglish\.com.*$",
-        ],
-        # Optional: narrow extraction (keeps nav junk down)
-        "selector": "article",
-        "category": "web/barthelme",
-    },
-
-    "all_at_one_point": {
-        "author": "calvino",
-        "url": "https://www.ruanyifeng.com/calvino/2007/07/ch_4_all_at_one_point.html",
-        # Includes the “science epigraph” line (your choice); move to “Naturally, we were all there,” if you want epigraph removed
-        "start_marker": "Through the calculations begun by Edwin P. Hubble",
-        "end_marker": "mourning her loss.",
-        "patterns": [
-            r"^Posted on.*$",
-        ],
-        "selector": None,
-        "category": "web/calvino",
-    },
-
-    "the_spiral": {
-        "author": "calvino",
-        "url": "https://www.ruanyifeng.com/calvino/2007/06/ch_12_the_spiral.html",
-        "start_marker": "For the majority of mollusks, the visible organic form",
-        "end_marker": "without shores, without boundaries.",
-        "patterns": [
-            r"^Posted on.*$",
-        ],
-        "selector": None,
-        "category": "web/calvino",
-    },
-
-    "kleist_marquise_of_o": {
-        "author": "kleist",
-        "url": "https://archive.org/stream/in.ernet.dli.2015.225965/2015.225965.The-Marquise_djvu.txt",
-
-        # Start at the first story sentence (skips the title/TOC/intro junk)
-        "start_marker": "Liy  n M , a large  town  in",
-
-        # End at the story’s final sentence (right before Michael Kohlhaas starts)
-        "end_marker": "if  he  had  not  seemed  like  an  angel  to  her  at  his  first  appearance.",
-
-        # Kill running headers + page-number-only lines that get injected mid-story
-        "patterns": [
-            # "THE MARQUISE OF O" / zero variant "0"
-            r"^\s*THE\s+MARQUISE\s+OF\s+[O0]\s*$",
-
-            # Running header with optional page marker:
-            # e.g. "The  Marquise  of  O [61" or "The  Marquise  of  O-"
-            r"^\s*The\s+Marquise\s+of\s+O-?(?:\s*\[\s*\d+(?:\s+\d+)*\s*\]?)?\s*$",
-
-            # Page numbers that show up alone: "41", "[59", "60]", "25 1", etc.
-            r"^\s*\[?\s*\d+(?:\s+\d+)*\s*\]?\s*$",
-        ],
-
-        "selector": None,
-        "category": "web/kleist",
-    },
-
-    "kleist_earthquake_in_chile": {
-        "author": "kleist",
-        "url": "https://archive.org/stream/in.ernet.dli.2015.225965/2015.225965.The-Marquise_djvu.txt",
-
-        # First narrative line of the Earthquake story
-        "start_marker": "L/n  Santiago,  the  capital  of  the",
-
-        # Last line before St. Cecilia begins
-        "end_marker": "it  almost  seemed  to  him  that  he  had  reason  to  feel  glad.",
-
-        "patterns": [
-            # Archive scans inject the book header even inside other stories
-            r"^\s*THE\s+MARQUISE\s+OF\s+[O0]\s*$",
-
-            # Running header for this story, sometimes with page numbers attached:
-            # e.g. "The  Earthquake  in  Chile  [267"
-            r"^\s*The\s+Earthquake\s+in\s+Chile(?:\s*\[\s*\d+(?:\s+\d+)*\s*\]?)?\s*$",
-
-            # Page numbers alone
-            r"^\s*\[?\s*\d+(?:\s+\d+)*\s*\]?\s*$",
-        ],
-
-        "selector": None,
-        "category": "web/kleist",
-    },
-}
-
-BOOK_CONFIGS = {
-    # --- Joyce (Dubliners PDFs) ---
-
-    "araby": {
-        "pages": list(range(1, 6)),  # 1–5
-        "use_text_flow": True,
-        "start_marker": "North Richmond Street, being blind,",
-        "end_marker": "my eyes burned with anguish and anger.",
-        "patterns": [
-            r"^\s*\d{1,3}\s*$",  # page numbers
-        ],
-    },
-
-    "eveline": {
-        "pages": list(range(1, 4)),  # 1–3
-        "use_text_flow": True,       # REQUIRED for this PDF to extract in the right order
-        "start_marker": "She sat at the window watching the evening invade the avenue.",
-        # The sentence is line-broken in the PDF text layer, so use a marker that doesn't cross a newline:
-        "end_marker": "or farewell or recognition.",
-        "patterns": [
-            r"^\s*\d{1,3}\s*$",  # defensive: page numbers / stray numeric lines
-        ],
-    },
-
-    "the_dead": {
-        "pages": list(range(1, 27)),  # 1–26
-        "use_text_flow": True,
-        "start_marker": "Lily, the caretaker's daughter",
-        "end_marker": "the living and the dead.",
-        "patterns": [
-            r"^\s*\d{1,3}\s*$",  # page numbers
-        ],
-    },
-
-    # --- Hawthorne ---
-
-    "young_goodman_brown": {
-        "pages": list(range(1, 11)),  # 1–10
-        "use_text_flow": True,
-        "start_marker": "YOUNG GOODMAN BROWN came forth at sunset",
-        "end_marker": "hour was gloom.",
-        "patterns": None,
-    },
-
-    "the_ministers_black_veil": {
-        "pages": list(range(1, 8)),  # 1–7
-        "use_text_flow": True,       # REQUIRED for this PDF (default extraction is badly ordered)
-        "start_marker": "THE SEXTON stood in the porch of Milford meeting-house,",
-        "end_marker": "he hid his face from men.",
-        "patterns": [
-            # Running headers like "3 NATHANIEL HAWTHORNE"
-            r"^\s*\d+\s+NATHANIEL\s+HAWTHORNE\s*$",
-        ],
-    },
-
-    "rappaccinis_daughter": {
-        "pages": list(range(1, 21)),  # 1–20
-        "use_text_flow": True,
-        "start_marker": "A YOUNG man, named Giovanni Guasconti,",
-        "end_marker": "upshot of your experiment?\"",
-        "patterns": None,
-    },
-
-    # --- Maupassant ---
-
-    "boule_de_suif": {
-        "pages": list(range(1, 36)),  # 1–35
-        "use_text_flow": True,
-        "start_marker": "For several days in succession",
-        "end_marker": "between two verses of the song.",
-        "patterns": [
-            # (mostly redundant because end_marker trims before these, but safe)
-            r"Downloaded from\s+www\.libraryofshortstories\.com",
-            r"This work is in the public domain.*",
-        ],
-    },
-
-    "a_piece_of_string": {
-        "pages": list(range(1, 8)),  # 1–7
-        "use_text_flow": True,
-        "start_marker": "ALONG ALL THE ROADS around Goderville",
-        "end_marker": "M'sieu the Mayor.\"",
-        "patterns": None,
-    },
-
-    "the_necklace": {
-        "pages": list(range(1, 7)),  # 1–6
-        "use_text_flow": True,
-        "start_marker": "She was one of those pretty and charming girls",
-        "end_marker": "francs!",
-        "patterns": [
-            r"^\s*\d{1,3}\s*$",  # defensive: standalone page numbers if present
-        ],
-    },
-
-    # --- Borges ---
-
-    "the_garden_of_forking_paths": {
-        "pages": list(range(1, 7)),  # 1–6
-        "use_text_flow": True,
-        "start_marker": "On page 22 of Liddell Hart’s History of World War I",
-        "end_marker": "contrition and weariness.",
-        "patterns": [
-            # Defensive cleanup in case end_marker fails:
-            r"^\s*\[\d+\]\s*$",     # footnote marker lines like "[1]"
-            r"\(Editor.?s note\.\)", # "(Editor’s note.)" / "(Editor's note.)"
-            r"^\s*Response\s*$",     # trailing "Response" line
-        ],
-    },
-
-    # NOTE: filename is Borges-The-Library-of-Babel.pdf => key borges_the_library_of_babel
-    "borges_the_library_of_babel": {
-        # Exclude page 8 (publisher / collection page)
-        "pages": list(range(1, 8)),  # 1–7
-        "use_text_flow": True,
-        "start_marker": "The universe (which others call the Library)",
-        "end_marker": "have no \"back.\"",
-        "patterns": [
-            # Running headers / page artifacts
-            r"^\s*THE\s+LIBRARY\s+OF\s+BABEL\s+\d+\s*$",
-            r"^\s*[0-9A-Za-z]*\s*JORGE\s+LUIS\s+BORGES\s*$",
-            r"^\s*\d{1,3}\s*$",
-            # Editorial note inside the text layer
-            r"\[Ed\. note\.\]",
-        ],
-    },
-
-    "the_aleph": {
-        "pages": list(range(1, 12)),  # 1–11
-        "use_text_flow": True,
-        "start_marker": "On the burning February morning Beatriz Viterbo died,",
-        "end_marker": "the face of Beatriz.",
-        "patterns": None,
-    },
-
-    # --- Poe (updated PDFs) ---
-
-    "the_telltale_heart": {
-        # Skip cover + copyright pages; story starts on PDF page 3
-        "pages": list(range(3, 9)),  # 3-8
-        "use_text_flow": True,
-        "start_marker": "TRUE!",
-        "end_marker": "hideous heart!",
-        "patterns": [
-            r"^\s*\d{1,3}\s*$",  # page numbers
-            r"^\s*EDGAR\s+ALLAN\s+POE\s+\d+\s*$",
-            r"^\s*\d+\s+THE\s+TELL-TALE\s+HEART\s*$",
-            r"^\s*THE\s+TELL-TALE\s+HEART\s+\d+\s*$",
-            r"^\s*E\s+d\s+g\s+a\s+r.*P\s+o\s+e.*$",
-            r"^\s*p\s*$",
-        ],
-    },
-
-    "the_cask_of_amontillado": {
-        # Skip cover + copyright pages; story starts on PDF page 3
-        "pages": list(range(3, 11)),  # 3-10
-        "use_text_flow": True,
-        "start_marker": "THE thousand injuries of Fortunato I had borne as I best",
-        "end_marker": "In pace requiescat!",
-        "patterns": [
-            r"^\s*\d{1,3}\s*$",  # page numbers
-            r"^\s*EDGAR\s+ALLAN\s+POE\s+\d+\s*$",
-            r"^\s*\d+\s+THE\s+CASK\s+OF\s+AMONTILLADO\s*$",
-            r"^\s*THE\s+CASK\s+OF\s+AMONTILLADO\s+\d+\s*$",
-            r"^\s*E\s+d\s+g\s+a\s+r.*P\s+o\s+e.*$",
-            r"^\s*p\s*$",
-        ],
-    },
-
-    "the_fall_of_the_house_of_usher": {
-        # Skip the cover + copyright pages; story starts on PDF page 3
-        "pages": list(range(3, 26)),  # 3–25
-        "use_text_flow": True,
-        "start_marker": "During the whole of a dull, dark, and soundless day in the",
-        "end_marker": "the “House of Usher.”",
-        "patterns": [
-            # Running headers
-            r"^\s*THE\s+FALL\s+OF\s+THE\s+HOUSE\s+OF\s+USHER\s+\d+\s*$",
-            r"^\s*EDGAR\s+ALLAN\s+POE\s+\d+\s*$",
-            r"^\s*\d{1,3}\s*$",  # stray numeric-only lines
-            # Footnote block (cross-line match)
-            r"\*\s*Watson[\s\S]{0,200}?vol\.\s*v\.",
-        ],
-    },
-    # --- Kleist ---
-    "saint_cecilia": {
-        "pages": list(range(1, 9)),  # 1–8
-        "use_text_flow": True,
-        "start_marker": "At the end of the sixteenth century",
-        "end_marker": "Gloria in excelsis yet again.",
-        "patterns": [
-            r"^\s*\d+\s*$",  # page numbers
-        ],
-    },
-
-    # --- Hoffmann (Blackmask) ---
-    # NOTE: filename is "counsillor_krespel.pdf" (typo), so the normalized key is "counsillor_krespel"
-    "counsillor_krespel": {
-        "pages": list(range(5, 15)),  # 5–14 (skip cover + TOC)
-        "use_text_flow": False,
-        "start_marker": "The man whom I am going to tell you about was Krespel",
-        "end_marker": "But she was dead!",
-        "patterns": [
-            r"This page copyright.*",
-            r"http://www\.blackmask\.com.*",
-            r"^Councillor Krespel\s*$",
-            r"^Councillor Krespel\s+\d+\s*$",
-            r"^E\.T\.A\. Hoffmann\s*\d*\s*$",
-            r"^Translation by.*$",
-        ],
-    },
-
-    "the_sandman": {
-        "pages": list(range(1, 18)),  # 1–17
-        "use_text_flow": True,  # important for correct reading order
-        "start_marker": "Certainly you must all be uneasy",
-        "end_marker": "would never have given her.",
-        "patterns": [
-            r"^\s*Hoffmann\s+The Sandman\s+\d+\s*$",
-            r"^Translation by.*$",
             r"^\s*\d+\s*$",
         ],
     },
-
-    "automata": {
-        "pages": list(range(3, 22)),  # 3–21 (skip cover + TOC)
-        "use_text_flow": False,
-        "start_marker": "A considerable time ago I was invited",
-        # avoid newline breaks in the last quote
-        "end_marker": "told, after all.",
+    "aldous_huxley_crome_yellow_1921": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "aldous_huxley_island_1962": {
+        "start_marker": "Chapter One ",
         "patterns": [
-            r"This page copyright.*",
-            r"http://www\.blackmask\.com.*",
-            r"^Automata\s*$",
-            r"^Automata\s+\d+\s*$",
-            r"^E\.?\s*T\.?\s*A\.?\s*Hoffmann\s*$",
-            r"\(cid:\d+\)",
+            r"^\s*\d+\s*$",
+        ],
+    },
+    "aldous_huxley_point_counter_point_1928": {
+        "start_marker": "POINT COUNTER POINT\n\n                                   By\n                             ALDOUS HUXLEY",
+        "end_marker": "[The end of _Point Counter Point",
+    },
+    "aldous_huxley_the_genius_and_the_goddess_1955": {
+        "start_marker": "“The trouble with fiction,” said John Rivers",
+        "end_marker": "[The end of _The Genius and the Goddess",
+    },
+
+    # ==========================================
+    # HENRY JAMES
+    # ==========================================
+    "henry_james_the_ambassadors_1903": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "henry_james_the_awkward_age_1899": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "henry_james_the_portrait_of_a_lady_1881": {
+        "start_marker": "PREFACE \n\n• \n\nThe  Portrait  of  a  Lady",
+        "patterns": [
+            r"^\s*\d+\s*$",
+        ],
+    },
+    "henry_james_the_american_1877": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "henry_james_the_golden_bowl_1904": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "henry_james_the_spoils_of_poynton_1897": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+
+    # ==========================================
+    # LAFCADIO HEARN
+    # ==========================================
+    "lafciadio_hearn_chita_a_memory_of_last_island_1889": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "lafciadio_hearn_in_ghostly_japan_1899": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+        "patterns": [
+            r"\[Illustration.*?\]",
+        ],
+    },
+    "lafciadio_hearn_kokoro_hints_and_echoes_of_japanese_inner_life_1896": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "lafciadio_hearn_kwaidan_stories_and_studies_of_strange_things_1904": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "lafciadio_hearn_the_romance_of_the_milky_way_1905": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "lafciadio_hearn_youma_the_story_of_a_west_indian_slave_1890": {
+        "start_marker": "THE da, during old colonial days, of-",
+        "end_marker": "suffrage to the slaves of \nMartinique.",
+        "patterns": [
+            r"^\s*\d+\s*$",
+            r"Youma\.\s*\d+",
         ],
     },
 
-    # --- Fanu (Blackmask) ---
-    "mr_justice_harbottle": {
-        "pages": list(range(3, 24)),  # 3-23
-        "use_text_flow": False,
-        "start_marker": "CHAPTER I. THE JUDGE'S HOUSE",
-        "end_marker": "the rich man died, and was buried.",
+    # ==========================================
+    # WALTER SCOTT
+    # ==========================================
+    "walter_scott_a_legend_of_montrose_1819": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "walter_scott_castle_dangerous_1831": {
+        "start_marker": "CASTLE DANGEROUS.\r\n\r\nCHAPTER THE FIRST.",
+        "end_marker": "END OF CASTLE DANGEROUS.",
+    },
+    "walter_scott_count_robert_of_paris_1831": {
+        "start_marker": "COUNT ROBERT OF PARIS.",
+        "end_marker": None,
+    },
+    "walter_scott_the_antiquary_1816": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "walter_scott_the_bride_of_lammermoor_1819": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "walter_scott_waverley_1814": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
         "patterns": [
-            r"This page copyright.*",
-            r"http://www\.blackmask\.com.*",
-            r"^\s*MR\. JUSTICE HARBOTTLE\s*$",
-            r"^\s*MR\. JUSTICE HARBOTTLE\s+\d+\s*$",
-            r"^\s*\?\s+.*$",  # TOC bullets
-            r"^\s*CHAPTER\s+[IVXLC]+\..*\s+\d+\s*$",
-            r"\(cid:\d+\)",
+            r"\[Illustration.*?\]",
         ],
     },
 
-    "the_familiar": {
-        "pages": list(range(4, 27)),  # 4-26 (skip cover + TOC + copyright page)
-        "use_text_flow": False,
-        "start_marker": "CHAPTER I. FOOTSTEPS",
-        "end_marker": "absolute and impenetrable mystery is like to prevail until the day of doom.",
+    # ==========================================
+    # ROBERT LOUIS STEVENSON
+    # ==========================================
+    "robert_louis_stevenson_st_ives_1897": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "robert_louis_stevenson_the_master_of_ballantrae_1889": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
         "patterns": [
-            r"This page copyright.*",
-            r"http://www\.blackmask\.com.*",
-            r"^\s*THE FAMILIAR\s*$",
-            r"^\s*THE FAMILIAR\s+\d+\s*$",
-            r"^\s*CHAPTER.*\s+\d+\s*$",
-            r"^\s*POSTSCRIPT BY THE EDITOR\s+\d+\s*$",
-            r"\(cid:\d+\)",
+            r"\[Illustration.*?\]",
         ],
     },
-
-    "green_tea": {
-        "pages": list(range(3, 23)),  # 3-22 (skip cover/TOC/end page)
-        "use_text_flow": False,
-        "start_marker": "CHAPTER I. Dr. Hesselius Relates How He Met the Rev. Mr. Jennings",
-        "end_marker": "and the mortal and immortal prematurely make acquaintance.",
+    "robert_louis_stevenson_the_wrecker_1892": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "robert_louis_stevenson_treasure_island_1883": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "robert_louis_stevenson_weir_of_hermiston_1896": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
         "patterns": [
-            r"This page copyright.*",
-            r"http://www\.blackmask\.com.*",
-            r"^\s*Green Tea\s*$",
-            r"^\s*Green Tea\s+\d+\s*$",
-            r"^\s*\?\s+.*$",
-            r"^\s*i\s*$",
+            r"\[Picture.*?\]",
+            r"\[Illustration.*?\]",
         ],
     },
-
-    # --- Mary Shelley (UFSC / Blackmask mix) ---
-    "the_mortal_immortal": {
-        "pages": list(range(2, 12)),  # 2–11 (skip cover)
-        "use_text_flow": False,
-        "start_marker": "JULY 16, 1833",
-        "end_marker": "its immortal essence.",
-        "patterns": [],
+    "robert_louis_stevenson_kidnapped_1886": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
     },
 
-    "the_transformation": {
-        "pages": list(range(2, 15)),  # 2–14 (skip cover)
-        "use_text_flow": False,
-        "start_marker": "I HAVE heard it said",
-        "end_marker": "Guido il Cortese.",
-        "patterns": [],
+    # ==========================================
+    # BOOTH TARKINGTON
+    # ==========================================
+    "booth_tarkington_kate_fennigate_1943": {
+        "start_marker": None,
+        "end_marker": "[The end of _Kate Fennigate_",
     },
-
-    "the_dream": {
-        "pages": list(range(3, 11)),  # 3–10 (skip cover + TOC)
-        "use_text_flow": False,
-        "start_marker": "THE time of the occurrence of the little legend",
-        "end_marker": "bid me be blest for evermore",
+    "booth_tarkington_the_gentleman_from_indiana_1899": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
+    },
+    "booth_tarkington_the_heritage_of_hatcher_ide_1941": {
+        "start_marker": None,
+        "end_marker": "[The end of _The Heritage of Hatcher Ide_",
+    },
+    "booth_tarkington_the_magnificent_ambersons_1918": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
         "patterns": [
-            r"This page copyright.*",
-            r"http://www\.blackmask\.com.*",
-            r"^The Dream\s*$",
-            r"^The Dream\s+\d+\s*$",
-            r"^Mary Shelley\s*$",
-            r"^by The Author of Frankenstein\s*$",
+            r"\[Illustration.*?\]",
         ],
     },
-
-    # --- Kate Chopin ---
-    "the_story_of_an_hour": {
-        "pages": [1, 2],
-        "use_text_flow": True,
-        "start_marker": "Knowing that Mrs. Mallard was afflicted with a heart trouble,",
-        "end_marker": "When the doctors came they said she had died of heart disease—of joy that kills.",
-        "patterns": None,
+    "booth_tarkington_the_plutocrat_1927": {
+        "start_marker": None,
+        "end_marker": "[The end of _The Plutocrat_",
     },
-
-    "a_pair_of_silk_stockings": {
-        "pages": [1, 2, 3],  # page 4 is notes only
-        "use_text_flow": True,
-        "start_marker": "Little Mrs. Sommers one day found herself the unexpected possessor of fifteen",
-        "end_marker": "go on and on with her forever.",
-        "patterns": [
-            r"^\s*\d+\s*$",  # page numbers like "2", "3"
-        ],
+    "booth_tarkington_alice_adams_1921": {
+        "start_marker": "*** START OF THE PROJECT GUTENBERG EBOOK",
+        "end_marker": "*** END OF THE PROJECT GUTENBERG EBOOK",
     },
+}
 
-    "desirees_baby": {
-        "pages": [1, 2, 3, 4],
-        "use_text_flow": True,
-        "start_marker": "As the day was pleasant, Madame Valmondé drove over to L’Abri to see Désirée",
-        "end_marker": "the brand of slavery.”",
-        "patterns": None,
-    },
-
-    # --- Henry James (Blackmask-style PDFs: TOC/headers/footers) ---
-
-    # NOTE: file name is the_real_thing.pdf but the actual text is "The Real Right Thing"
-    "the_real_thing": {
-        # Skip cover/TOC/copyright pages; story starts on PDF page 6
-        "pages": list(range(6, 14)),  # 6–13
-        "use_text_flow": True,
-        "start_marker": "When, after the death of Ashton Doyne",
-        "end_marker": "\"I give up.\"",
-        "patterns": [
-            r"^\s*The Real Right Thing\s*$",  # footer/header
-            r"^\s*\d+\s+\d+\s*$",             # footer like "1 3", "2 6", etc.
-            r"^\s*\d+\s*$",                   # section markers like "1", "2", "3" on their own line
-        ],
-    },
-
-    "the_author_of_beltraffio": {
-        # Skip cover + TOC; story begins on PDF page 3
-        "pages": list(range(3, 29)),  # 3–28
-        "use_text_flow": True,
-        "start_marker": "Much as I wished to see him I had kept my letter of introduction",
-        "end_marker": 'she even dipped into the black "Beltraffio."',
-        "patterns": [
-            r"^\s*This page copyright.*$",
-            r"^\s*http://www\.blackmask\.com\s*$",
-            r"^\s*The Author of Beltraffio\s*$",
-            r"^\s*The Author of Beltraffio\s*\d+\s*$",  # footer like "The Author of Beltraffio 12"
-            r"^\s*CHAPTER\s+[IVXLC]+\.?\s+\d+\s*$",     # footer like "CHAPTER II 9"
-            r"^\s*•\s*$",
-        ],
-    },
-
-    "the_figure_in_the_carpet": {
-        # Skip cover + TOC; story content begins on PDF page 3 (after the copyright/transcription lines)
-        "pages": list(range(3, 24)),  # 3–23
-        "use_text_flow": True,
-        "start_marker": "I had done a few things and earned a few pence",
-        "end_marker": "quite my revenge.",
-        "patterns": [
-            r"^\s*This page copyright.*$",
-            r"^\s*http://www\.blackmask\.com\s*$",
-            r"^\s*Transcribed from.*$",
-            r"^\s*The Figure in the Carpet\s*$",               # per-page footer/header
-            r"^\s*CHAPTER\s+[IVXLC0-9]+\.?\s+\d+\s*$",         # footer like "CHAPTER XI. 21"
-            r"^\s*CHAPTER\s+[IVXLC0-9]+\.?\s*•\s*$",           # "CHAPTER I •" lists
-            r"^\s*•\s*$",
-        ],
-    },
-
-    # --- Kafka ---
-    "in_the_penal_colony": {
-        "pages": list(range(1, 17)),  # 1–16
-        "use_text_flow": True,
-        "start_marker": "‘It’s a remarkable piece of apparatus,’ said the officer to the explorer",
-        "end_marker": "kept them from attempting the leap.",
-        "patterns": [
-            r"^\s*©\s*\d{4}\s+by\s+http://www\.HorrorMasters\.com\s*$",
-            r"^\s*\(c\)\s*\d{4}\s+by\s+Horror\s+Masters\s*$",
-            r"^\s*Blah blah blah.*$",
-            r"^\s*To the reader:.*stolen this story.*$",
-            r"^~\^\^.*$",
-            r"^@#\$.*$",
-        ],
-    },
-
-    "the_judgement": {
-        "pages": list(range(1, 8)),  # 1–7
-        "use_text_flow": True,
-        # Keeps "For F." and captures the split drop-cap ("I" + "t was...")
-        "start_marker": "For F.\nI\nt was on a Sunday morning",
-        "end_marker": "At this moment an almost endless traffic rolled across the bridge.",
-        "patterns": [
-            r'^\s*Franz\s+Kafka\s+"The\s+Judgement"\s+\d+\s*$',  # header on every page
-            r"^_+\s*$",                                         # trailing separator line
-        ],
-    },
-
-    "a_hunger_artist": {
-        "pages": [1, 2, 3, 4, 5],
-        "use_text_flow": True,
-
-        # IMPORTANT: This PDF needs x_tolerance lowered to prevent missing spaces
-        "extract_kwargs": {"x_tolerance": 1},
-
-        "start_marker": "During these last decades the interest in professional fasting has markedly diminished.",
-        "end_marker": "did not ever want to move away.",
-        "patterns": [
-            r"^\s*Franz\s+Kafka\s+\d+\s+A\s+Hunger\s+Artist\s*$",  # footer on every page
-        ],
-    },
-
-    "kew_gardens": {
-        "pages": list(range(1, 7)),  # 1–6
-        "use_text_flow": False,
-        "start_marker": "From the oval-shaped flower-bed",
-        "end_marker": "voices cried aloud and the petals of myriads of flowers flashed their colours into the air.",
-        "patterns": [
-            r"Downloaded from\s+www\.libraryofshortstories\.com.*",
-            r"This work is in the public domain.*",
-            r"Please check your local copyright laws.*",
-        ],
-    },
-    "the_mark_on_the_wall": {
-        "pages": list(range(1, 10)),  # 1–9 (story); pages 10–13 are exercises
-        "use_text_flow": True,
-        "start_marker": "Perhaps it was the middle of January",
-        "end_marker": "Ah, the mark on the wall! It was a snail",
-        "patterns": [
-            # Running headers
-            r"^\s*\d{1,3}\s*/\s*(?:KALEIDOSCOPE|THE MARK ON THE WALL)\s*$",
-            # Footer
-            r"^\s*Reprint\s+\d{4}-\d{2}\s*$",
-
-            # “Stop and Think” block injected mid-story (remove questions, keep story)
-            r"Stop and Think(?:\s+Stop and Think)*\s*1\.[\s\S]*?(?=In certain lights)",
-            r"Stop and Think(?:\s+Stop and Think)*\s*1\.[\s\S]*?(?=Someone is standing over me)",
-
-            # Whitaker’s Almanack explanatory note (not Woolf’s story text)
-            r"\*\s*Whitaker.?s Almanack[\s\S]{0,250}?subjects\.",
-        ],
-    },
-
-    "an_unwritten_novel": {
-        # PDF has 7 pages
-        "pages": list(range(1, 8)),  # 1–7
-
-        # IMPORTANT: fixes the initial drop-cap ordering ("S" + "UCH")
-        "use_text_flow": True,
-
-        # Start at title (easy to match), and cut before end notes
-        "start_marker": "AN UNWRITTEN NOVEL",
-        "end_marker": "adorable world!",
-
-        # Optional: remove title line so cleaned text starts immediately with "Such ..."
-        # (Your clean_text will repair "S UCH" -> "Such" either way, but this drops the title.)
-        "patterns": [
-            r"^\s*AN\s+UNWRITTEN\s+NOVEL\s*$",
-        ],
-    },
-
-    "the_balloon": {
-        # PDF has 6 pages
-        "pages": list(range(1, 7)),  # 1–6
-
-        # Default extraction order is fine for this PDF
-        "use_text_flow": False,
-
-        # Trim out title/header by starting at the first story sentence
-        "start_marker": "The balloon, beginning at a point on Fourteenth Street",
-        "end_marker": "when we are angry with one another.",
-
-        # Remove repeating footer line
-        "patterns": [
-            r"^\s*xpressenglish\.com\s*$",
-        ],
-    },
-
-    "the_school": {
-        "pages": list(range(1, 5)),  # 1–4
-        "use_text_flow": False,      # IMPORTANT for correct order in this PDF
-        "start_marker": "Well, we had all these children out planting trees, see,",
-        "end_marker": "The children cheered wildly.",
-        "patterns": [
-            # Running headers
-            r"^\s*\d+\s+amateurs\s*$",
-            r"^\s*the\s+school\s+\d+\s*$",
-
-            # LOA subscribe boilerplate
-            r"^\s*Are you receiving Story of the Week.*$",
-            r"^\s*Sign up now at loa\.org/sotw.*$",
-
-            # Footer garbage from "6966 Book.indb ..."
-            r"^\s*\d+\s*BBooookk\.\.iinnddbb.*$",
-
-            # Standalone page-number lines
-            r"^\s*\d{1,4}\s*$",
-        ],
-    },
-
-    "the_distance_of_the_moon": {
-        "pages": list(range(1, 7)),  # 1–6 only
-        "use_text_flow": True,       # REQUIRED for correct reading order
-        "start_marker": "At one time, according to Sir George H. Darwin",
-        "end_marker": "and me with them.",
-        "patterns": [
-            r"^\s*\d+\s*$",  # page numbers 1–6 at the top
-        ],
-    },
+# Fallback TXT config when no book-specific settings are provided.
+DEFAULT_TEXT_BOOK_CONFIG = {
+    "start_marker": None,
+    "end_marker": None,
+    "patterns": None,
 }
 
 # Fallback PDF config when no book-specific settings are provided.
@@ -731,18 +364,26 @@ DASHBOARD_WINDOW_CONFIG = {
         "keep_keys": {
             "clause_counts_per_token",
             "clause_ratios",
+            "parataxis_hypotaxis",
             "avg_dependents_per_head",
             "avg_mean_dependency_distance",
             "avg_tokens_per_sentence",
             "median_depth",
             "max_depth",
             "depth_skew",
+            "structural_entropy",
+            "normalized_structural_entropy",
             "punctuation_per_token",
+            "breath_unit_counts",
+            "breath_unit_per_1000_words",
         },
         "nested_keys": {
             "clause_counts_per_token",
             "clause_ratios",
+            "parataxis_hypotaxis",
             "avg_dependents_per_head",
+            "breath_unit_counts",
+            "breath_unit_per_1000_words",
         },
     },
     "log_prob": {
@@ -1149,13 +790,7 @@ class TopicMetricLineConfig:
 
 @dataclass(frozen=True)
 class TopicGraphConfig:
-    text_targets: Sequence[str] = (
-        "gothic/poe/the_fall_of_the_house_of_usher",
-        "realism/chopin/a_pair_of_silk_stockings",
-        "modernism/joyce/the_dead",
-        "postmodernism/borges/The_Garden_of_Forking_Paths",
-        "gothic/hoffman/automata",
-    )
+    text_targets: Sequence[str] = ()
     top_k_edges: int = 3
     min_similarity: float = 0.05
     fig_width: float = 9.5
@@ -1194,38 +829,8 @@ class DataSelectionConfig:
 DEFAULT_CENTRAL_TOPIC_X_CONFIG = CentralTopicXBarConfig()
 DEFAULT_CENTRAL_TOPIC_SELECTION_CONFIG = CentralTopicSelectionConfig()
 DEFAULT_DASHBOARD_CORRELATION_CONFIG = DashboardCorrelationConfig()
-DEFAULT_EXEMPLAR_SCATTER_CONFIG = ExemplarScatterConfig(
-    fixed_exemplars=(
-        {
-            "genre": "romanticism",
-            "author": "kleist",
-            "text_name": "kleist_earthquake_in_chile",
-            "topic_id": 2,
-            "metric": "syntax.clause_ratios.coordination_ratio",
-        },
-        {
-            "genre": "romanticism",
-            "author": "kleist",
-            "text_name": "kleist_marquise_of_o",
-            "topic_id": 10,
-            "metric": "syntax.median_depth",
-        },
-        {
-            "genre": "modernism",
-            "author": "woolf",
-            "text_name": "kew_gardens",
-            "topic_id": 0,
-            "metric": "syntax.median_depth",
-        },
-        {
-            "genre": "modernism",
-            "author": "woolf",
-            "text_name": "an_unwritten_novel",
-            "topic_id": 9,
-            "metric": "syntax.median_depth",
-        },
-    )
-)
+DEFAULT_EXEMPLAR_SCATTER_CONFIG = ExemplarScatterConfig()
+
 DEFAULT_PRESENCE_SLOPEGRAPH_CONFIG = PresenceSlopegraphConfig()
 DEFAULT_PRESENCE_COMPARISON_SCATTER_CONFIG = PresenceComparisonScatterConfig()
 DEFAULT_PRESENCE_COMPARISON_PANEL_CONFIG = PresenceComparisonPanelConfig()
@@ -1235,31 +840,17 @@ DEFAULT_CONVERGENCE_INDEX_CONFIG = ConvergenceIndexConfig()
 DEFAULT_AGGREGATED_HEATMAP_CONFIG = AggregatedHeatmapConfig()
 DEFAULT_TOPIC_METRIC_HEATMAP_CONFIG = TopicMetricHeatmapConfig()
 DEFAULT_FOREST_PLOT_CONFIG = ForestPlotConfig()
-DEFAULT_AUTHOR_DISPERSION_CONFIG = AuthorDispersionConfig(
-    author_targets=(
-        {
-            "genre": "modernism",
-            "author": "woolf",
-        },
-    )
-)
+DEFAULT_AUTHOR_DISPERSION_CONFIG = AuthorDispersionConfig()
+
 DEFAULT_INTERNAL_STABILITY_RANK_CONFIG = InternalStabilityRankConfig()
 DEFAULT_TEXT_METRIC_HEATMAP_CONFIG = TextMetricHeatmapConfig()
 DEFAULT_CENTRAL_TOPIC_WINDOW_HEATMAP_CONFIG = CentralTopicWindowHeatmapConfig()
 DEFAULT_STABILITY_FILTER_CONFIG = StabilityFilterConfig()
 DEFAULT_STABILITY_STACKED_BAR_CONFIG = StabilityStackedBarConfig()
-DEFAULT_TOPIC_METRIC_LINE_CONFIG = TopicMetricLineConfig(
-    presence_metric_targets=(
-        {
-            "genre": "romanticism",
-            "author": "kleist",
-            "text_name": "kleist_marquise_of_o",
-            "metric": "syntax.punctuation_per_token",
-        },
-    )
-)
+DEFAULT_TOPIC_METRIC_LINE_CONFIG = TopicMetricLineConfig()
+
 DEFAULT_TOPIC_GRAPH_CONFIG = TopicGraphConfig()
-DEFAULT_DATA_SELECTION_CONFIG = DataSelectionConfig(genres=tuple(GENRES))
+DEFAULT_DATA_SELECTION_CONFIG = DataSelectionConfig(authors=tuple(TXT_AUTHOR_DIRS))
 
 CONVERGENCE_METRIC_LABELS = {
     "significant_count": "Significant metrics (proportion)",
@@ -1268,14 +859,4 @@ CONVERGENCE_METRIC_LABELS = {
     "sign_agreement": "Sign agreement (proportion)",
 }
 
-@lru_cache(maxsize=None)
-def load_spacy_model(
-    model_name: str = DEFAULT_SPACY_MODEL,
-    disable: Optional[Sequence[str]] = None,
-):
-    """
-    Shared spaCy loader with simple caching driven by config defaults.
-    Pass a different model_name/disable list to override per call.
-    """
-    disable_components = tuple(disable) if disable else DEFAULT_SPACY_DISABLE
-    return spacy.load(model_name, disable=list(disable_components))
+

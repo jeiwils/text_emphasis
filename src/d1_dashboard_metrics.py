@@ -111,7 +111,7 @@ from .x_configs import (
     WINDOW_METRIC_DOMAINS,
 )
 
-from .b2_topic_modeling import (
+from .c4_topic_modeling import (
     build_topic_window_metrics,
     collect_soft_topic_mentions,
 )
@@ -120,9 +120,8 @@ from .b2_topic_modeling import (
 def _window_metrics_base_name(path: Path) -> Optional[str]:
     name = path.name
     for domain in WINDOW_METRIC_DOMAINS:
-        suffix = f"_window_metrics.{domain}.json"
-        if name.endswith(suffix):
-            return name[: -len(suffix)]
+        if name == f"window_metrics.{domain}.json":
+            return ""
     return None
 
 
@@ -130,13 +129,15 @@ def load_window_metrics(path: Path) -> Dict[str, object]:
     base_name = _window_metrics_base_name(path)
     if base_name is None:
         raise ValueError(
-            f"Expected window metrics file with suffix _window_metrics.<domain>.json; got {path}"
+            "Expected window metrics file named `window_metrics.<domain>.json`; "
+            f"got {path}"
         )
 
     window_data: Dict[str, object] = {}
     base_meta: Optional[Dict[str, object]] = None
     for domain in WINDOW_METRIC_DOMAINS:
-        domain_path = path.with_name(f"{base_name}_window_metrics.{domain}.json")
+        domain_filename = f"window_metrics.{domain}.json"
+        domain_path = path.with_name(domain_filename)
         if not domain_path.exists():
             raise FileNotFoundError(f"Missing window metrics file: {domain_path}")
         with open(domain_path, "r", encoding="utf-8") as f:
@@ -1479,6 +1480,9 @@ def build_dashboard_row(
     avg_mean_dependency_distances = []
     avg_median_depths = []
     depth_skews = []
+    normalized_structural_entropies = []
+    parataxis_hypotaxis_ratios = []
+    breath_unit_per_1000_totals = []
     punctuation_per_tokens = []
     for window in syntax_windows:
         if not isinstance(window, dict):
@@ -1506,6 +1510,19 @@ def build_dashboard_row(
         depth_skew = window.get("avg_depth_skew", window.get("depth_skew"))
         if depth_skew is not None:
             depth_skews.append(depth_skew)
+        normalized_structural_entropy = window.get("normalized_structural_entropy")
+        if normalized_structural_entropy is not None:
+            normalized_structural_entropies.append(normalized_structural_entropy)
+        parataxis_payload = window.get("parataxis_hypotaxis", {})
+        if isinstance(parataxis_payload, dict):
+            parataxis_ratio = parataxis_payload.get("parataxis_to_hypotaxis_ratio")
+            if parataxis_ratio is not None:
+                parataxis_hypotaxis_ratios.append(parataxis_ratio)
+        breath_unit_per_1000 = window.get("breath_unit_per_1000_words", {})
+        if isinstance(breath_unit_per_1000, dict):
+            breath_total = breath_unit_per_1000.get("total")
+            if breath_total is not None:
+                breath_unit_per_1000_totals.append(breath_total)
         punctuation_per_token = window.get("punctuation_per_token")
         if punctuation_per_token is not None:
             punctuation_per_tokens.append(punctuation_per_token)
@@ -1526,6 +1543,15 @@ def build_dashboard_row(
         _require_numbers(avg_median_depths, label="avg_median_depth")
     )
     depth_skew = statistics.mean(_require_numbers(depth_skews, label="depth_skew"))
+    normalized_structural_entropy = statistics.mean(
+        _require_numbers(normalized_structural_entropies, label="normalized_structural_entropy")
+    )
+    parataxis_to_hypotaxis_ratio = statistics.mean(
+        _require_numbers(parataxis_hypotaxis_ratios, label="parataxis_to_hypotaxis_ratio")
+    )
+    breath_unit_per_1000_words = statistics.mean(
+        _require_numbers(breath_unit_per_1000_totals, label="breath_unit_per_1000_words")
+    )
     punctuation_per_token = statistics.mean(
         _require_numbers(punctuation_per_tokens, label="punctuation_per_token")
     )
@@ -1586,6 +1612,9 @@ def build_dashboard_row(
                 {"avg_mean_dependency_distance": avg_mean_dependency_distance},
                 {"avg_median_depth": avg_median_depth},
                 {"depth_skew": depth_skew},
+                {"normalized_structural_entropy": normalized_structural_entropy},
+                {"parataxis_to_hypotaxis_ratio": parataxis_to_hypotaxis_ratio},
+                {"breath_unit_per_1000_words": breath_unit_per_1000_words},
                 {"punctuation_per_token": punctuation_per_token},
             ]
         },

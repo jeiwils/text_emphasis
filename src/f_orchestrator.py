@@ -9,12 +9,12 @@ Flow:
    `data/texts/processed/normalised_segmented_texts/<genre>/<author>/*_normalised_segmented.jsonl`
    and writes topics JSON to `data/analytics/topic_modelling/<genre>/<author>/<name>/<name>_clustered_topics.json`.
 4) `run_corpus_metrics` reads cleaned texts from `data/texts/processed/cleaned_texts/<genre>/<author>/*.json`
-   and writes corpus metrics JSON to `data/analytics/corpus_analytics/<genre>/<author>/<name>/<name>_corpus_metrics.json`
-   plus per-text frequencies at `data/analytics/corpus_analytics/<genre>/<author>/<name>/<name>_corpus_frequencies.json`.
+   and writes `corpus_metrics.json` plus `corpus_frequencies.json` under
+   `data/analytics/corpus_analytics/<genre>/<author>/<name>/`.
    Each file matches the c0 meta/sentences/windows schema (log-probs, surprisal, etc.).
 5) `run_windowed_metrics` reads those corpus JSONs, recomputes sentence-level spaCy docs
-   from cleaned-segmented texts, and writes split window metrics to:
-   `data/analytics/window_metrics/<genre>/<author>/<name>/<name>_window_metrics.<domain>.json`
+   from cleaned-segmented texts, and writes standardized split window metrics to:
+   `data/analytics/window_metrics/<genre>/<author>/<name>/window_metrics.<domain>.json`
    for domains: syntax, lexico_semantics, discourse, log_prob.
 """
 
@@ -33,24 +33,46 @@ from .x_configs import (
     DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
     DEFAULT_USE_EXISTING,
     DEFAULT_WINDOW_SIZE,
-    GENRES,
     MODEL_CONFIGS,
-    WEB_CONFIGS,
-    load_spacy_model,
 )
-from .a_preprocessing_cleaning import (
-    TextPreprocessor,
-    preprocess_all_pdfs,
-    preprocess_web_story,
-)
-from .b1_concept_embeddings import ConceptExtractor, generate_embeddings
+from .a_preprocessing_cleaning import preprocess_all_texts
+from .b_concept_embeddings import ConceptExtractor, generate_embeddings
 from .b3_log_prob_metrics import WholeTextMetrics
-from .b2_topic_modeling import run_topic_modelling
+from .c4_topic_modeling import run_topic_modelling
 from .c1_syntactics import SyntaxAnalyzer
 from .c2_lexico_semantics import LexicoSemanticsAnalyzer
 from .c3_discourse import DiscourseAnalyzer
 from .d2_dashboard import run_dashboard_with_config
-from .z_utils import analytics_path, iter_dirs, text_path
+from .z_utils import analytics_path, iter_dirs, load_spacy_model, text_path, window_metrics_filename
+
+# Toggle these booleans to include or exclude whole stages when running `run_all_metrics()`.
+ORCHESTRATOR_STAGE_SWITCHES = {
+    "preprocessing": True,
+    "concept_embeddings": True,
+    "topic_modelling": False,
+    "corpus_metrics": True,
+    "window_metrics": True,
+    "dashboard": False,
+}
+
+# Toggle which window-analysis domains are written during the window-metrics stage.
+WINDOW_ANALYSIS_SWITCHES = {
+    "syntax": True,
+    "lexico_semantics": True,
+    "discourse": True,
+    "log_prob": True,
+}
+
+
+def _merge_switches(defaults: Dict[str, bool], overrides=None) -> Dict[str, bool]:
+    """Merge optional runtime overrides into the editable top-of-file switch config."""
+    merged = dict(defaults)
+    if overrides:
+        for key, value in overrides.items():
+            if key in merged:
+                merged[key] = bool(value)
+    return merged
+
 
 def run_concept_embeddings(
     top_n=DEFAULT_CONCEPT_TOP_N,
@@ -67,7 +89,7 @@ def run_concept_embeddings(
         return
 
     extractor = ConceptExtractor(encoder=encoder)
-    categories = list(iter_dirs(normalised_root, genres=GENRES, authors=authors, depth=2))
+    categories = list(iter_dirs(normalised_root, authors=authors, depth=2))
     for category_key, subdir in tqdm(categories, desc="Concept embeddings", ascii=True):
         genre, author = category_key.split("/", 1)
         files = sorted(subdir.glob("*_normalised.json"))
@@ -98,7 +120,7 @@ def run_corpus_metrics(use_existing=DEFAULT_USE_EXISTING, authors=None):
     output_root = analytics_path("corpus")
     output_root.mkdir(parents=True, exist_ok=True)
 
-    categories = list(iter_dirs(cleaned_root, genres=GENRES, authors=authors, depth=2))
+    categories = list(iter_dirs(cleaned_root, authors=authors, depth=2))
     processed = 0
     skipped = 0
     for category_key, subdir in tqdm(categories, desc="Corpus metrics", ascii=True):
@@ -127,7 +149,7 @@ def run_corpus_metrics(use_existing=DEFAULT_USE_EXISTING, authors=None):
             text_dir = out_subdir / base_name
             text_dir.mkdir(parents=True, exist_ok=True)
 
-            freq_path = text_dir / f"{base_name}_corpus_frequencies.json"
+            freq_path = text_dir / "corpus_frequencies.json"
             if use_existing and freq_path.exists():
                 try:
                     freqs = json.load(freq_path.open("r", encoding="utf-8"))
@@ -135,9 +157,10 @@ def run_corpus_metrics(use_existing=DEFAULT_USE_EXISTING, authors=None):
                     freqs = {}
             else:
                 freqs = metrics.compute_corpus_frequencies([text], nlp=nlp)
+                freq_path.parent.mkdir(parents=True, exist_ok=True)
                 freq_path.write_text(json.dumps(freqs, indent=2), encoding="utf-8")
 
-            output_file = text_dir / f"{base_name}_corpus_metrics.json"
+            output_file = text_dir / "corpus_metrics.json"
             if use_existing and output_file.exists():
                 skipped += 1
                 continue
@@ -167,6 +190,12 @@ def run_corpus_metrics(use_existing=DEFAULT_USE_EXISTING, authors=None):
     tqdm.write(f"Corpus metrics complete: {processed} processed, {skipped} skipped.")
 
 
+def _resolve_corpus_base_name(metrics_file: Path) -> str:
+    if metrics_file.name != "corpus_metrics.json":
+        raise ValueError(f"Expected `corpus_metrics.json`; got {metrics_file.name}")
+    return metrics_file.parent.name
+
+
 def _load_segmented_jsonl(path: Path) -> List[str]:
     sentences: List[str] = []
     with open(path, "r", encoding="utf-8") as f:
@@ -185,12 +214,11 @@ def _load_segmented_jsonl(path: Path) -> List[str]:
 
 def _load_text_for_windowing(category_key: str, metrics_file: Path) -> Tuple[str, List[str]]:
     """
-    Derive the cleaned-segmented text path from a metrics filename
-    (assumes *_corpus_metrics.json convention).
+    Derive the cleaned-segmented text path from a standardized corpus metrics filename.
     Raises FileNotFoundError if the segmented file is absent.
     """
     segmented_root = text_path("processed", "cleaned_segmented_texts", category_key)
-    base_name = metrics_file.stem.replace("_corpus_metrics", "")
+    base_name = _resolve_corpus_base_name(metrics_file)
     candidate = segmented_root / f"{base_name}_cleaned_segmented.jsonl"
     if candidate.exists():
         sentences = _load_segmented_jsonl(candidate)
@@ -201,8 +229,8 @@ def _load_text_for_windowing(category_key: str, metrics_file: Path) -> Tuple[str
     )
 
 
-def _load_corpus_frequencies(text_dir: Path, base_name: str) -> dict:
-    freq_path = text_dir / f"{base_name}_corpus_frequencies.json"
+def _load_corpus_frequencies(text_dir: Path) -> dict:
+    freq_path = text_dir / "corpus_frequencies.json"
     if not freq_path.exists():
         return {}
     try:
@@ -218,21 +246,29 @@ def run_windowed_metrics(
     mattr_window_size=DEFAULT_MATTR_WINDOW_SIZE,
     use_existing=DEFAULT_USE_EXISTING,
     authors=None,
+    analysis_sections=None,
 ):
     """
-    Compute window-level metrics by combining syntax, lexico-semantic, discourse
+    Compute window-level metrics by combining syntax, lexico-semantic, discourse.
+    Toggle per-domain output with `analysis_sections` / `WINDOW_ANALYSIS_SWITCHES`.
     Requires corpus outputs from run_corpus_metrics.
     """
+    analysis_sections = _merge_switches(WINDOW_ANALYSIS_SWITCHES, analysis_sections)
+    enabled_domains = [name for name, enabled in analysis_sections.items() if enabled]
+    if not enabled_domains:
+        tqdm.write("Window metrics skipped: no analysis sections enabled.")
+        return
+
     window_size = DEFAULT_WINDOW_SIZE
     corpus_root = analytics_path("corpus")
     output_root = analytics_path("window")
     output_root.mkdir(parents=True, exist_ok=True)
 
     nlp = load_spacy_model()
-    syntax_analyzer = SyntaxAnalyzer(nlp)
-    discourse_analyzer = DiscourseAnalyzer(nlp)
+    syntax_analyzer = SyntaxAnalyzer(nlp) if analysis_sections.get("syntax") else None
+    discourse_analyzer = DiscourseAnalyzer(nlp) if analysis_sections.get("discourse") else None
 
-    categories = list(iter_dirs(corpus_root, genres=GENRES, authors=authors, depth=2))
+    categories = list(iter_dirs(corpus_root, authors=authors, depth=2))
     processed = 0
     skipped = 0
     for category_key, author_dir in tqdm(categories, desc="Window metrics", ascii=True):
@@ -244,7 +280,7 @@ def run_windowed_metrics(
         for text_dir in author_dir.iterdir():
             if not text_dir.is_dir():
                 continue
-            metric_files.extend(sorted(text_dir.glob("*_corpus_metrics.json")))
+            metric_files.extend(sorted(text_dir.glob("corpus_metrics.json")))
         for file in tqdm(
             metric_files,
             desc=f"Window metrics: {category_key}",
@@ -252,20 +288,22 @@ def run_windowed_metrics(
             ascii=True,
         ):
             text_dir = file.parent
-            base_name = file.stem.replace("_corpus_metrics", "")
-            corpus_freqs = _load_corpus_frequencies(text_dir, base_name)
+            base_name = _resolve_corpus_base_name(file)
+            corpus_freqs = _load_corpus_frequencies(text_dir)
             global_avg_freq = (sum(corpus_freqs.values()) / len(corpus_freqs)) if corpus_freqs else None
-            lex_analyzer = LexicoSemanticsAnalyzer(nlp, corpus_freqs=corpus_freqs)
+            lex_analyzer = (
+                LexicoSemanticsAnalyzer(nlp, corpus_freqs=corpus_freqs)
+                if analysis_sections.get("lexico_semantics")
+                else None
+            )
 
             output_text_dir = out_category_dir / base_name
             output_text_dir.mkdir(parents=True, exist_ok=True)
             output_files = {
-                "syntax": output_text_dir / f"{base_name}_window_metrics.syntax.json",
-                "lexico_semantics": output_text_dir / f"{base_name}_window_metrics.lexico_semantics.json",
-                "discourse": output_text_dir / f"{base_name}_window_metrics.discourse.json",
-                "log_prob": output_text_dir / f"{base_name}_window_metrics.log_prob.json",
+                domain: output_text_dir / window_metrics_filename(domain)
+                for domain in enabled_domains
             }
-            if use_existing and all(path.exists() for path in output_files.values()):
+            if use_existing and output_files and all(path.exists() for path in output_files.values()):
                 skipped += 1
                 continue
 
@@ -297,21 +335,32 @@ def run_windowed_metrics(
                     "Check sentence boundary drift or adjust pipeline components."
                 )
 
-            syntax_metrics = syntax_analyzer.analyze_document(doc, window_size=window_size)
-            lex_metrics = lex_analyzer.analyze_document(
-                doc,
-                window_size=window_size,
-                mattr_window_size=mattr_window_size,
-                global_avg_freq=global_avg_freq,
+            syntax_metrics = (
+                syntax_analyzer.analyze_document(doc, window_size=window_size)
+                if syntax_analyzer is not None
+                else None
             )
-            discourse_sent, discourse_windows = discourse_analyzer.compute_sentence_metrics(
-                doc, window_size=window_size
+            lex_metrics = (
+                lex_analyzer.analyze_document(
+                    doc,
+                    window_size=window_size,
+                    mattr_window_size=mattr_window_size,
+                    global_avg_freq=global_avg_freq,
+                )
+                if lex_analyzer is not None
+                else None
             )
-            discourse_metrics = {
-                "meta": {"window_size": window_size, "num_sentences": num_sentences},
-                "sentences": discourse_sent,
-                "windows": discourse_windows,
-            }
+            if discourse_analyzer is not None:
+                discourse_sent, discourse_windows = discourse_analyzer.compute_sentence_metrics(
+                    doc, window_size=window_size
+                )
+                discourse_metrics = {
+                    "meta": {"window_size": window_size, "num_sentences": num_sentences},
+                    "sentences": discourse_sent,
+                    "windows": discourse_windows,
+                }
+            else:
+                discourse_metrics = None
 
             log_prob_sentences = data.get("sentences", [])
             log_prob_windows = data.get("windows", [])
@@ -327,11 +376,6 @@ def run_windowed_metrics(
                 "avg_log_prob": meta_block.get("avg_log_prob"),
             }
 
-            # Keep full window metrics; dashboard-level filtering happens downstream.
-            syntax_windows = syntax_metrics.get("windows", [])
-            lex_windows = lex_metrics.get("windows", [])
-            discourse_windows = discourse_metrics.get("windows", [])
-
             def _domain_payload(
                 metrics: Dict[str, object],
                 windows: List[Dict[str, object]],
@@ -344,43 +388,42 @@ def run_windowed_metrics(
                     "windows": windows,
                 }
 
-            syntax_payload = _domain_payload(syntax_metrics, syntax_windows)
-            lexico_payload = _domain_payload(lex_metrics, lex_windows)
-            discourse_payload = _domain_payload(discourse_metrics, discourse_windows)
-            log_prob_payload = {
-                "meta": log_prob_meta,
-                "sentences": log_prob_sentences,
-                "windows": log_prob_windows,
-            }
+            if syntax_metrics is not None:
+                syntax_payload = _domain_payload(syntax_metrics, syntax_metrics.get("windows", []))
+                with open(output_files["syntax"], "w", encoding="utf-8") as f:
+                    json.dump(syntax_payload, f, indent=2)
 
-            with open(output_files["syntax"], "w", encoding="utf-8") as f:
-                json.dump(syntax_payload, f, indent=2)
-            with open(output_files["lexico_semantics"], "w", encoding="utf-8") as f:
-                json.dump(lexico_payload, f, indent=2)
-            with open(output_files["discourse"], "w", encoding="utf-8") as f:
-                json.dump(discourse_payload, f, indent=2)
-            with open(output_files["log_prob"], "w", encoding="utf-8") as f:
-                json.dump(log_prob_payload, f, indent=2)
+            if lex_metrics is not None:
+                lexico_payload = _domain_payload(lex_metrics, lex_metrics.get("windows", []))
+                with open(output_files["lexico_semantics"], "w", encoding="utf-8") as f:
+                    json.dump(lexico_payload, f, indent=2)
+
+            if discourse_metrics is not None:
+                discourse_payload = _domain_payload(discourse_metrics, discourse_metrics.get("windows", []))
+                with open(output_files["discourse"], "w", encoding="utf-8") as f:
+                    json.dump(discourse_payload, f, indent=2)
+
+            if analysis_sections.get("log_prob"):
+                log_prob_payload = {
+                    "meta": log_prob_meta,
+                    "sentences": log_prob_sentences,
+                    "windows": log_prob_windows,
+                }
+                with open(output_files["log_prob"], "w", encoding="utf-8") as f:
+                    json.dump(log_prob_payload, f, indent=2)
 
             processed += 1
-    tqdm.write(f"Window metrics complete: {processed} processed, {skipped} skipped.")
+    tqdm.write(
+        f"Window metrics complete: {processed} processed, {skipped} skipped. "
+        f"Enabled sections: {', '.join(enabled_domains)}"
+    )
 
 
 def run_preprocessing(process_unknown=True, use_existing=DEFAULT_USE_EXISTING, authors=None):
     """
-    Run PDF preprocessing to produce cleaned/normalised corpora.
+    Run TXT raw-text preprocessing to produce cleaned/normalised corpora.
     """
-    preproc = TextPreprocessor()
-    for story_key, config in WEB_CONFIGS.items():
-        if authors and config.get("author") not in authors:
-            continue
-        preprocess_web_story(
-            story_key,
-            preproc,
-            config,
-            use_existing=use_existing,
-        )
-    preprocess_all_pdfs(
+    preprocess_all_texts(
         process_unknown=process_unknown,
         use_existing=use_existing,
         authors=authors,
@@ -392,44 +435,81 @@ def run_all_metrics(
     use_existing=DEFAULT_USE_EXISTING,
     process_unknown=True,
     authors=None,
+    stage_switches=None,
+    analysis_sections=None,
 ):
     """
-    Full orchestrator: preprocessing, concept embeddings, topics, corpus metrics, then windowed metrics.
+    Full orchestrator: preprocessing, concept embeddings, topics, corpus metrics,
+    windowed metrics, then dashboard correlations.
+
+    Edit `ORCHESTRATOR_STAGE_SWITCHES` / `WINDOW_ANALYSIS_SWITCHES` at the top of
+    this file, or pass overrides at runtime.
     """
     window_size = DEFAULT_WINDOW_SIZE
-    tqdm.write("Stage 1/6: preprocessing")
-    run_preprocessing(
-        process_unknown=process_unknown,
-        use_existing=use_existing,
-        authors=authors,
-    )
-    tqdm.write("Stage 2/6: concept embeddings")
-    shared_encoder = SentenceTransformer(MODEL_CONFIGS["sentence_embedding"])
-    run_concept_embeddings(
-        use_existing=use_existing,
-        encoder=shared_encoder,
-        authors=authors,
-    )
-    tqdm.write("Stage 3/6: topic modelling")
-    run_topic_modelling(
-        use_existing=use_existing,
-        base_window_size=window_size,
-        window_multiple=DEFAULT_TOPIC_WINDOW_MULTIPLE,
-        window_stride=window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
-        encoder=shared_encoder,
-        authors=authors,
-    )
-    tqdm.write("Stage 4/6: corpus metrics")
-    run_corpus_metrics(use_existing=use_existing, authors=authors)
-    tqdm.write("Stage 5/6: window metrics")
-    run_windowed_metrics(
-        mattr_window_size=mattr_window_size,
-        use_existing=use_existing,
-        authors=authors,
-    )
-    tqdm.write("Stage 6/6: dashboard correlations")
-    run_dashboard_with_config(use_existing=use_existing, authors=authors)
-    tqdm.write("All stages complete.")
+    stage_switches = _merge_switches(ORCHESTRATOR_STAGE_SWITCHES, stage_switches)
+    analysis_sections = _merge_switches(WINDOW_ANALYSIS_SWITCHES, analysis_sections)
+    shared_encoder = None
+
+    if stage_switches.get("preprocessing"):
+        tqdm.write("Stage 1/6: preprocessing")
+        run_preprocessing(
+            process_unknown=process_unknown,
+            use_existing=use_existing,
+            authors=authors,
+        )
+    else:
+        tqdm.write("Stage 1/6: preprocessing [skipped]")
+
+    if stage_switches.get("concept_embeddings"):
+        tqdm.write("Stage 2/6: concept embeddings")
+        shared_encoder = SentenceTransformer(MODEL_CONFIGS["sentence_embedding"])
+        run_concept_embeddings(
+            use_existing=use_existing,
+            encoder=shared_encoder,
+            authors=authors,
+        )
+    else:
+        tqdm.write("Stage 2/6: concept embeddings [skipped]")
+
+    if stage_switches.get("topic_modelling"):
+        tqdm.write("Stage 3/6: topic modelling")
+        if shared_encoder is None:
+            shared_encoder = SentenceTransformer(MODEL_CONFIGS["sentence_embedding"])
+        run_topic_modelling(
+            use_existing=use_existing,
+            base_window_size=window_size,
+            window_multiple=DEFAULT_TOPIC_WINDOW_MULTIPLE,
+            window_stride=window_size * DEFAULT_TOPIC_WINDOW_STRIDE_MULTIPLE,
+            encoder=shared_encoder,
+            authors=authors,
+        )
+    else:
+        tqdm.write("Stage 3/6: topic modelling [skipped]")
+
+    if stage_switches.get("corpus_metrics"):
+        tqdm.write("Stage 4/6: corpus metrics")
+        run_corpus_metrics(use_existing=use_existing, authors=authors)
+    else:
+        tqdm.write("Stage 4/6: corpus metrics [skipped]")
+
+    if stage_switches.get("window_metrics"):
+        tqdm.write("Stage 5/6: window metrics")
+        run_windowed_metrics(
+            mattr_window_size=mattr_window_size,
+            use_existing=use_existing,
+            authors=authors,
+            analysis_sections=analysis_sections,
+        )
+    else:
+        tqdm.write("Stage 5/6: window metrics [skipped]")
+
+    if stage_switches.get("dashboard"):
+        tqdm.write("Stage 6/6: dashboard correlations")
+        run_dashboard_with_config(use_existing=use_existing, authors=authors)
+    else:
+        tqdm.write("Stage 6/6: dashboard correlations [skipped]")
+
+    tqdm.write("All enabled stages complete.")
 
 if __name__ == "__main__":
     run_all_metrics()
